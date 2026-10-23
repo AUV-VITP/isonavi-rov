@@ -24,3 +24,4 @@ cad/*.stl
 
 # Slide deck, kept out of the repository.
 ppt/
+simulation/results/video/rov_frames/

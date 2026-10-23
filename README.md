@@ -7,6 +7,9 @@ It keeps the isonavi engines (ray casting, 6-DOF dynamics, the eight thruster
 vectored layout, the hardware-validated actuator path, the solved mass budget
 and the generated bill of materials) and replaces what a pool does not need.
 
+Operator console of one run, onboard camera beside the track:
+[`simulation/results/video/rov_course_auto.mp4`](simulation/results/video/rov_course_auto.mp4).
+
 ## What changed from isonavi, and why
 
 | isonavi-1 | isonavi-rov | Reason |
@@ -132,6 +135,7 @@ PYTHONPATH=. python tests/smoke_rov.py          # arena, camera, vision, pilot, 
 PYTHONPATH=. python eval/run_trials.py          # course runs by mode and water clarity
 PYTHONPATH=. python eval/vision_eval.py         # identification by range, clarity, lamp placement
 PYTHONPATH=. python eval/rov_figures.py         # figures
+PYTHONPATH=. python eval/make_rov_video.py      # operator console video of one run
 
 bash ../ros/test_chain.sh                       # ROS 2 build and chain test, under Jazzy
 ```
