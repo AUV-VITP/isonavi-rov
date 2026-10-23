@@ -167,12 +167,17 @@ class CourseEstimator:
         """Camera y from the gate posts, or None.
 
         With the distance to the gate known, each post is a bearing at a known
-        range, so one post is enough and a narrow object elsewhere in the frame
-        is rejected by its bearing rather than paired with a post.
+        range, and a narrow object elsewhere in the frame is rejected by its
+        bearing rather than paired with a post. Both posts must be in the frame
+        at the fitted position and each must have its own column: close to the
+        gate one post leaves the edge, and further out one may not be seen, and
+        a lone column is then as likely to be something beyond the gate, which
+        the fit would take for the missing post. A frame that fails this gives
+        no measurement, and the pilot's read carries the vehicle until the next.
         """
         return self.posts(img_u8, yaw, x_cam,
                           [(gate_x, gate_y + half_span), (gate_x, gate_y - half_span)], prior_y,
-                          span=span)
+                          span=span, require_all=True)
 
     # -------------------------------------------------------------- target
     def target(self, img_u8, yaw, target_pos, colour, max_range=1.6, max_bearing_deg=25.0):
@@ -189,7 +194,7 @@ class CourseEstimator:
 
     # ----------------------------------------------------------- obstacles
     def posts(self, img_u8, yaw, x_cam, posts_xy, prior_y, span=0.25, cap_deg=4.0,
-              accept_deg=1.5, prior_weight=0.05):
+              accept_deg=1.5, prior_weight=0.05, require_all=False, edge_deg=2.0):
         """Camera y from bearings to known posts ahead, or None.
 
         A joint fit rather than post-by-post matching: for each candidate y near
@@ -219,6 +224,10 @@ class CourseEstimator:
         cost = np.minimum(miss, cap) ** 2
         cost = cost.sum(axis=1) + prior_weight * cap ** 2 * ((ys - prior_y) / span) ** 2
         k = int(np.argmin(cost))
+        if require_all:
+            seen = np.abs(phi_c[:, None] - pred[k][None, :]).min(axis=0) < np.radians(accept_deg)
+            if not ((np.abs(pred[k] - yaw) < half - np.radians(edge_deg)).all() and seen.all()):
+                return None
         explained = miss[k] < np.radians(accept_deg)
         if not explained.any():
             return None

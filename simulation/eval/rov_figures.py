@@ -23,7 +23,7 @@ LOGS = os.path.join(ROOT, "results", "logs")
 os.makedirs(FIG, exist_ok=True)
 plt.rcParams.update({"figure.dpi": 130, "savefig.dpi": 145, "font.size": 9,
                      "axes.spines.top": False, "axes.spines.right": False})
-MODE_COL = {"manual": "#c0392b", "assist": "#e08e0b", "auto": "#1f6fb2"}
+MODE_COL = {"manual": "#c0392b", "assist": "#e08e0b", "auto": "#1f6fb2", "shared": "#1e8449"}
 
 
 def draw_course(ax, a):
@@ -55,7 +55,7 @@ def course_figure():
     fig, axes = plt.subplots(2, 1, figsize=(9.0, 4.6), sharex=True)
     for ax, b in zip(axes, (0.4, 1.0)):
         draw_course(ax, a)
-        for mode in ("manual", "assist", "auto"):
+        for mode in MODE_COL:
             r = CourseRun(a, mode=mode, seed=3, turbidity=b).run()
             e = r.log["eta"]
             ax.plot(e[:, 0], e[:, 1], color=MODE_COL[mode], lw=1.1,
@@ -68,7 +68,7 @@ def course_figure():
         ax.set_aspect("equal")
         ax.set_ylabel("y, m")
         ax.set_title(f"water b = {b} /m, seed 3", fontsize=9, loc="left")
-        ax.legend(loc="upper left", fontsize=7, frameon=False, ncol=3)
+        ax.legend(loc="upper left", fontsize=7, frameon=False, ncol=4)
     axes[-1].set_xlabel("x along the pool, m")
     fig.tight_layout()
     fig.savefig(f"{FIG}/r1_course_tracks.png")

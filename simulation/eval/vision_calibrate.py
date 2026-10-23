@@ -6,7 +6,10 @@ on the log brightness ratio and a heading term, is fitted per water clarity
 on half the frames and its error is reported on the other half.
 
 Gate and target: frames at known range and offset; reported as how often a
-measurement comes back and how far it is from the truth.
+measurement comes back and how far it is from the truth. The gate frames come
+from random layouts and the fit is called exactly as the closed loop calls
+it, searched about the planned gate line, so the error carries what lies
+beyond the gate as well as the gate itself.
 """
 
 from __future__ import annotations
@@ -27,7 +30,7 @@ from isonavi.vision import CourseEstimator                         # noqa: E402
 OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "results", "logs")
 TURB = (0.05, 0.2, 0.4, 0.7, 1.0)
 N_CORRIDOR = 400
-RANGES = (0.75, 1.0, 1.5, 2.0, 2.5, 3.0)
+RANGES = (0.5, 0.75, 1.0, 1.5, 2.0, 2.5, 3.0)
 N_PER_RANGE = 24
 CAM_X = CameraConfig().pos[0]
 
@@ -62,17 +65,17 @@ def corridor_case(args):
 def gate_case(args):
     b, r, i = args
     rng = np.random.default_rng([int(b * 100), int(r * 100), i, 11])
-    cfg = ArenaConfig()
+    cfg = random_arena(2000 + i)
     a = PoolArena(cfg)
-    y = rng.uniform(-0.3, 0.3)
+    y = cfg.gate_y + rng.uniform(-0.3, 0.3)
     yaw = rng.normal(0, np.radians(4))
     xc = cfg.gate_x - r
     eta = np.array([xc - CAM_X, y - CAM_X * np.sin(yaw), -0.55, 0, 0, yaw])
     img, _, _ = Camera(water=WaterConfig(scattering=b), seed=int(rng.integers(1 << 30))).render(a.scene, eta)
     yaw_m = yaw + rng.normal(0, np.radians(1.0))
-    prior = y + rng.normal(0, 0.05)              # the last estimate, as in the closed loop
     est = CourseEstimator(scattering=b).gate(img, yaw_m, xc, cfg.gate_x, cfg.gate_y,
-                                             cfg.gate_width / 2 + cfg.pipe_radius, prior)
+                                             cfg.gate_width / 2 + cfg.pipe_radius, cfg.gate_y,
+                                             span=0.5)
     return {"b": b, "range": r, "ok": est is not None,
             "err": None if est is None else float(est - y)}
 

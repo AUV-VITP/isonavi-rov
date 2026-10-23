@@ -60,8 +60,30 @@ class PilotConfig:
     stick_noise: float = 0.06    # fraction of full stick
     read_sigma0: float = 0.03    # m, lateral read error at close range
     read_sigma_per_m: float = 0.025
+    read_filter: float = 0.03    # per tick; the read error wanders rather than jitters
     cruise_n: float = 26.0       # surge thrust the pilot holds in the open
     slow_n: float = 13.0         # surge thrust near elements
+
+
+def read_sigma(pc, rng, turbidity):
+    """Scale of the pilot's lateral read error at a range, lit by the vehicle's lamps.
+
+    Contrast falls as exp(-2 c r) over the two way path, so the read error
+    grows by the inverse of it.
+    """
+    loss = np.exp(2.0 * (WATER_ABSORPTION[1] + turbidity) * rng)
+    return pc.read_sigma0 + pc.read_sigma_per_m * rng * loss
+
+
+def read_error(pc, rng, turbidity):
+    """Spread of the pilot's read: the low-passed error, sigma * sqrt(k / (2 - k))."""
+    k = pc.read_filter
+    return read_sigma(pc, rng, turbidity) * np.sqrt(k / (2.0 - k))
+
+
+def blend_weight(err_pilot, err_camera):
+    """Share of the lateral command given to the camera, by inverse error variance."""
+    return err_pilot ** 2 / (err_pilot ** 2 + err_camera ** 2)
 
 
 @dataclass
@@ -187,7 +209,7 @@ class CourseRun:
         self.read_bias = 0.0
         self.assist = AssistController(params.buoyancy - params.weight, pc_yaw=self.pc.k_yaw)
         self.vis = None                         # (time, vehicle y, error) from the last usable frame
-        self.vis_log = []                       # (time, reference, estimate, truth)
+        self.vis_log = []                       # (time, reference, estimate, truth, x, error)
         self.cam_lat = None                     # shared mode: camera lateral error, blend weight
         self.prev_cam_lat = None
         if mode in ("auto", "shared"):
@@ -221,7 +243,6 @@ class CourseRun:
         if ref == 0:
             return
         img, _, _ = self.cam.render(self.arena.scene, eta)
-        prior = self.vis[1] if self.vis is not None else float(self.path[self.wi, 1])
         y_cam = None
         tag = ref
         x_cam = eta[0] + self.cam.cfg.pos[0] * np.cos(yaw_meas)
@@ -248,7 +269,7 @@ class CourseRun:
             return
         y = y_cam - self.cam.cfg.pos[0] * np.sin(yaw_meas)
         self.vis = (t, y, self._vis_error(tag, x_cam))
-        self.vis_log.append((t, tag, y, float(eta[1]), float(eta[0])))
+        self.vis_log.append((t, tag, y, float(eta[1]), float(eta[0]), self.vis[2]))
 
     def _vis_error(self, tag, x_cam):
         """The estimator's held-out RMS error for this measurement, from the calibration."""
@@ -283,14 +304,12 @@ class CourseRun:
         lat = float(rel @ n)
         along = float(rel @ t)
         rng_ref = float(np.clip(L - along, 0.3, 3.0))
-        # Lit by the vehicle's own lamps, contrast falls as exp(-2 c r) over the
-        # two way path, so the read error grows by the inverse of it.
-        c_att = WATER_ABSORPTION[1] + self.turb
-        loss = np.exp(2.0 * c_att * rng_ref)
-        sigma = self.pc.read_sigma0 + self.pc.read_sigma_per_m * rng_ref * loss
+        sigma = read_sigma(self.pc, rng_ref, self.turb)
         if self.mode == "auto":
+            loss = np.exp(2.0 * (WATER_ABSORPTION[1] + self.turb) * rng_ref)
             sigma = 0.02 + 0.01 * rng_ref * loss
-        self.read_bias = 0.97 * self.read_bias + 0.03 * self.rng.normal(0, sigma)
+        k = self.pc.read_filter
+        self.read_bias = (1.0 - k) * self.read_bias + k * self.rng.normal(0, sigma)
         lat_read = lat + self.read_bias
         fresh = self.path[self.wi, 5] > 0 and self.vis is not None and now - self.vis[0] <= 0.45
         if self.mode == "auto" and fresh:
@@ -299,10 +318,7 @@ class CourseRun:
             self.cam_lat = None
             if fresh:
                 # Weight the camera against the pilot by the error each has here.
-                # The pilot's read error is the low-passed bias, whose spread is
-                # sigma * sqrt(k / (2 - k)) for the filter constant k = 0.03.
-                s_p = sigma * np.sqrt(0.03 / 1.97)
-                w = s_p ** 2 / (s_p ** 2 + self.vis[2] ** 2)
+                w = blend_weight(read_error(self.pc, rng_ref, self.turb), self.vis[2])
                 self.cam_lat = (float((np.array([eta[0], self.vis[1]]) - a) @ n), float(w))
         heading = float(np.arctan2(t[1], t[0]))
         if np.isfinite(self.path[self.wi, 4]):
@@ -452,5 +468,5 @@ class CourseRun:
             min_clearance=float(min_clear),
             depth_rms=float(np.sqrt(np.mean(np.square(depth_err)))) if depth_err else 0.0,
             log={**{k: np.array(v) for k, v in log.items()},
-                 "vision": np.array(self.vis_log).reshape(-1, 5)},
+                 "vision": np.array(self.vis_log).reshape(-1, 6)},
         )

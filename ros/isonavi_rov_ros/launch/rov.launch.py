@@ -7,12 +7,14 @@ from launch_ros.actions import Node
 def generate_launch_description():
     mode = LaunchConfiguration("mode")
     port = LaunchConfiguration("port")
+    b = LaunchConfiguration("scattering")
     return LaunchDescription([
         DeclareLaunchArgument("mode", default_value="assist"),
         DeclareLaunchArgument("port", default_value=""),
+        DeclareLaunchArgument("scattering", default_value="0.4"),
         Node(package="joy", executable="joy_node", name="joy"),
-        Node(package="isonavi_rov_ros", executable="pilot", parameters=[{"mode": mode}]),
+        Node(package="isonavi_rov_ros", executable="pilot", parameters=[{"mode": mode, "scattering": b}]),
         Node(package="isonavi_rov_ros", executable="safety"),
         Node(package="isonavi_rov_ros", executable="actuator", parameters=[{"port": port}]),
-        Node(package="isonavi_rov_ros", executable="vision"),
+        Node(package="isonavi_rov_ros", executable="vision", parameters=[{"scattering": b}]),
     ])
