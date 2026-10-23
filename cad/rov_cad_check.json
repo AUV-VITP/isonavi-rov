@@ -1,0 +1,85 @@
+{
+ "volume": {
+  "buoyancy": {
+   "built_l": 2.272018453514177,
+   "budget_l": 2.2720184535141774
+  },
+  "electronics": {
+   "built_l": 0,
+   "budget_l": 0.0
+  },
+  "frame": {
+   "built_l": 3.5832,
+   "budget_l": 3.6269500000000003
+  },
+  "hull": {
+   "built_l": 3.448551388586745,
+   "budget_l": 3.4485513885867443
+  },
+  "payload": {
+   "built_l": 0.15948990033234053,
+   "budget_l": 0.17099999999999999
+  },
+  "propulsion": {
+   "built_l": 1.0195531897186827,
+   "budget_l": 1.136
+  },
+  "safety": {
+   "built_l": 0.01413716694115407,
+   "budget_l": 0.014
+  },
+  "tether": {
+   "built_l": 0.028274333882308145,
+   "budget_l": 0.028
+  }
+ },
+ "envelope_m": [
+  0.66,
+  0.44,
+  0.33
+ ],
+ "envelope_ok": true,
+ "clearance": {
+  "thruster h1 duct": {
+   "plate_mm": 14.24063688486297,
+   "hull_mm": 71.04626572948749
+  },
+  "thruster h2 duct": {
+   "plate_mm": 14.24063688486297,
+   "hull_mm": 71.04626572948747
+  },
+  "thruster h3 duct": {
+   "plate_mm": 14.24063688486297,
+   "hull_mm": 101.55051268217501
+  },
+  "thruster h4 duct": {
+   "plate_mm": 14.24063688486297,
+   "hull_mm": 101.55051268217501
+  },
+  "thruster v1 duct": {
+   "plate_mm": 10.0,
+   "hull_mm": 58.43396380615195,
+   "outflow_blocked_l": 0.0
+  },
+  "thruster v2 duct": {
+   "plate_mm": 10.0,
+   "hull_mm": 58.43396380615195,
+   "outflow_blocked_l": 0.0
+  },
+  "thruster v3 duct": {
+   "plate_mm": 10.0,
+   "hull_mm": 53.43396380615195,
+   "outflow_blocked_l": 0.004185751387787351
+  },
+  "thruster v4 duct": {
+   "plate_mm": 10.0,
+   "hull_mm": 53.43396380615195,
+   "outflow_blocked_l": 0.004185751387787343
+  }
+ },
+ "min_plate_mm": 10.0,
+ "min_hull_mm": 53.43396380615195,
+ "max_outflow_blocked_l": 0.004185751387787351,
+ "interference": [],
+ "n_parts": 37
+}

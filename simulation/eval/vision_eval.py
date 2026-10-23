@@ -23,7 +23,7 @@ from isonavi.vision import TargetFinder, COLOURS                    # noqa: E402
 OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "results", "logs")
 RANGES = (0.75, 1.0, 1.25, 1.5, 2.0, 2.5, 3.0)
 TURB = (0.05, 0.4, 1.0)
-SEPARATION = (0.10, 0.20, 0.30)       # lamp offset either side of the lens, m
+SEPARATION = (0.10, 0.18, 0.30)       # lamp offset either side of the lens, m; 0.18 as built
 JITTER = 8
 
 
@@ -32,12 +32,12 @@ def frame_case(args):
     a = PoolArena()
     rs = np.random.default_rng([int(rng_m * 100), int(b * 100), int(sep * 100), COLOURS.index(colour), j])
     tgt = a.targets[f"balloon_{colour}"]["pos"]
-    cfg = CameraConfig(lamps=(Lamp((0.0, sep, 0.0)), Lamp((0.0, -sep, 0.0))))
+    cfg = CameraConfig(lamps=(Lamp((0.07, sep, 0.0)), Lamp((0.07, -sep, 0.0))))
     cam = Camera(cfg, WaterConfig(scattering=b), seed=int(rs.integers(1 << 30)))
     yaw = rs.normal(0, np.radians(4))
     cx = tgt[0] - rng_m * np.cos(yaw) - cfg.pos[0]
     cy = tgt[1] - rng_m * np.sin(yaw)
-    eta = np.array([cx, cy + rs.normal(0, 0.03), tgt[2] + rs.normal(0, 0.03),
+    eta = np.array([cx, cy + rs.normal(0, 0.03), tgt[2] - cfg.pos[2] + rs.normal(0, 0.03),
                     rs.normal(0, 0.02), rs.normal(0, 0.02), yaw])
     img, _, _ = cam.render(a.scene, eta)
     res = {}

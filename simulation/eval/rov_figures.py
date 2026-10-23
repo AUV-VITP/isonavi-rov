@@ -81,13 +81,13 @@ def vision_figure():
     ranges = sorted({r["range"] for r in rows})
     fig, axes = plt.subplots(1, 3, figsize=(9.6, 2.9), sharey=True)
     for ax, b in zip(axes, sorted({r["b"] for r in rows})):
-        for sep, ls in ((0.10, ":"), (0.20, "-"), (0.30, "--")):
+        for sep, ls in ((0.10, ":"), (0.18, "-"), (0.30, "--")):
             sel = sorted([r for r in rows if r["b"] == b and r["sep"] == sep], key=lambda r: r["range"])
             ax.plot([r["range"] for r in sel], [r["id_corrected"] for r in sel], ls, color="#1f6fb2",
                     label=f"lamps {sep:.2f} m off axis")
-        sel = sorted([r for r in rows if r["b"] == b and r["sep"] == 0.20], key=lambda r: r["range"])
+        sel = sorted([r for r in rows if r["b"] == b and r["sep"] == 0.18], key=lambda r: r["range"])
         ax.plot([r["range"] for r in sel], [r["id_uncorrected"] for r in sel], "-", color="#c0392b",
-                lw=0.9, label="0.20 m, no water correction")
+                lw=0.9, label="0.18 m, no water correction")
         ax.set_title(f"b = {b} /m", fontsize=9, loc="left")
         ax.set_xlabel("range to target, m")
         ax.set_xticks(ranges[::2] + [ranges[-1]] if ranges[-1] not in ranges[::2] else ranges[::2])
@@ -108,7 +108,7 @@ def camera_figure():
     fig, axes = plt.subplots(1, 3, figsize=(9.6, 2.5))
     for ax, b in zip(axes, (0.05, 0.4, 1.0)):
         cam = Camera(water=WaterConfig(scattering=b), seed=4)
-        eta = np.array([tgt[0] - 1.8 - cam.cfg.pos[0], tgt[1] + 0.5, tgt[2], 0, 0, 0])
+        eta = np.array([tgt[0] - 1.8 - cam.cfg.pos[0], tgt[1] + 0.5, tgt[2] - cam.cfg.pos[2], 0, 0, 0])
         img, _, _ = cam.render(a.scene, eta)
         rng = np.hypot(1.8, 0.5)
         ax.imshow(img)

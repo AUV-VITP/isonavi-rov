@@ -43,8 +43,8 @@ LINES = [
      "side plates, cross members and skids, cut in house"),
     ("frame", "A4 stainless fasteners", 1, 1200, "market", False, "no galvanic pairs with the aluminium"),
     ("frame", "closed cell foam, 3 L, epoxy coated", 1, 1500, "estimate", True,
-     "2.3 L needed for +2 N net buoyancy, see rov.py"),
-    ("frame", "lead trim ballast, 1.1 kg", 1, 400, "estimate", True, "sets 45 mm BG, see rov.py"),
+     "2.1 L needed for +2 N net buoyancy, see rov.py"),
+    ("frame", "lead trim ballast, 1.3 kg", 1, 450, "estimate", True, "sets 45 mm BG, see rov.py"),
     # Electronics.
     ("electronics", "Raspberry Pi 5, 4 GB, with cooler and card", 1, 7600, "market", False,
      "flight computer: camera, vision, supervisor, ROS 2"),
