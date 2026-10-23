@@ -23,7 +23,7 @@ Modes.
           operator delay from the lateral loop. This is the mode the ROS 2
           layer runs autonomously.
 
-A run is scored the way it would be judged: contacts counted as events, not
+A run is scored on what an observer would record: contacts counted as events, not
 time in contact, gate passed clean or not, balloon touched with the probe or
 not, and the time to the end of the maze.
 """

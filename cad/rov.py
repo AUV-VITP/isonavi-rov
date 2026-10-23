@@ -19,7 +19,7 @@ Solved:
      centre of buoyancy and the vehicle is self righting;
   3. foam station, so it floats level.
 
-Then checked: the size box, the weight against the two thresholds, the
+Then checked: the size box, the weight against the ceiling and the target, the
 thrust envelope with any one thruster lost, the tether voltage drop and the
 fuse rating.
 """
@@ -43,8 +43,8 @@ RHO, G = 1000.0, 9.81
 
 # Envelope, metres. Frame plates set L and H, the thruster ducts set B.
 FRAME_L, FRAME_B, FRAME_H = 0.600, 0.440, 0.330
-SIZE_TIER = (0.75, 0.6501, 0.6001)          # bonus tier, L B H strictly below
-MASS_LIMIT, MASS_BONUS = 35.0, 20.0
+SIZE_TARGET = (0.75, 0.65, 0.60)            # envelope target, L B H
+MASS_LIMIT, MASS_TARGET = 35.0, 20.0       # ceiling, and the target the design works to
 
 # Design targets for the solve.
 NET_BUOYANCY_N = 2.0       # positive, so it surfaces when power is lost
@@ -275,7 +275,7 @@ def main(write=True):
     heave_v = speed_for(env["heave"]["full"], lin[2], quad[2])
 
     tt = tether()
-    size_ok = FRAME_L < SIZE_TIER[0] and FRAME_B < SIZE_TIER[1] and FRAME_H < SIZE_TIER[2]
+    size_ok = FRAME_L < SIZE_TARGET[0] and FRAME_B < SIZE_TARGET[1] and FRAME_H < SIZE_TARGET[2]
 
     out = {
         "mass_kg": M, "displaced_m3": V,
@@ -284,8 +284,8 @@ def main(write=True):
         "trim_offset_m": float(cg[0] - cb[0]),
         "foam_l": next(p.vol for p in parts if p.group == "buoyancy" and "foam" in p.name) * 1000,
         "ballast_kg": next(p.mass for p in parts if "lead" in p.name),
-        "size_m": [FRAME_L, FRAME_B, FRAME_H], "size_bonus": bool(size_ok),
-        "mass_limit_ok": bool(M <= MASS_LIMIT), "mass_bonus": bool(M < MASS_BONUS),
+        "size_m": [FRAME_L, FRAME_B, FRAME_H], "size_target_met": bool(size_ok),
+        "mass_limit_ok": bool(M <= MASS_LIMIT), "mass_target_met": bool(M < MASS_TARGET),
         "thrust_max_n": THRUST_MAX_N, "arms": list(ARMS),
         "envelope_n": env,
         "surge_speed_full": v_full, "surge_speed_one_lost": v_lost,
@@ -305,8 +305,8 @@ def main(write=True):
 
     print("isonavi-rov vehicle budget")
     print(f"  mass {M:6.2f} kg   limit {MASS_LIMIT:.0f} ({'ok' if M <= MASS_LIMIT else 'OVER'}), "
-          f"bonus below {MASS_BONUS:.0f} ({'yes' if M < MASS_BONUS else 'no'})")
-    print(f"  size {FRAME_L*100:.0f} x {FRAME_B*100:.0f} x {FRAME_H*100:.0f} cm, bonus tier "
+          f"target below {MASS_TARGET:.0f} ({'met' if M < MASS_TARGET else 'missed'})")
+    print(f"  size {FRAME_L*100:.0f} x {FRAME_B*100:.0f} x {FRAME_H*100:.0f} cm, envelope target "
           f"{'met' if size_ok else 'missed'}")
     print(f"  displaced {V*1000:.2f} L, net buoyancy {out['net_buoyancy_n']:+.2f} N, "
           f"BG {out['bg_m']*1000:.1f} mm, trim offset {out['trim_offset_m']*1000:.2f} mm")

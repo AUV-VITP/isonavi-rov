@@ -19,9 +19,9 @@
   0.44,
   0.33
  ],
- "size_bonus": true,
+ "size_target_met": true,
  "mass_limit_ok": true,
- "mass_bonus": true,
+ "mass_target_met": true,
  "thrust_max_n": 30.0,
  "arms": [
   0.215,

@@ -1,7 +1,7 @@
 """Scored course runs across pilot modes, water clarity and seeds.
 
 Each run flies the gate, the target touch and the three section maze with the
-pilot model in isonavi/pilot.py, and is scored on what a judge sees: a clean gate,
+pilot model in isonavi/pilot.py, and is scored on what an observer at the poolside sees: a clean gate,
 the right balloon touched, contacts as events, and time to the maze exit.
 """
 
