@@ -240,6 +240,39 @@ class CourseEstimator:
         return float(maze_y + off)
 
 
+class EstimatorErrors:
+    """Held-out RMS error of each course estimator at one water clarity."""
+
+    def __init__(self, cal, key):
+        c = cal["corridor"][key]
+        self.walls = {"straight": c["rms_straight"], "obstacles": c["rms_obstacles"],
+                      "passage": c["rms_passage"]}
+        self.posts = c["posts_rms"] if c["posts_rms"] is not None else c["rms_obstacles"]
+        self.by_range = {}
+        for kind in ("gate", "target"):
+            rows = [v for k, v in cal[kind].items() if k.split("_")[0] == key]
+            # A range where the estimator never answered gets an error it cannot win with.
+            self.by_range[kind] = sorted((v["range"], 1.0 if v["rms"] is None else v["rms"])
+                                         for v in rows)
+
+    def at(self, kind, rng):
+        """Error at the calibrated range nearest this one."""
+        return min(self.by_range[kind], key=lambda r: abs(r[0] - rng))[1]
+
+
+def load_errors(scattering):
+    """Estimator errors at the calibrated water clarity nearest this one, if calibrated."""
+    import json
+    import os
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "results", "logs",
+                        "vision_calibration.json")
+    if not os.path.exists(path):
+        return None
+    cal = json.load(open(path))
+    key = min(cal["corridor"], key=lambda k: abs(float(k) - scattering))
+    return EstimatorErrors(cal, key)
+
+
 def load_calibration(scattering):
     """Corridor estimator calibration nearest in water clarity, if it has been run."""
     import json

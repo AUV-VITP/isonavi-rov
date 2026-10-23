@@ -10,7 +10,8 @@ from isonavi.pool import PoolArena   # noqa: E402
 from isonavi.pilot import CourseRun  # noqa: E402
 
 b = float(sys.argv[1]) if len(sys.argv) > 1 else 0.05
-r = CourseRun(PoolArena(), mode="auto", seed=3, turbidity=b).run()
+mode = sys.argv[2] if len(sys.argv) > 2 else "auto"
+r = CourseRun(PoolArena(), mode=mode, seed=3, turbidity=b).run()
 v = r.log["vision"]
 names = {1: "gate", 2: "target", 3: "walls", 4: "posts"}
 print(f"b {b}: {r.contacts} contacts, {r.time_s:.1f} s, contacts at {r.contact_list[:12]}")

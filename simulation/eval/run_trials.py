@@ -24,7 +24,7 @@ from isonavi.pool import PoolArena, random_arena   # noqa: E402
 from isonavi.pilot import CourseRun                # noqa: E402
 
 OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "results", "logs")
-MODES = ("manual", "assist", "auto")
+MODES = ("manual", "assist", "auto", "shared")
 TURBIDITY = (0.05, 0.4, 1.0)
 SEEDS = range(1, 21)
 LAYOUTS = range(1, 41)
@@ -71,7 +71,7 @@ def summarise(rows, exp, turbs):
                 "time_std": float(t.std()) if len(t) else None,
                 "depth_rms_mean": float(np.mean([r["depth_rms"] for r in sel])),
             }
-            if mode == "auto":
+            if mode in ("auto", "shared"):
                 for name in REF_NAMES.values():
                     vals = [r["vision"][name]["rms"] for r in sel
                             if name in r["vision"] and r["vision"][name]["rms"] is not None]
@@ -84,7 +84,7 @@ def main():
     jobs = [("reference", m, tb, s, 0) for m in MODES for tb in TURBIDITY for s in SEEDS]
     jobs += [("layouts", m, tb, k, k) for m in MODES for tb in LAYOUT_TURBIDITY for k in LAYOUTS]
     # Rendered runs are the slow ones; start them first so the pool ends together.
-    jobs.sort(key=lambda j: j[1] != "auto")
+    jobs.sort(key=lambda j: j[1] not in ("auto", "shared"))
     with Pool(max(1, (os.cpu_count() or 2) - 1)) as pool:
         rows = pool.map(one, jobs, chunksize=1)
     summ = {"reference": summarise(rows, "reference", TURBIDITY),
@@ -98,7 +98,7 @@ def main():
         for k, v in block.items():
             tm = f"{v['time_mean']:.1f}+/-{v['time_std']:.1f}" if v["time_mean"] else "-"
             extra = ""
-            if k.startswith("auto"):
+            if k.startswith(("auto", "shared")):
                 extra = "  vision rms mm " + " ".join(
                     f"{n[0]}{'-' if v.get(f'vision_rms_{n}') is None else round(v[f'vision_rms_{n}'] * 1000)}"
                     for n in REF_NAMES.values())
