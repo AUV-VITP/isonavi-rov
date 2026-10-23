@@ -1,0 +1,363 @@
+{
+ "rows": [
+  {
+   "group": "propulsion",
+   "item": "BLDC outrunner, 3536 class, 1000 KV",
+   "qty": 8,
+   "unit_inr": 1690,
+   "cost_inr": 13520,
+   "basis": "market",
+   "in_house": false,
+   "reason": "runs flooded; epoxy potted stator, stainless bearings"
+  },
+  {
+   "group": "propulsion",
+   "item": "bidirectional ESC, 30 A, 2 to 4S",
+   "qty": 8,
+   "unit_inr": 844,
+   "cost_inr": 6752,
+   "basis": "market",
+   "in_house": false,
+   "reason": "reversible thrust for the vectored layout"
+  },
+  {
+   "group": "propulsion",
+   "item": "duct, propeller and mount, printed PETG",
+   "qty": 8,
+   "unit_inr": 300,
+   "cost_inr": 2400,
+   "basis": "estimate",
+   "in_house": true,
+   "reason": "Kort nozzle duct and 76 mm three blade propeller, 2 kg of filament across eight"
+  },
+  {
+   "group": "propulsion",
+   "item": "shaft, bearings, potting epoxy",
+   "qty": 8,
+   "unit_inr": 350,
+   "cost_inr": 2800,
+   "basis": "estimate",
+   "in_house": true,
+   "reason": "corrosion proofing for open water running"
+  },
+  {
+   "group": "hull",
+   "item": "cast acrylic tube, 114 mm OD, 6 mm wall, 300 mm",
+   "qty": 1,
+   "unit_inr": 3500,
+   "cost_inr": 3500,
+   "basis": "estimate",
+   "in_house": false,
+   "reason": "the one pressure housing; clear so a leak is visible on deck"
+  },
+  {
+   "group": "hull",
+   "item": "end caps, machined 6061 aluminium",
+   "qty": 2,
+   "unit_inr": 1100,
+   "cost_inr": 2200,
+   "basis": "estimate",
+   "in_house": true,
+   "reason": "bar stock plus in house turning; double radial o-ring seal"
+  },
+  {
+   "group": "hull",
+   "item": "front port, 10 mm cast acrylic",
+   "qty": 1,
+   "unit_inr": 400,
+   "cost_inr": 400,
+   "basis": "estimate",
+   "in_house": true,
+   "reason": "flat camera window"
+  },
+  {
+   "group": "hull",
+   "item": "o-rings, cable penetrators, vent plug",
+   "qty": 1,
+   "unit_inr": 2500,
+   "cost_inr": 2500,
+   "basis": "market",
+   "in_house": false,
+   "reason": "ten IP68 penetrators, nitrile o-ring kit, vent for the vacuum test"
+  },
+  {
+   "group": "frame",
+   "item": "HDPE sheet, 10 mm, 1220 x 610 mm",
+   "qty": 1,
+   "unit_inr": 4500,
+   "cost_inr": 4500,
+   "basis": "estimate",
+   "in_house": true,
+   "reason": "side plates, cross members and skids, cut in house"
+  },
+  {
+   "group": "frame",
+   "item": "A4 stainless fasteners",
+   "qty": 1,
+   "unit_inr": 1200,
+   "cost_inr": 1200,
+   "basis": "market",
+   "in_house": false,
+   "reason": "no galvanic pairs with the aluminium"
+  },
+  {
+   "group": "frame",
+   "item": "closed cell foam, 3 L, epoxy coated",
+   "qty": 1,
+   "unit_inr": 1500,
+   "cost_inr": 1500,
+   "basis": "estimate",
+   "in_house": true,
+   "reason": "2.3 L needed for +2 N net buoyancy, see rov.py"
+  },
+  {
+   "group": "frame",
+   "item": "lead trim ballast, 1.1 kg",
+   "qty": 1,
+   "unit_inr": 400,
+   "cost_inr": 400,
+   "basis": "estimate",
+   "in_house": true,
+   "reason": "sets 45 mm BG, see rov.py"
+  },
+  {
+   "group": "electronics",
+   "item": "Raspberry Pi 5, 4 GB, with cooler and card",
+   "qty": 1,
+   "unit_inr": 7600,
+   "cost_inr": 7600,
+   "basis": "market",
+   "in_house": false,
+   "reason": "flight computer: camera, vision, supervisor, ROS 2"
+  },
+  {
+   "group": "electronics",
+   "item": "ESP32 devkit",
+   "qty": 1,
+   "unit_inr": 450,
+   "cost_inr": 450,
+   "basis": "market",
+   "in_house": false,
+   "reason": "actuator interface; the board validated in the loop"
+  },
+  {
+   "group": "electronics",
+   "item": "camera module, wide angle",
+   "qty": 1,
+   "unit_inr": 3200,
+   "cost_inr": 3200,
+   "basis": "market",
+   "in_house": false,
+   "reason": "pilot feed and vision"
+  },
+  {
+   "group": "electronics",
+   "item": "IMU with onboard fusion",
+   "qty": 1,
+   "unit_inr": 2500,
+   "cost_inr": 2500,
+   "basis": "market",
+   "in_house": false,
+   "reason": "attitude and heading hold"
+  },
+  {
+   "group": "electronics",
+   "item": "depth sensor, MS5837-30BA module",
+   "qty": 1,
+   "unit_inr": 2800,
+   "cost_inr": 2800,
+   "basis": "market",
+   "in_house": false,
+   "reason": "depth hold"
+  },
+  {
+   "group": "electronics",
+   "item": "DC-DC converter, 48 to 16 V, 400 W",
+   "qty": 2,
+   "unit_inr": 3500,
+   "cost_inr": 7000,
+   "basis": "estimate",
+   "in_house": false,
+   "reason": "thruster rail; two share the 800 W governor cap"
+  },
+  {
+   "group": "electronics",
+   "item": "DC-DC converter, 48 to 5 V, 5 A",
+   "qty": 1,
+   "unit_inr": 600,
+   "cost_inr": 600,
+   "basis": "market",
+   "in_house": false,
+   "reason": "computer rail"
+  },
+  {
+   "group": "electronics",
+   "item": "kill switch: reed input and 100 A high side switch",
+   "qty": 1,
+   "unit_inr": 1800,
+   "cost_inr": 1800,
+   "basis": "estimate",
+   "in_house": true,
+   "reason": "external magnet switch opens the thruster rail"
+  },
+  {
+   "group": "electronics",
+   "item": "fuses, holders, distribution board",
+   "qty": 1,
+   "unit_inr": 1500,
+   "cost_inr": 1500,
+   "basis": "market",
+   "in_house": false,
+   "reason": "one fuse per converter, one per thruster pair"
+  },
+  {
+   "group": "electronics",
+   "item": "leak probes",
+   "qty": 2,
+   "unit_inr": 150,
+   "cost_inr": 300,
+   "basis": "market",
+   "in_house": false,
+   "reason": "end caps; trips the supervisor"
+  },
+  {
+   "group": "electronics",
+   "item": "lamp, 15 W COB LED and driver, potted housing",
+   "qty": 2,
+   "unit_inr": 1200,
+   "cost_inr": 2400,
+   "basis": "estimate",
+   "in_house": true,
+   "reason": "placed 0.2 m either side of the lens, see vision_eval.py"
+  },
+  {
+   "group": "electronics",
+   "item": "wire, connectors, heat shrink",
+   "qty": 1,
+   "unit_inr": 2000,
+   "cost_inr": 2000,
+   "basis": "market",
+   "in_house": false,
+   "reason": "silicone wire, XT60, JST"
+  },
+  {
+   "group": "tether",
+   "item": "power cable, 4 core 2.5 mm2 flexible, 55 m",
+   "qty": 55,
+   "unit_inr": 110,
+   "cost_inr": 6050,
+   "basis": "estimate",
+   "in_house": false,
+   "reason": "two cores per leg, 0.34 ohm loop, see rov.py"
+  },
+  {
+   "group": "tether",
+   "item": "Cat5e, 55 m",
+   "qty": 55,
+   "unit_inr": 25,
+   "cost_inr": 1375,
+   "basis": "market",
+   "in_house": false,
+   "reason": "plain Ethernet; 50 m is inside the 100 m limit, no modem needed"
+  },
+  {
+   "group": "tether",
+   "item": "floats, braid sleeve, strain relief",
+   "qty": 1,
+   "unit_inr": 1500,
+   "cost_inr": 1500,
+   "basis": "estimate",
+   "in_house": true,
+   "reason": "makes the bundle neutrally buoyant, so it does not drag on the floor"
+  },
+  {
+   "group": "surface",
+   "item": "power supply, 48 V 21 A, Mean Well RSP-1000-48",
+   "qty": 1,
+   "unit_inr": 25632,
+   "cost_inr": 25632,
+   "basis": "converted",
+   "in_house": false,
+   "reason": "mains input 90 to 264 V AC, so 230 V 50 Hz compatible"
+  },
+  {
+   "group": "surface",
+   "item": "emergency stop, 25 A DC breaker, main fuse",
+   "qty": 1,
+   "unit_inr": 1800,
+   "cost_inr": 1800,
+   "basis": "estimate",
+   "in_house": false,
+   "reason": "fuse sized at 1.25 times the governed peak current"
+  },
+  {
+   "group": "surface",
+   "item": "enclosure and mains inlet",
+   "qty": 1,
+   "unit_inr": 1500,
+   "cost_inr": 1500,
+   "basis": "estimate",
+   "in_house": true,
+   "reason": "keeps the supply off a wet deck"
+  },
+  {
+   "group": "surface",
+   "item": "gamepad",
+   "qty": 1,
+   "unit_inr": 2500,
+   "cost_inr": 2500,
+   "basis": "market",
+   "in_house": false,
+   "reason": "pilot input"
+  },
+  {
+   "group": "test",
+   "item": "thrust rig: 10 kg load cell and amplifier",
+   "qty": 1,
+   "unit_inr": 900,
+   "cost_inr": 900,
+   "basis": "market",
+   "in_house": true,
+   "reason": "bench thrust curve for every thruster before it is fitted"
+  },
+  {
+   "group": "test",
+   "item": "hand vacuum pump with gauge",
+   "qty": 1,
+   "unit_inr": 1500,
+   "cost_inr": 1500,
+   "basis": "market",
+   "in_house": false,
+   "reason": "hull leak test before every dive"
+  },
+  {
+   "group": "test",
+   "item": "practice pool hire, four sessions",
+   "qty": 4,
+   "unit_inr": 2000,
+   "cost_inr": 8000,
+   "basis": "estimate",
+   "in_house": false,
+   "reason": "trimming, pilot practice and a course mock up"
+  }
+ ],
+ "groups": {
+  "propulsion": 25472,
+  "hull": 8600,
+  "frame": 7600,
+  "electronics": 32150,
+  "tether": 8925,
+  "surface": 31432,
+  "test": 10400
+ },
+ "vehicle_inr": 73822,
+ "build_inr": 114179,
+ "subtotal_inr": 124579,
+ "contingency_pct": 10.0,
+ "contingency_inr": 12458,
+ "total_inr": 137037,
+ "in_house_inr": 21400,
+ "in_house_items": 12,
+ "n_lines": 34,
+ "usd_inr": 95.64
+}

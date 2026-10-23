@@ -117,6 +117,38 @@ def course_path(arena, target_colour=None):
     return np.array(wps, float)
 
 
+class AssistController:
+    """Depth, heading and attitude hold from the pressure sensor and the IMU only.
+
+    Vertical speed is not measured, so it is taken from the depth signal
+    through a first order filtered derivative. This is the same object the
+    ROS 2 node runs on the vehicle.
+    """
+
+    def __init__(self, net_buoyancy_n, pc_yaw=1.6, kz=260.0, kvz=120.0,
+                 kyaw=9.0, katt=40.0, katt_d=12.0, vz_tau=0.15):
+        self.buoy = net_buoyancy_n
+        self.k = (kz, kvz, kyaw, katt, katt_d, pc_yaw)
+        self.vz_tau = vz_tau
+        self.z_prev = None
+        self.vz = 0.0
+
+    def wrench(self, z_ref, z_meas, att, gyro, hdg_err, dt):
+        kz, kvz, kyaw, katt, katt_d, kpy = self.k
+        if self.z_prev is None:
+            self.z_prev = z_meas
+        a = dt / (self.vz_tau + dt)
+        self.vz += a * ((z_meas - self.z_prev) / dt - self.vz)
+        self.z_prev = z_meas
+        tau = np.zeros(6)
+        tau[2] = kz * (z_ref - z_meas) - kvz * self.vz - self.buoy
+        yaw_rate_ref = float(np.clip(kpy * hdg_err, -0.8, 0.8))
+        tau[5] = kyaw * (yaw_rate_ref - gyro[2])
+        tau[3] = -katt * att[0] - katt_d * gyro[0]
+        tau[4] = -katt * att[1] - katt_d * gyro[1]
+        return tau
+
+
 class CourseRun:
     DIMS = (0.600, 0.440, 0.330)
     PROBE_X = 0.36              # probe tip ahead of the frame centre
@@ -145,6 +177,7 @@ class CourseRun:
         self.prev_dz = 0.0
         self.yaw_ref = 0.0
         self.read_bias = 0.0
+        self.assist = AssistController(params.buoyancy - params.weight, pc_yaw=self.pc.k_yaw)
 
     # ----------------------------------------------------------------- helpers
     def _tether_wrench(self, eta, nu):
@@ -250,15 +283,7 @@ class CourseRun:
                 # Manual depth is read through the delay as well.
                 tau[2] = float(np.clip(tau[2], -60, 60))
             else:
-                dz = z_ref - z_meas
-                self.prev_dz = 0.85 * self.prev_dz + 0.15 * dz
-                buoy = p.buoyancy - p.weight
-                vz = (R := rot_body_to_world(*eta[3:6])) @ nu[:3]
-                tau[2] = 260.0 * dz - 120.0 * vz[2] - buoy
-                yaw_rate_ref = float(np.clip(pc.k_yaw * hdg_err, -0.8, 0.8))
-                tau[5] = 9.0 * (yaw_rate_ref - gyro[2])
-                tau[3] = -40.0 * att[0] - 12.0 * gyro[0]
-                tau[4] = -40.0 * att[1] - 12.0 * gyro[1]
+                tau[2:] = self.assist.wrench(z_ref, z_meas, att, gyro, hdg_err, dt)[2:]
             depth_err.append(eta[2] - z_ref)
 
             self.dyn.step(tau, dt, tau_ext=self._tether_wrench(eta, nu))
