@@ -139,11 +139,34 @@ isonavi_1 = VehicleParams(
     arms=(0.42, 0.30, 0.38, 0.26),
 )
 
-VEHICLES = {"bluerov2": BLUEROV2_HEAVY, "isonavi": isonavi_1}
+
+
+def _rov_params():
+    """isonavi-rov, read from the solved vehicle budget so the two cannot drift."""
+    import json
+    import os
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                        "..", "..", "cad", "rov_budget.json")
+    d = json.load(open(path))
+    k = d["dynamics"]
+    return VehicleParams(
+        name="isonavi-rov (open frame, pool)",
+        mass=k["mass"], volume=k["volume"], r_b=tuple(k["r_b"]),
+        inertia=tuple(k["inertia"]), added_mass=tuple(k["added_mass"]),
+        lin_damp=tuple(k["lin_damp"]), quad_damp=tuple(k["quad_damp"]),
+        max_thrust_n=d["thrust_max_n"], thruster_tau=0.10,
+        arms=tuple(d["arms"]),
+    )
+
+
+isonavi_rov = _rov_params()
+
+VEHICLES = {"bluerov2": BLUEROV2_HEAVY, "isonavi": isonavi_1, "rov": isonavi_rov}
 
 
 def vehicle(name: str) -> VehicleParams:
-    key = name.lower().split()[0].split("-")[0]
+    key = name.lower().split()[0]
+    key = "rov" if key.endswith("-rov") else key.split("-")[0]
     if key not in VEHICLES:
         raise KeyError(f"unknown vehicle {name!r}, have {sorted(VEHICLES)}")
     return VEHICLES[key]
@@ -321,8 +344,12 @@ class VehicleDynamics:
         self.torque_scale = lo
         return f_force + lo * f_torque
 
-    def step(self, tau_cmd, dt: float):
-        """Advance one timestep under a commanded body wrench."""
+    def step(self, tau_cmd, dt: float, tau_ext=None):
+        """Advance one timestep under a commanded body wrench.
+
+        ``tau_ext`` is an optional external body wrench that does not pass
+        through the thrusters, such as the pull of a tether.
+        """
         p = self.p
         f_cmd = self.allocate(np.asarray(tau_cmd, float))
         # First order thruster lag.
@@ -342,6 +369,8 @@ class VehicleDynamics:
         D = self._damping(nu_r)
         g = self._restoring(self.eta)
         tau_fin = self._fin_moment(nu_r)
+        if tau_ext is not None:
+            tau_fin = tau_fin + np.asarray(tau_ext, float)
         nu_dot = self.M_inv @ (tau + tau_fin - C @ nu_r - D @ nu_r - g)
 
         # Semi-implicit Euler keeps this stable at the timesteps used here.

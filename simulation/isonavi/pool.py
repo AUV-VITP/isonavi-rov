@@ -195,11 +195,17 @@ class PoolArena:
         R = rot_body_to_world(*eta[3:6])
         return pts @ R.T + np.asarray(eta[:3], float)
 
-    def contacts(self, eta, dims, margin=0.0):
-        """Names of course elements the hull is touching, and the minimum clearance."""
+    def contacts(self, eta, dims, margin=0.0, skip=None):
+        """Names of course elements the hull is touching, and the minimum clearance.
+
+        Elements whose name starts with ``skip`` are left out, so a target the
+        vehicle is meant to touch does not count against its clearance.
+        """
         p = self.hull_points(eta, dims)
         touched, clearance = [], np.inf
         for name, sdf in self.elements:
+            if skip and name.startswith(skip):
+                continue
             d = float(np.min(sdf(p)))
             clearance = min(clearance, d)
             if d <= margin:

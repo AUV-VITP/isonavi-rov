@@ -1,0 +1,2528 @@
+{
+ "runs": [
+  {
+   "mode": "manual",
+   "turbidity": 0.05,
+   "seed": 1,
+   "time_s": 96.45999999999795,
+   "finished": true,
+   "gate_clean": true,
+   "balloon": true,
+   "wrong_balloon": false,
+   "contacts": 2,
+   "contact_list": [
+    [
+     72.3,
+     "obstacle_1"
+    ],
+    [
+     76.1,
+     "obstacle_2"
+    ]
+   ],
+   "min_clearance": -0.009368716476617273,
+   "depth_rms": 0.034051507425169616
+  },
+  {
+   "mode": "manual",
+   "turbidity": 0.05,
+   "seed": 2,
+   "time_s": 95.99999999999804,
+   "finished": true,
+   "gate_clean": true,
+   "balloon": true,
+   "wrong_balloon": false,
+   "contacts": 1,
+   "contact_list": [
+    [
+     72.04,
+     "obstacle_1"
+    ]
+   ],
+   "min_clearance": -0.0020129148467573146,
+   "depth_rms": 0.033638147435371246
+  },
+  {
+   "mode": "manual",
+   "turbidity": 0.05,
+   "seed": 3,
+   "time_s": 96.55999999999793,
+   "finished": true,
+   "gate_clean": true,
+   "balloon": true,
+   "wrong_balloon": false,
+   "contacts": 0,
+   "contact_list": [],
+   "min_clearance": 0.0027709058490793734,
+   "depth_rms": 0.03260069901293555
+  },
+  {
+   "mode": "manual",
+   "turbidity": 0.05,
+   "seed": 4,
+   "time_s": 96.09999999999802,
+   "finished": true,
+   "gate_clean": true,
+   "balloon": true,
+   "wrong_balloon": false,
+   "contacts": 1,
+   "contact_list": [
+    [
+     76.22,
+     "obstacle_2"
+    ]
+   ],
+   "min_clearance": -0.0011608336544509344,
+   "depth_rms": 0.03383938774210544
+  },
+  {
+   "mode": "manual",
+   "turbidity": 0.05,
+   "seed": 5,
+   "time_s": 95.85999999999807,
+   "finished": true,
+   "gate_clean": true,
+   "balloon": true,
+   "wrong_balloon": false,
+   "contacts": 1,
+   "contact_list": [
+    [
+     75.86,
+     "obstacle_2"
+    ]
+   ],
+   "min_clearance": -0.011580683951615147,
+   "depth_rms": 0.033436771071799924
+  },
+  {
+   "mode": "manual",
+   "turbidity": 0.05,
+   "seed": 6,
+   "time_s": 96.41999999999796,
+   "finished": true,
+   "gate_clean": true,
+   "balloon": true,
+   "wrong_balloon": false,
+   "contacts": 1,
+   "contact_list": [
+    [
+     72.34,
+     "obstacle_1"
+    ]
+   ],
+   "min_clearance": -0.003027133538480383,
+   "depth_rms": 0.0336804935027191
+  },
+  {
+   "mode": "manual",
+   "turbidity": 0.05,
+   "seed": 7,
+   "time_s": 95.6599999999981,
+   "finished": true,
+   "gate_clean": true,
+   "balloon": true,
+   "wrong_balloon": false,
+   "contacts": 2,
+   "contact_list": [
+    [
+     71.62,
+     "obstacle_1"
+    ],
+    [
+     75.5,
+     "obstacle_2"
+    ]
+   ],
+   "min_clearance": -0.003181906244925998,
+   "depth_rms": 0.03418717369258395
+  },
+  {
+   "mode": "manual",
+   "turbidity": 0.05,
+   "seed": 8,
+   "time_s": 96.29999999999798,
+   "finished": true,
+   "gate_clean": true,
+   "balloon": true,
+   "wrong_balloon": false,
+   "contacts": 1,
+   "contact_list": [
+    [
+     72.12,
+     "obstacle_1"
+    ]
+   ],
+   "min_clearance": -0.015654409223967387,
+   "depth_rms": 0.03337198878772368
+  },
+  {
+   "mode": "manual",
+   "turbidity": 0.05,
+   "seed": 9,
+   "time_s": 96.33999999999797,
+   "finished": true,
+   "gate_clean": true,
+   "balloon": true,
+   "wrong_balloon": false,
+   "contacts": 1,
+   "contact_list": [
+    [
+     76.26,
+     "obstacle_2"
+    ]
+   ],
+   "min_clearance": -0.009064214278809463,
+   "depth_rms": 0.03333691441705433
+  },
+  {
+   "mode": "manual",
+   "turbidity": 0.05,
+   "seed": 10,
+   "time_s": 95.6999999999981,
+   "finished": true,
+   "gate_clean": true,
+   "balloon": true,
+   "wrong_balloon": false,
+   "contacts": 0,
+   "contact_list": [],
+   "min_clearance": 0.002358399938743462,
+   "depth_rms": 0.03346869383426737
+  },
+  {
+   "mode": "manual",
+   "turbidity": 0.05,
+   "seed": 11,
+   "time_s": 96.41999999999796,
+   "finished": true,
+   "gate_clean": true,
+   "balloon": true,
+   "wrong_balloon": false,
+   "contacts": 1,
+   "contact_list": [
+    [
+     76.2,
+     "obstacle_2"
+    ]
+   ],
+   "min_clearance": -0.01575577432836453,
+   "depth_rms": 0.03364587522068448
+  },
+  {
+   "mode": "manual",
+   "turbidity": 0.05,
+   "seed": 12,
+   "time_s": 95.6799999999981,
+   "finished": true,
+   "gate_clean": true,
+   "balloon": true,
+   "wrong_balloon": false,
+   "contacts": 0,
+   "contact_list": [],
+   "min_clearance": 0.0039530817828334446,
+   "depth_rms": 0.03448849917861583
+  },
+  {
+   "mode": "manual",
+   "turbidity": 0.4,
+   "seed": 1,
+   "time_s": 100.99999999999704,
+   "finished": true,
+   "gate_clean": true,
+   "balloon": true,
+   "wrong_balloon": false,
+   "contacts": 0,
+   "contact_list": [],
+   "min_clearance": 0.003488763320556247,
+   "depth_rms": 0.03366596331172
+  },
+  {
+   "mode": "manual",
+   "turbidity": 0.4,
+   "seed": 2,
+   "time_s": 101.39999999999696,
+   "finished": true,
+   "gate_clean": true,
+   "balloon": true,
+   "wrong_balloon": false,
+   "contacts": 1,
+   "contact_list": [
+    [
+     79.88,
+     "obstacle_2"
+    ]
+   ],
+   "min_clearance": -0.0011153905332648567,
+   "depth_rms": 0.03262298356335822
+  },
+  {
+   "mode": "manual",
+   "turbidity": 0.4,
+   "seed": 3,
+   "time_s": 103.07999999999663,
+   "finished": true,
+   "gate_clean": true,
+   "balloon": true,
+   "wrong_balloon": false,
+   "contacts": 2,
+   "contact_list": [
+    [
+     77.38,
+     "obstacle_1"
+    ],
+    [
+     81.22,
+     "obstacle_2"
+    ]
+   ],
+   "min_clearance": -0.006601297170530068,
+   "depth_rms": 0.03186575445094005
+  },
+  {
+   "mode": "manual",
+   "turbidity": 0.4,
+   "seed": 4,
+   "time_s": 101.33999999999698,
+   "finished": true,
+   "gate_clean": true,
+   "balloon": true,
+   "wrong_balloon": false,
+   "contacts": 0,
+   "contact_list": [],
+   "min_clearance": 0.007587059779348933,
+   "depth_rms": 0.03312640344196634
+  },
+  {
+   "mode": "manual",
+   "turbidity": 0.4,
+   "seed": 5,
+   "time_s": 99.79999999999728,
+   "finished": true,
+   "gate_clean": true,
+   "balloon": true,
+   "wrong_balloon": false,
+   "contacts": 2,
+   "contact_list": [
+    [
+     75.06,
+     "obstacle_1"
+    ],
+    [
+     78.88,
+     "obstacle_2"
+    ]
+   ],
+   "min_clearance": -0.018457972600189193,
+   "depth_rms": 0.03279901583130192
+  },
+  {
+   "mode": "manual",
+   "turbidity": 0.4,
+   "seed": 6,
+   "time_s": 100.49999999999714,
+   "finished": true,
+   "gate_clean": true,
+   "balloon": true,
+   "wrong_balloon": false,
+   "contacts": 2,
+   "contact_list": [
+    [
+     75.6,
+     "obstacle_1"
+    ],
+    [
+     79.48,
+     "obstacle_2"
+    ]
+   ],
+   "min_clearance": -0.006012169729859313,
+   "depth_rms": 0.03396643961054801
+  },
+  {
+   "mode": "manual",
+   "turbidity": 0.4,
+   "seed": 7,
+   "time_s": 102.01999999999684,
+   "finished": true,
+   "gate_clean": true,
+   "balloon": true,
+   "wrong_balloon": false,
+   "contacts": 1,
+   "contact_list": [
+    [
+     79.86,
+     "obstacle_2"
+    ]
+   ],
+   "min_clearance": -0.004178828644051197,
+   "depth_rms": 0.032875358194222735
+  },
+  {
+   "mode": "manual",
+   "turbidity": 0.4,
+   "seed": 8,
+   "time_s": 101.93999999999686,
+   "finished": true,
+   "gate_clean": true,
+   "balloon": true,
+   "wrong_balloon": false,
+   "contacts": 1,
+   "contact_list": [
+    [
+     75.58,
+     "obstacle_1"
+    ]
+   ],
+   "min_clearance": -0.003573581044747743,
+   "depth_rms": 0.03220034996370841
+  },
+  {
+   "mode": "manual",
+   "turbidity": 0.4,
+   "seed": 9,
+   "time_s": 103.39999999999657,
+   "finished": true,
+   "gate_clean": true,
+   "balloon": true,
+   "wrong_balloon": false,
+   "contacts": 1,
+   "contact_list": [
+    [
+     82.34,
+     "obstacle_2"
+    ]
+   ],
+   "min_clearance": -0.0031937974156638384,
+   "depth_rms": 0.032212530193068266
+  },
+  {
+   "mode": "manual",
+   "turbidity": 0.4,
+   "seed": 10,
+   "time_s": 102.7199999999967,
+   "finished": true,
+   "gate_clean": true,
+   "balloon": true,
+   "wrong_balloon": false,
+   "contacts": 0,
+   "contact_list": [],
+   "min_clearance": 0.0028114924656443448,
+   "depth_rms": 0.03264205513339782
+  },
+  {
+   "mode": "manual",
+   "turbidity": 0.4,
+   "seed": 11,
+   "time_s": 101.93999999999686,
+   "finished": true,
+   "gate_clean": true,
+   "balloon": true,
+   "wrong_balloon": false,
+   "contacts": 0,
+   "contact_list": [],
+   "min_clearance": 0.005577651377090376,
+   "depth_rms": 0.03250532490948416
+  },
+  {
+   "mode": "manual",
+   "turbidity": 0.4,
+   "seed": 12,
+   "time_s": 99.31999999999738,
+   "finished": true,
+   "gate_clean": true,
+   "balloon": true,
+   "wrong_balloon": false,
+   "contacts": 1,
+   "contact_list": [
+    [
+     78.52,
+     "obstacle_2"
+    ]
+   ],
+   "min_clearance": -0.00659499149284597,
+   "depth_rms": 0.03418022720824347
+  },
+  {
+   "mode": "manual",
+   "turbidity": 1.0,
+   "seed": 1,
+   "time_s": 136.87999999999622,
+   "finished": true,
+   "gate_clean": true,
+   "balloon": true,
+   "wrong_balloon": false,
+   "contacts": 8,
+   "contact_list": [
+    [
+     77.54,
+     "maze_wall_right"
+    ],
+    [
+     79.26,
+     "maze_wall_right"
+    ],
+    [
+     79.72,
+     "maze_wall_right"
+    ],
+    [
+     81.26,
+     "maze_wall_right"
+    ],
+    [
+     84.46,
+     "maze_wall_right"
+    ],
+    [
+     87.5,
+     "maze_wall_right"
+    ],
+    [
+     89.34,
+     "maze_wall_right"
+    ],
+    [
+     92.88,
+     "maze_wall_right"
+    ]
+   ],
+   "min_clearance": -0.024988468388060105,
+   "depth_rms": 0.030058840746925317
+  },
+  {
+   "mode": "manual",
+   "turbidity": 1.0,
+   "seed": 2,
+   "time_s": 133.5199999999945,
+   "finished": true,
+   "gate_clean": true,
+   "balloon": true,
+   "wrong_balloon": false,
+   "contacts": 6,
+   "contact_list": [
+    [
+     74.46,
+     "maze_wall_right"
+    ],
+    [
+     115.56,
+     "maze_wall_right"
+    ],
+    [
+     117.38,
+     "maze_wall_right"
+    ],
+    [
+     118.6,
+     "maze_wall_right"
+    ],
+    [
+     120.7,
+     "maze_wall_right"
+    ],
+    [
+     121.32,
+     "maze_wall_right"
+    ]
+   ],
+   "min_clearance": -0.02498113990854898,
+   "depth_rms": 0.030089078724562394
+  },
+  {
+   "mode": "manual",
+   "turbidity": 1.0,
+   "seed": 3,
+   "time_s": 137.17999999999637,
+   "finished": true,
+   "gate_clean": true,
+   "balloon": true,
+   "wrong_balloon": false,
+   "contacts": 14,
+   "contact_list": [
+    [
+     75.68,
+     "maze_wall_right"
+    ],
+    [
+     79.56,
+     "maze_wall_right"
+    ],
+    [
+     81.14,
+     "maze_wall_right"
+    ],
+    [
+     86.12,
+     "maze_wall_right"
+    ],
+    [
+     88.66,
+     "maze_wall_right"
+    ],
+    [
+     90.38,
+     "maze_wall_right"
+    ],
+    [
+     92.06,
+     "maze_wall_right"
+    ],
+    [
+     93.68,
+     "maze_wall_right"
+    ],
+    [
+     114.44,
+     "maze_wall_right"
+    ],
+    [
+     116.56,
+     "maze_wall_right"
+    ],
+    [
+     121.82,
+     "maze_wall_right"
+    ],
+    [
+     123.32,
+     "maze_wall_right"
+    ],
+    [
+     126.56,
+     "maze_wall_right"
+    ],
+    [
+     127.76,
+     "maze_wall_right"
+    ]
+   ],
+   "min_clearance": -0.0249912549199943,
+   "depth_rms": 0.029212805987096777
+  },
+  {
+   "mode": "manual",
+   "turbidity": 1.0,
+   "seed": 4,
+   "time_s": 141.25999999999846,
+   "finished": true,
+   "gate_clean": true,
+   "balloon": true,
+   "wrong_balloon": false,
+   "contacts": 8,
+   "contact_list": [
+    [
+     87.56,
+     "maze_wall_left"
+    ],
+    [
+     110.02,
+     "obstacle_2"
+    ],
+    [
+     120.12,
+     "maze_wall_right"
+    ],
+    [
+     121.5,
+     "maze_wall_right"
+    ],
+    [
+     123.46,
+     "maze_wall_right"
+    ],
+    [
+     126.28,
+     "maze_wall_right"
+    ],
+    [
+     129.62,
+     "maze_wall_right"
+    ],
+    [
+     130.84,
+     "maze_wall_right"
+    ]
+   ],
+   "min_clearance": -0.024995664125203355,
+   "depth_rms": 0.02969583795220737
+  },
+  {
+   "mode": "manual",
+   "turbidity": 1.0,
+   "seed": 5,
+   "time_s": 130.91999999999317,
+   "finished": true,
+   "gate_clean": true,
+   "balloon": true,
+   "wrong_balloon": false,
+   "contacts": 0,
+   "contact_list": [],
+   "min_clearance": 0.009698593678046957,
+   "depth_rms": 0.029679142332411902
+  },
+  {
+   "mode": "manual",
+   "turbidity": 1.0,
+   "seed": 6,
+   "time_s": 135.39999999999546,
+   "finished": true,
+   "gate_clean": true,
+   "balloon": true,
+   "wrong_balloon": false,
+   "contacts": 8,
+   "contact_list": [
+    [
+     77.72,
+     "maze_wall_right"
+    ],
+    [
+     78.6,
+     "maze_wall_right"
+    ],
+    [
+     79.92,
+     "maze_wall_right"
+    ],
+    [
+     82.94,
+     "maze_wall_right"
+    ],
+    [
+     114.2,
+     "maze_wall_left"
+    ],
+    [
+     115.36,
+     "maze_wall_left"
+    ],
+    [
+     125.38,
+     "maze_wall_left"
+    ],
+    [
+     126.6,
+     "maze_wall_left"
+    ]
+   ],
+   "min_clearance": -0.024996906280020804,
+   "depth_rms": 0.030045232724734968
+  },
+  {
+   "mode": "manual",
+   "turbidity": 1.0,
+   "seed": 7,
+   "time_s": 133.59999999999454,
+   "finished": true,
+   "gate_clean": true,
+   "balloon": true,
+   "wrong_balloon": false,
+   "contacts": 0,
+   "contact_list": [],
+   "min_clearance": 0.0002404086377976282,
+   "depth_rms": 0.03009216665147514
+  },
+  {
+   "mode": "manual",
+   "turbidity": 1.0,
+   "seed": 8,
+   "time_s": 138.6199999999971,
+   "finished": true,
+   "gate_clean": true,
+   "balloon": true,
+   "wrong_balloon": false,
+   "contacts": 7,
+   "contact_list": [
+    [
+     90.84,
+     "maze_wall_right"
+    ],
+    [
+     92.98,
+     "maze_wall_right"
+    ],
+    [
+     107.28,
+     "obstacle_2"
+    ],
+    [
+     117.3,
+     "maze_wall_right"
+    ],
+    [
+     118.44,
+     "maze_wall_right"
+    ],
+    [
+     119.58,
+     "maze_wall_right"
+    ],
+    [
+     122.66,
+     "maze_wall_right"
+    ]
+   ],
+   "min_clearance": -0.024995795799775268,
+   "depth_rms": 0.029449758750225697
+  },
+  {
+   "mode": "manual",
+   "turbidity": 1.0,
+   "seed": 9,
+   "time_s": 134.7199999999951,
+   "finished": true,
+   "gate_clean": true,
+   "balloon": true,
+   "wrong_balloon": false,
+   "contacts": 5,
+   "contact_list": [
+    [
+     86.9,
+     "maze_wall_right"
+    ],
+    [
+     89.6,
+     "maze_wall_right"
+    ],
+    [
+     100.28,
+     "obstacle_1"
+    ],
+    [
+     122.04,
+     "maze_wall_left"
+    ],
+    [
+     124.52,
+     "maze_wall_left"
+    ]
+   ],
+   "min_clearance": -0.024962231882415177,
+   "depth_rms": 0.029613093654366877
+  },
+  {
+   "mode": "manual",
+   "turbidity": 1.0,
+   "seed": 10,
+   "time_s": 135.75999999999564,
+   "finished": true,
+   "gate_clean": true,
+   "balloon": true,
+   "wrong_balloon": false,
+   "contacts": 10,
+   "contact_list": [
+    [
+     75.02,
+     "maze_wall_right"
+    ],
+    [
+     75.98,
+     "maze_wall_right"
+    ],
+    [
+     77.72,
+     "maze_wall_right"
+    ],
+    [
+     79.8,
+     "maze_wall_right"
+    ],
+    [
+     82.12,
+     "maze_wall_right"
+    ],
+    [
+     87.06,
+     "maze_wall_right"
+    ],
+    [
+     88.3,
+     "maze_wall_right"
+    ],
+    [
+     90.7,
+     "maze_wall_right"
+    ],
+    [
+     91.74,
+     "maze_wall_right"
+    ],
+    [
+     105.78,
+     "obstacle_2"
+    ]
+   ],
+   "min_clearance": -0.024990147299815836,
+   "depth_rms": 0.029257755972195022
+  },
+  {
+   "mode": "manual",
+   "turbidity": 1.0,
+   "seed": 11,
+   "time_s": 134.65999999999508,
+   "finished": true,
+   "gate_clean": true,
+   "balloon": true,
+   "wrong_balloon": false,
+   "contacts": 5,
+   "contact_list": [
+    [
+     85.82,
+     "maze_wall_left"
+    ],
+    [
+     100.42,
+     "obstacle_1"
+    ],
+    [
+     114.3,
+     "maze_wall_right"
+    ],
+    [
+     115.5,
+     "maze_wall_right"
+    ],
+    [
+     117.64,
+     "maze_wall_right"
+    ]
+   ],
+   "min_clearance": -0.024972780574976407,
+   "depth_rms": 0.02969007557944594
+  },
+  {
+   "mode": "manual",
+   "turbidity": 1.0,
+   "seed": 12,
+   "time_s": 135.53999999999553,
+   "finished": true,
+   "gate_clean": true,
+   "balloon": true,
+   "wrong_balloon": false,
+   "contacts": 11,
+   "contact_list": [
+    [
+     76.74,
+     "maze_wall_left"
+    ],
+    [
+     79.12,
+     "maze_wall_left"
+    ],
+    [
+     80.86,
+     "maze_wall_left"
+    ],
+    [
+     83.34,
+     "maze_wall_left"
+    ],
+    [
+     84.28,
+     "maze_wall_left"
+    ],
+    [
+     113.3,
+     "maze_wall_right"
+    ],
+    [
+     115.54,
+     "maze_wall_right"
+    ],
+    [
+     118.82,
+     "maze_wall_right"
+    ],
+    [
+     119.7,
+     "maze_wall_right"
+    ],
+    [
+     120.64,
+     "maze_wall_right"
+    ],
+    [
+     122.98,
+     "maze_wall_right"
+    ]
+   ],
+   "min_clearance": -0.024990239175335917,
+   "depth_rms": 0.029684668389822824
+  },
+  {
+   "mode": "assist",
+   "turbidity": 0.05,
+   "seed": 1,
+   "time_s": 94.03999999999843,
+   "finished": true,
+   "gate_clean": true,
+   "balloon": true,
+   "wrong_balloon": false,
+   "contacts": 0,
+   "contact_list": [],
+   "min_clearance": 0.0038157223074082453,
+   "depth_rms": 0.024639225344523744
+  },
+  {
+   "mode": "assist",
+   "turbidity": 0.05,
+   "seed": 2,
+   "time_s": 94.23999999999839,
+   "finished": true,
+   "gate_clean": true,
+   "balloon": true,
+   "wrong_balloon": false,
+   "contacts": 0,
+   "contact_list": [],
+   "min_clearance": 0.0008051581497882342,
+   "depth_rms": 0.024641273620609146
+  },
+  {
+   "mode": "assist",
+   "turbidity": 0.05,
+   "seed": 3,
+   "time_s": 94.47999999999834,
+   "finished": true,
+   "gate_clean": true,
+   "balloon": true,
+   "wrong_balloon": false,
+   "contacts": 0,
+   "contact_list": [],
+   "min_clearance": 0.007962518130546437,
+   "depth_rms": 0.024621987320118468
+  },
+  {
+   "mode": "assist",
+   "turbidity": 0.05,
+   "seed": 4,
+   "time_s": 94.47999999999834,
+   "finished": true,
+   "gate_clean": true,
+   "balloon": true,
+   "wrong_balloon": false,
+   "contacts": 1,
+   "contact_list": [
+    [
+     74.94,
+     "obstacle_2"
+    ]
+   ],
+   "min_clearance": -0.009769040383863233,
+   "depth_rms": 0.024400188657403322
+  },
+  {
+   "mode": "assist",
+   "turbidity": 0.05,
+   "seed": 5,
+   "time_s": 93.77999999999848,
+   "finished": true,
+   "gate_clean": true,
+   "balloon": true,
+   "wrong_balloon": false,
+   "contacts": 1,
+   "contact_list": [
+    [
+     74.22,
+     "obstacle_2"
+    ]
+   ],
+   "min_clearance": -0.0005179949789665787,
+   "depth_rms": 0.024866113388001213
+  },
+  {
+   "mode": "assist",
+   "turbidity": 0.05,
+   "seed": 6,
+   "time_s": 94.37999999999836,
+   "finished": true,
+   "gate_clean": true,
+   "balloon": true,
+   "wrong_balloon": false,
+   "contacts": 1,
+   "contact_list": [
+    [
+     71.18,
+     "obstacle_1"
+    ]
+   ],
+   "min_clearance": -0.0014855501281581633,
+   "depth_rms": 0.024645176219483058
+  },
+  {
+   "mode": "assist",
+   "turbidity": 0.05,
+   "seed": 7,
+   "time_s": 94.05999999999842,
+   "finished": true,
+   "gate_clean": true,
+   "balloon": true,
+   "wrong_balloon": false,
+   "contacts": 0,
+   "contact_list": [],
+   "min_clearance": 0.011292881536419948,
+   "depth_rms": 0.02467272064446527
+  },
+  {
+   "mode": "assist",
+   "turbidity": 0.05,
+   "seed": 8,
+   "time_s": 94.61999999999831,
+   "finished": true,
+   "gate_clean": true,
+   "balloon": true,
+   "wrong_balloon": false,
+   "contacts": 1,
+   "contact_list": [
+    [
+     71.3,
+     "obstacle_1"
+    ]
+   ],
+   "min_clearance": -0.0017788188993411204,
+   "depth_rms": 0.024739308085847428
+  },
+  {
+   "mode": "assist",
+   "turbidity": 0.05,
+   "seed": 9,
+   "time_s": 94.25999999999839,
+   "finished": true,
+   "gate_clean": true,
+   "balloon": true,
+   "wrong_balloon": false,
+   "contacts": 0,
+   "contact_list": [],
+   "min_clearance": 0.0070678393143705776,
+   "depth_rms": 0.024649005162970077
+  },
+  {
+   "mode": "assist",
+   "turbidity": 0.05,
+   "seed": 10,
+   "time_s": 94.1999999999984,
+   "finished": true,
+   "gate_clean": true,
+   "balloon": true,
+   "wrong_balloon": false,
+   "contacts": 0,
+   "contact_list": [],
+   "min_clearance": 0.008842803400318046,
+   "depth_rms": 0.02467557874379248
+  },
+  {
+   "mode": "assist",
+   "turbidity": 0.05,
+   "seed": 11,
+   "time_s": 94.45999999999835,
+   "finished": true,
+   "gate_clean": true,
+   "balloon": true,
+   "wrong_balloon": false,
+   "contacts": 0,
+   "contact_list": [],
+   "min_clearance": 0.01293682670009122,
+   "depth_rms": 0.02466989345441251
+  },
+  {
+   "mode": "assist",
+   "turbidity": 0.05,
+   "seed": 12,
+   "time_s": 94.09999999999842,
+   "finished": true,
+   "gate_clean": true,
+   "balloon": true,
+   "wrong_balloon": false,
+   "contacts": 1,
+   "contact_list": [
+    [
+     74.32,
+     "obstacle_2"
+    ]
+   ],
+   "min_clearance": -0.00022723122825927394,
+   "depth_rms": 0.024752306966738087
+  },
+  {
+   "mode": "assist",
+   "turbidity": 0.4,
+   "seed": 1,
+   "time_s": 97.87999999999766,
+   "finished": true,
+   "gate_clean": true,
+   "balloon": true,
+   "wrong_balloon": false,
+   "contacts": 0,
+   "contact_list": [],
+   "min_clearance": 0.0034435902971606015,
+   "depth_rms": 0.024164256270317618
+  },
+  {
+   "mode": "assist",
+   "turbidity": 0.4,
+   "seed": 2,
+   "time_s": 97.7199999999977,
+   "finished": true,
+   "gate_clean": true,
+   "balloon": true,
+   "wrong_balloon": false,
+   "contacts": 1,
+   "contact_list": [
+    [
+     77.12,
+     "obstacle_2"
+    ]
+   ],
+   "min_clearance": -0.0033599865848374794,
+   "depth_rms": 0.024138899557026076
+  },
+  {
+   "mode": "assist",
+   "turbidity": 0.4,
+   "seed": 3,
+   "time_s": 98.7399999999975,
+   "finished": true,
+   "gate_clean": true,
+   "balloon": true,
+   "wrong_balloon": false,
+   "contacts": 1,
+   "contact_list": [
+    [
+     74.66,
+     "obstacle_1"
+    ]
+   ],
+   "min_clearance": -0.0038856483083817075,
+   "depth_rms": 0.024038876026570555
+  },
+  {
+   "mode": "assist",
+   "turbidity": 0.4,
+   "seed": 4,
+   "time_s": 98.89999999999746,
+   "finished": true,
+   "gate_clean": true,
+   "balloon": true,
+   "wrong_balloon": false,
+   "contacts": 0,
+   "contact_list": [],
+   "min_clearance": 0.005535816559621473,
+   "depth_rms": 0.023888989452766015
+  },
+  {
+   "mode": "assist",
+   "turbidity": 0.4,
+   "seed": 5,
+   "time_s": 97.43999999999775,
+   "finished": true,
+   "gate_clean": true,
+   "balloon": true,
+   "wrong_balloon": false,
+   "contacts": 1,
+   "contact_list": [
+    [
+     77.18,
+     "obstacle_2"
+    ]
+   ],
+   "min_clearance": -0.009517441937196435,
+   "depth_rms": 0.024381911210126065
+  },
+  {
+   "mode": "assist",
+   "turbidity": 0.4,
+   "seed": 6,
+   "time_s": 98.37999999999757,
+   "finished": true,
+   "gate_clean": true,
+   "balloon": true,
+   "wrong_balloon": false,
+   "contacts": 0,
+   "contact_list": [],
+   "min_clearance": 0.0016594533625446037,
+   "depth_rms": 0.024226416785580837
+  },
+  {
+   "mode": "assist",
+   "turbidity": 0.4,
+   "seed": 7,
+   "time_s": 97.55999999999773,
+   "finished": true,
+   "gate_clean": true,
+   "balloon": true,
+   "wrong_balloon": false,
+   "contacts": 1,
+   "contact_list": [
+    [
+     73.38,
+     "obstacle_1"
+    ]
+   ],
+   "min_clearance": -0.005561544562100191,
+   "depth_rms": 0.024231892169420427
+  },
+  {
+   "mode": "assist",
+   "turbidity": 0.4,
+   "seed": 8,
+   "time_s": 98.35999999999757,
+   "finished": true,
+   "gate_clean": true,
+   "balloon": true,
+   "wrong_balloon": false,
+   "contacts": 0,
+   "contact_list": [],
+   "min_clearance": 0.004195375041700516,
+   "depth_rms": 0.024205383093560094
+  },
+  {
+   "mode": "assist",
+   "turbidity": 0.4,
+   "seed": 9,
+   "time_s": 100.61999999999712,
+   "finished": true,
+   "gate_clean": true,
+   "balloon": true,
+   "wrong_balloon": false,
+   "contacts": 0,
+   "contact_list": [],
+   "min_clearance": 0.005057190784875248,
+   "depth_rms": 0.023912639533560806
+  },
+  {
+   "mode": "assist",
+   "turbidity": 0.4,
+   "seed": 10,
+   "time_s": 99.45999999999735,
+   "finished": true,
+   "gate_clean": true,
+   "balloon": true,
+   "wrong_balloon": false,
+   "contacts": 0,
+   "contact_list": [],
+   "min_clearance": 0.005941850758894415,
+   "depth_rms": 0.023957660160746727
+  },
+  {
+   "mode": "assist",
+   "turbidity": 0.4,
+   "seed": 11,
+   "time_s": 99.59999999999732,
+   "finished": true,
+   "gate_clean": true,
+   "balloon": true,
+   "wrong_balloon": false,
+   "contacts": 0,
+   "contact_list": [],
+   "min_clearance": 0.0023373008696430594,
+   "depth_rms": 0.02381302834274941
+  },
+  {
+   "mode": "assist",
+   "turbidity": 0.4,
+   "seed": 12,
+   "time_s": 97.2199999999978,
+   "finished": true,
+   "gate_clean": true,
+   "balloon": true,
+   "wrong_balloon": false,
+   "contacts": 0,
+   "contact_list": [],
+   "min_clearance": 0.0044134737724343225,
+   "depth_rms": 0.02426237128847321
+  },
+  {
+   "mode": "assist",
+   "turbidity": 1.0,
+   "seed": 1,
+   "time_s": 130.9599999999932,
+   "finished": true,
+   "gate_clean": true,
+   "balloon": true,
+   "wrong_balloon": false,
+   "contacts": 5,
+   "contact_list": [
+    [
+     80.94,
+     "maze_wall_right"
+    ],
+    [
+     82.74,
+     "maze_wall_right"
+    ],
+    [
+     83.72,
+     "maze_wall_right"
+    ],
+    [
+     86.3,
+     "maze_wall_right"
+    ],
+    [
+     91.54,
+     "maze_wall_right"
+    ]
+   ],
+   "min_clearance": -0.024878764428578372,
+   "depth_rms": 0.020816177405430583
+  },
+  {
+   "mode": "assist",
+   "turbidity": 1.0,
+   "seed": 2,
+   "time_s": 129.0199999999922,
+   "finished": true,
+   "gate_clean": true,
+   "balloon": true,
+   "wrong_balloon": false,
+   "contacts": 5,
+   "contact_list": [
+    [
+     74.58,
+     "maze_wall_right"
+    ],
+    [
+     113.34,
+     "maze_wall_right"
+    ],
+    [
+     115.5,
+     "maze_wall_right"
+    ],
+    [
+     116.54,
+     "maze_wall_right"
+    ],
+    [
+     118.2,
+     "maze_wall_right"
+    ]
+   ],
+   "min_clearance": -0.024993689984318147,
+   "depth_rms": 0.021129650697713987
+  },
+  {
+   "mode": "assist",
+   "turbidity": 1.0,
+   "seed": 3,
+   "time_s": 131.67999999999356,
+   "finished": true,
+   "gate_clean": true,
+   "balloon": true,
+   "wrong_balloon": false,
+   "contacts": 7,
+   "contact_list": [
+    [
+     75.64,
+     "maze_wall_right"
+    ],
+    [
+     76.46,
+     "maze_wall_right"
+    ],
+    [
+     81.24,
+     "maze_wall_right"
+    ],
+    [
+     102.34,
+     "obstacle_2"
+    ],
+    [
+     118.84,
+     "maze_wall_right"
+    ],
+    [
+     121.84,
+     "maze_wall_right"
+    ],
+    [
+     122.8,
+     "maze_wall_right"
+    ]
+   ],
+   "min_clearance": -0.024742964626791243,
+   "depth_rms": 0.020921836787943623
+  },
+  {
+   "mode": "assist",
+   "turbidity": 1.0,
+   "seed": 4,
+   "time_s": 137.2399999999964,
+   "finished": true,
+   "gate_clean": true,
+   "balloon": true,
+   "wrong_balloon": false,
+   "contacts": 16,
+   "contact_list": [
+    [
+     75.74,
+     "maze_wall_left"
+    ],
+    [
+     77.3,
+     "maze_wall_left"
+    ],
+    [
+     78.64,
+     "maze_wall_left"
+    ],
+    [
+     79.38,
+     "maze_wall_left"
+    ],
+    [
+     81.08,
+     "maze_wall_left"
+    ],
+    [
+     83.78,
+     "maze_wall_left"
+    ],
+    [
+     84.7,
+     "maze_wall_left"
+    ],
+    [
+     85.94,
+     "maze_wall_left"
+    ],
+    [
+     88.36,
+     "maze_wall_left"
+    ],
+    [
+     103.68,
+     "obstacle_1"
+    ],
+    [
+     117.8,
+     "maze_wall_right"
+    ],
+    [
+     118.82,
+     "maze_wall_right"
+    ],
+    [
+     119.4,
+     "maze_wall_right"
+    ],
+    [
+     122.08,
+     "maze_wall_right"
+    ],
+    [
+     124.36,
+     "maze_wall_right"
+    ],
+    [
+     126.14,
+     "maze_wall_right"
+    ]
+   ],
+   "min_clearance": -0.024994092318177487,
+   "depth_rms": 0.020346352550848452
+  },
+  {
+   "mode": "assist",
+   "turbidity": 1.0,
+   "seed": 5,
+   "time_s": 126.51999999999197,
+   "finished": true,
+   "gate_clean": true,
+   "balloon": true,
+   "wrong_balloon": false,
+   "contacts": 3,
+   "contact_list": [
+    [
+     95.62,
+     "obstacle_1"
+    ],
+    [
+     113.84,
+     "maze_wall_right"
+    ],
+    [
+     115.16,
+     "maze_wall_right"
+    ]
+   ],
+   "min_clearance": -0.02499896983504688,
+   "depth_rms": 0.021369569585590085
+  },
+  {
+   "mode": "assist",
+   "turbidity": 1.0,
+   "seed": 6,
+   "time_s": 128.15999999999175,
+   "finished": true,
+   "gate_clean": true,
+   "balloon": true,
+   "wrong_balloon": false,
+   "contacts": 0,
+   "contact_list": [],
+   "min_clearance": 0.005487735073557286,
+   "depth_rms": 0.02113195271886312
+  },
+  {
+   "mode": "assist",
+   "turbidity": 1.0,
+   "seed": 7,
+   "time_s": 129.55999999999247,
+   "finished": true,
+   "gate_clean": true,
+   "balloon": true,
+   "wrong_balloon": false,
+   "contacts": 1,
+   "contact_list": [
+    [
+     77.1,
+     "maze_wall_right"
+    ]
+   ],
+   "min_clearance": -0.0019626167666564123,
+   "depth_rms": 0.020995663100738145
+  },
+  {
+   "mode": "assist",
+   "turbidity": 1.0,
+   "seed": 8,
+   "time_s": 133.97999999999473,
+   "finished": true,
+   "gate_clean": true,
+   "balloon": true,
+   "wrong_balloon": false,
+   "contacts": 7,
+   "contact_list": [
+    [
+     91.24,
+     "maze_wall_right"
+    ],
+    [
+     113.4,
+     "maze_wall_right"
+    ],
+    [
+     116.8,
+     "maze_wall_right"
+    ],
+    [
+     117.46,
+     "maze_wall_right"
+    ],
+    [
+     118.98,
+     "maze_wall_right"
+    ],
+    [
+     120.94,
+     "maze_wall_right"
+    ],
+    [
+     124.22,
+     "maze_wall_right"
+    ]
+   ],
+   "min_clearance": -0.02496241139540154,
+   "depth_rms": 0.020846784689832372
+  },
+  {
+   "mode": "assist",
+   "turbidity": 1.0,
+   "seed": 9,
+   "time_s": 126.69999999999193,
+   "finished": true,
+   "gate_clean": true,
+   "balloon": true,
+   "wrong_balloon": false,
+   "contacts": 1,
+   "contact_list": [
+    [
+     95.28,
+     "obstacle_1"
+    ]
+   ],
+   "min_clearance": -0.0004551682978758548,
+   "depth_rms": 0.021210779013861578
+  },
+  {
+   "mode": "assist",
+   "turbidity": 1.0,
+   "seed": 10,
+   "time_s": 130.619999999993,
+   "finished": true,
+   "gate_clean": true,
+   "balloon": true,
+   "wrong_balloon": false,
+   "contacts": 10,
+   "contact_list": [
+    [
+     69.68,
+     "maze_wall_right"
+    ],
+    [
+     73.74,
+     "maze_wall_right"
+    ],
+    [
+     75.24,
+     "maze_wall_right"
+    ],
+    [
+     75.66,
+     "maze_wall_right"
+    ],
+    [
+     78.18,
+     "maze_wall_right"
+    ],
+    [
+     80.06,
+     "maze_wall_right"
+    ],
+    [
+     80.86,
+     "maze_wall_right"
+    ],
+    [
+     86.02,
+     "maze_wall_right"
+    ],
+    [
+     87.26,
+     "maze_wall_right"
+    ],
+    [
+     89.02,
+     "maze_wall_right"
+    ]
+   ],
+   "min_clearance": -0.02499820733605105,
+   "depth_rms": 0.020934006171758373
+  },
+  {
+   "mode": "assist",
+   "turbidity": 1.0,
+   "seed": 11,
+   "time_s": 130.7799999999931,
+   "finished": true,
+   "gate_clean": true,
+   "balloon": true,
+   "wrong_balloon": false,
+   "contacts": 3,
+   "contact_list": [
+    [
+     114.42,
+     "maze_wall_right"
+    ],
+    [
+     117.74,
+     "maze_wall_right"
+    ],
+    [
+     118.94,
+     "maze_wall_right"
+    ]
+   ],
+   "min_clearance": -0.024868476562857712,
+   "depth_rms": 0.020893873944738572
+  },
+  {
+   "mode": "assist",
+   "turbidity": 1.0,
+   "seed": 12,
+   "time_s": 132.85999999999416,
+   "finished": true,
+   "gate_clean": true,
+   "balloon": true,
+   "wrong_balloon": false,
+   "contacts": 13,
+   "contact_list": [
+    [
+     74.52,
+     "maze_wall_left"
+    ],
+    [
+     75.7,
+     "maze_wall_left"
+    ],
+    [
+     80.38,
+     "maze_wall_left"
+    ],
+    [
+     82.46,
+     "maze_wall_left"
+    ],
+    [
+     83.26,
+     "maze_wall_left"
+    ],
+    [
+     85.26,
+     "maze_wall_left"
+    ],
+    [
+     98.62,
+     "obstacle_1"
+    ],
+    [
+     102.26,
+     "obstacle_2"
+    ],
+    [
+     112.68,
+     "maze_wall_right"
+    ],
+    [
+     114.44,
+     "maze_wall_right"
+    ],
+    [
+     118.0,
+     "maze_wall_right"
+    ],
+    [
+     121.48,
+     "maze_wall_right"
+    ],
+    [
+     123.08,
+     "maze_wall_right"
+    ]
+   ],
+   "min_clearance": -0.024996754861920302,
+   "depth_rms": 0.020806492651068095
+  },
+  {
+   "mode": "auto",
+   "turbidity": 0.05,
+   "seed": 1,
+   "time_s": 92.25999999999878,
+   "finished": true,
+   "gate_clean": true,
+   "balloon": true,
+   "wrong_balloon": false,
+   "contacts": 0,
+   "contact_list": [],
+   "min_clearance": 0.004977315036007738,
+   "depth_rms": 0.024902566143855203
+  },
+  {
+   "mode": "auto",
+   "turbidity": 0.05,
+   "seed": 2,
+   "time_s": 92.25999999999878,
+   "finished": true,
+   "gate_clean": true,
+   "balloon": true,
+   "wrong_balloon": false,
+   "contacts": 0,
+   "contact_list": [],
+   "min_clearance": 0.0028961392513268333,
+   "depth_rms": 0.02489988539231722
+  },
+  {
+   "mode": "auto",
+   "turbidity": 0.05,
+   "seed": 3,
+   "time_s": 92.33999999999877,
+   "finished": true,
+   "gate_clean": true,
+   "balloon": true,
+   "wrong_balloon": false,
+   "contacts": 0,
+   "contact_list": [],
+   "min_clearance": 0.004792743696967722,
+   "depth_rms": 0.024920166754699994
+  },
+  {
+   "mode": "auto",
+   "turbidity": 0.05,
+   "seed": 4,
+   "time_s": 92.23999999999879,
+   "finished": true,
+   "gate_clean": true,
+   "balloon": true,
+   "wrong_balloon": false,
+   "contacts": 0,
+   "contact_list": [],
+   "min_clearance": 0.002636510154944996,
+   "depth_rms": 0.024834143253541625
+  },
+  {
+   "mode": "auto",
+   "turbidity": 0.05,
+   "seed": 5,
+   "time_s": 92.25999999999878,
+   "finished": true,
+   "gate_clean": true,
+   "balloon": true,
+   "wrong_balloon": false,
+   "contacts": 0,
+   "contact_list": [],
+   "min_clearance": 7.155326373306861e-05,
+   "depth_rms": 0.02512618503743507
+  },
+  {
+   "mode": "auto",
+   "turbidity": 0.05,
+   "seed": 6,
+   "time_s": 92.1799999999988,
+   "finished": true,
+   "gate_clean": true,
+   "balloon": true,
+   "wrong_balloon": false,
+   "contacts": 0,
+   "contact_list": [],
+   "min_clearance": 0.004934238592566819,
+   "depth_rms": 0.02492608954557735
+  },
+  {
+   "mode": "auto",
+   "turbidity": 0.05,
+   "seed": 7,
+   "time_s": 92.29999999999878,
+   "finished": true,
+   "gate_clean": true,
+   "balloon": true,
+   "wrong_balloon": false,
+   "contacts": 0,
+   "contact_list": [],
+   "min_clearance": 0.004623146943255472,
+   "depth_rms": 0.02485238842635208
+  },
+  {
+   "mode": "auto",
+   "turbidity": 0.05,
+   "seed": 8,
+   "time_s": 92.1799999999988,
+   "finished": true,
+   "gate_clean": true,
+   "balloon": true,
+   "wrong_balloon": false,
+   "contacts": 0,
+   "contact_list": [],
+   "min_clearance": 0.004035026502470118,
+   "depth_rms": 0.02499342574269192
+  },
+  {
+   "mode": "auto",
+   "turbidity": 0.05,
+   "seed": 9,
+   "time_s": 92.23999999999879,
+   "finished": true,
+   "gate_clean": true,
+   "balloon": true,
+   "wrong_balloon": false,
+   "contacts": 0,
+   "contact_list": [],
+   "min_clearance": 0.0034784902285349764,
+   "depth_rms": 0.024918092369105155
+  },
+  {
+   "mode": "auto",
+   "turbidity": 0.05,
+   "seed": 10,
+   "time_s": 92.1999999999988,
+   "finished": true,
+   "gate_clean": true,
+   "balloon": true,
+   "wrong_balloon": false,
+   "contacts": 0,
+   "contact_list": [],
+   "min_clearance": 0.0008911704034830353,
+   "depth_rms": 0.024915149777390594
+  },
+  {
+   "mode": "auto",
+   "turbidity": 0.05,
+   "seed": 11,
+   "time_s": 92.23999999999879,
+   "finished": true,
+   "gate_clean": true,
+   "balloon": true,
+   "wrong_balloon": false,
+   "contacts": 0,
+   "contact_list": [],
+   "min_clearance": 0.006094640089146956,
+   "depth_rms": 0.024904101668139247
+  },
+  {
+   "mode": "auto",
+   "turbidity": 0.05,
+   "seed": 12,
+   "time_s": 92.23999999999879,
+   "finished": true,
+   "gate_clean": true,
+   "balloon": true,
+   "wrong_balloon": false,
+   "contacts": 0,
+   "contact_list": [],
+   "min_clearance": 0.0026250317670923062,
+   "depth_rms": 0.024811464251201183
+  },
+  {
+   "mode": "auto",
+   "turbidity": 0.4,
+   "seed": 1,
+   "time_s": 93.1999999999986,
+   "finished": true,
+   "gate_clean": true,
+   "balloon": true,
+   "wrong_balloon": false,
+   "contacts": 0,
+   "contact_list": [],
+   "min_clearance": 0.004371319793416265,
+   "depth_rms": 0.024771246528036237
+  },
+  {
+   "mode": "auto",
+   "turbidity": 0.4,
+   "seed": 2,
+   "time_s": 93.1999999999986,
+   "finished": true,
+   "gate_clean": true,
+   "balloon": true,
+   "wrong_balloon": false,
+   "contacts": 0,
+   "contact_list": [],
+   "min_clearance": 0.0008642025323279921,
+   "depth_rms": 0.024701896981712455
+  },
+  {
+   "mode": "auto",
+   "turbidity": 0.4,
+   "seed": 3,
+   "time_s": 93.49999999999854,
+   "finished": true,
+   "gate_clean": true,
+   "balloon": true,
+   "wrong_balloon": false,
+   "contacts": 0,
+   "contact_list": [],
+   "min_clearance": 0.005943510317841339,
+   "depth_rms": 0.02470064045743704
+  },
+  {
+   "mode": "auto",
+   "turbidity": 0.4,
+   "seed": 4,
+   "time_s": 93.27999999999858,
+   "finished": true,
+   "gate_clean": true,
+   "balloon": true,
+   "wrong_balloon": false,
+   "contacts": 0,
+   "contact_list": [],
+   "min_clearance": 0.008654219114983472,
+   "depth_rms": 0.02471995010019437
+  },
+  {
+   "mode": "auto",
+   "turbidity": 0.4,
+   "seed": 5,
+   "time_s": 93.29999999999858,
+   "finished": true,
+   "gate_clean": true,
+   "balloon": true,
+   "wrong_balloon": false,
+   "contacts": 1,
+   "contact_list": [
+    [
+     73.78,
+     "obstacle_2"
+    ]
+   ],
+   "min_clearance": -0.0011528921332665427,
+   "depth_rms": 0.02503541982576645
+  },
+  {
+   "mode": "auto",
+   "turbidity": 0.4,
+   "seed": 6,
+   "time_s": 93.45999999999854,
+   "finished": true,
+   "gate_clean": true,
+   "balloon": true,
+   "wrong_balloon": false,
+   "contacts": 0,
+   "contact_list": [],
+   "min_clearance": 0.0020795663128818642,
+   "depth_rms": 0.02475899781466845
+  },
+  {
+   "mode": "auto",
+   "turbidity": 0.4,
+   "seed": 7,
+   "time_s": 93.6999999999985,
+   "finished": true,
+   "gate_clean": true,
+   "balloon": true,
+   "wrong_balloon": false,
+   "contacts": 0,
+   "contact_list": [],
+   "min_clearance": 0.003338074125289768,
+   "depth_rms": 0.024681569580560173
+  },
+  {
+   "mode": "auto",
+   "turbidity": 0.4,
+   "seed": 8,
+   "time_s": 93.1799999999986,
+   "finished": true,
+   "gate_clean": true,
+   "balloon": true,
+   "wrong_balloon": false,
+   "contacts": 0,
+   "contact_list": [],
+   "min_clearance": 0.004445097416694934,
+   "depth_rms": 0.024884369003235207
+  },
+  {
+   "mode": "auto",
+   "turbidity": 0.4,
+   "seed": 9,
+   "time_s": 93.63999999999851,
+   "finished": true,
+   "gate_clean": true,
+   "balloon": true,
+   "wrong_balloon": false,
+   "contacts": 0,
+   "contact_list": [],
+   "min_clearance": 0.005003036881741956,
+   "depth_rms": 0.024724967681812995
+  },
+  {
+   "mode": "auto",
+   "turbidity": 0.4,
+   "seed": 10,
+   "time_s": 93.1599999999986,
+   "finished": true,
+   "gate_clean": true,
+   "balloon": true,
+   "wrong_balloon": false,
+   "contacts": 0,
+   "contact_list": [],
+   "min_clearance": 0.0038867377106870035,
+   "depth_rms": 0.024731456096214903
+  },
+  {
+   "mode": "auto",
+   "turbidity": 0.4,
+   "seed": 11,
+   "time_s": 93.59999999999852,
+   "finished": true,
+   "gate_clean": true,
+   "balloon": true,
+   "wrong_balloon": false,
+   "contacts": 0,
+   "contact_list": [],
+   "min_clearance": 0.0032824711009834945,
+   "depth_rms": 0.024655421654108212
+  },
+  {
+   "mode": "auto",
+   "turbidity": 0.4,
+   "seed": 12,
+   "time_s": 93.41999999999855,
+   "finished": true,
+   "gate_clean": true,
+   "balloon": true,
+   "wrong_balloon": false,
+   "contacts": 0,
+   "contact_list": [],
+   "min_clearance": 0.0014604286940117922,
+   "depth_rms": 0.024721153389245385
+  },
+  {
+   "mode": "auto",
+   "turbidity": 1.0,
+   "seed": 1,
+   "time_s": 117.53999999999375,
+   "finished": true,
+   "gate_clean": true,
+   "balloon": true,
+   "wrong_balloon": false,
+   "contacts": 5,
+   "contact_list": [
+    [
+     100.1,
+     "maze_wall_left"
+    ],
+    [
+     102.16,
+     "maze_wall_left"
+    ],
+    [
+     102.98,
+     "maze_wall_left"
+    ],
+    [
+     104.36,
+     "maze_wall_left"
+    ],
+    [
+     105.88,
+     "maze_wall_left"
+    ]
+   ],
+   "min_clearance": -0.02498601663669007,
+   "depth_rms": 0.02212106008718255
+  },
+  {
+   "mode": "auto",
+   "turbidity": 1.0,
+   "seed": 2,
+   "time_s": 116.13999999999403,
+   "finished": true,
+   "gate_clean": true,
+   "balloon": true,
+   "wrong_balloon": false,
+   "contacts": 5,
+   "contact_list": [
+    [
+     66.6,
+     "maze_wall_right"
+    ],
+    [
+     67.6,
+     "maze_wall_right"
+    ],
+    [
+     68.06,
+     "maze_wall_right"
+    ],
+    [
+     71.48,
+     "maze_wall_right"
+    ],
+    [
+     72.9,
+     "maze_wall_right"
+    ]
+   ],
+   "min_clearance": -0.0249591928104844,
+   "depth_rms": 0.02218108638077394
+  },
+  {
+   "mode": "auto",
+   "turbidity": 1.0,
+   "seed": 3,
+   "time_s": 115.2799999999942,
+   "finished": true,
+   "gate_clean": true,
+   "balloon": true,
+   "wrong_balloon": false,
+   "contacts": 0,
+   "contact_list": [],
+   "min_clearance": 0.0034732446187761626,
+   "depth_rms": 0.022331363238355564
+  },
+  {
+   "mode": "auto",
+   "turbidity": 1.0,
+   "seed": 4,
+   "time_s": 116.07999999999404,
+   "finished": true,
+   "gate_clean": true,
+   "balloon": true,
+   "wrong_balloon": false,
+   "contacts": 0,
+   "contact_list": [],
+   "min_clearance": 0.004508554226249573,
+   "depth_rms": 0.02208239307403441
+  },
+  {
+   "mode": "auto",
+   "turbidity": 1.0,
+   "seed": 5,
+   "time_s": 116.59999999999394,
+   "finished": true,
+   "gate_clean": true,
+   "balloon": true,
+   "wrong_balloon": false,
+   "contacts": 1,
+   "contact_list": [
+    [
+     91.9,
+     "obstacle_2"
+    ]
+   ],
+   "min_clearance": -0.0026374536510508154,
+   "depth_rms": 0.022225307206062764
+  },
+  {
+   "mode": "auto",
+   "turbidity": 1.0,
+   "seed": 6,
+   "time_s": 114.91999999999427,
+   "finished": true,
+   "gate_clean": true,
+   "balloon": true,
+   "wrong_balloon": false,
+   "contacts": 0,
+   "contact_list": [],
+   "min_clearance": 0.006312877335281998,
+   "depth_rms": 0.022315484924732704
+  },
+  {
+   "mode": "auto",
+   "turbidity": 1.0,
+   "seed": 7,
+   "time_s": 116.21999999999402,
+   "finished": true,
+   "gate_clean": true,
+   "balloon": true,
+   "wrong_balloon": false,
+   "contacts": 0,
+   "contact_list": [],
+   "min_clearance": 0.0031037354350217407,
+   "depth_rms": 0.022200874261387303
+  },
+  {
+   "mode": "auto",
+   "turbidity": 1.0,
+   "seed": 8,
+   "time_s": 115.57999999999414,
+   "finished": true,
+   "gate_clean": true,
+   "balloon": true,
+   "wrong_balloon": false,
+   "contacts": 0,
+   "contact_list": [],
+   "min_clearance": 0.0022561277949707803,
+   "depth_rms": 0.022375811861981797
+  },
+  {
+   "mode": "auto",
+   "turbidity": 1.0,
+   "seed": 9,
+   "time_s": 119.51999999999336,
+   "finished": true,
+   "gate_clean": true,
+   "balloon": true,
+   "wrong_balloon": false,
+   "contacts": 4,
+   "contact_list": [
+    [
+     70.48,
+     "maze_wall_left"
+    ],
+    [
+     71.7,
+     "maze_wall_left"
+    ],
+    [
+     73.02,
+     "maze_wall_left"
+    ],
+    [
+     74.2,
+     "maze_wall_left"
+    ]
+   ],
+   "min_clearance": -0.02490307737577411,
+   "depth_rms": 0.02193415651623368
+  },
+  {
+   "mode": "auto",
+   "turbidity": 1.0,
+   "seed": 10,
+   "time_s": 118.05999999999365,
+   "finished": true,
+   "gate_clean": true,
+   "balloon": true,
+   "wrong_balloon": false,
+   "contacts": 2,
+   "contact_list": [
+    [
+     67.14,
+     "maze_wall_right"
+    ],
+    [
+     68.78,
+     "maze_wall_right"
+    ]
+   ],
+   "min_clearance": -0.024908916576353392,
+   "depth_rms": 0.021954495539612037
+  },
+  {
+   "mode": "auto",
+   "turbidity": 1.0,
+   "seed": 11,
+   "time_s": 118.89999999999348,
+   "finished": true,
+   "gate_clean": true,
+   "balloon": true,
+   "wrong_balloon": false,
+   "contacts": 0,
+   "contact_list": [],
+   "min_clearance": 0.0011611638739865843,
+   "depth_rms": 0.021794737920621244
+  },
+  {
+   "mode": "auto",
+   "turbidity": 1.0,
+   "seed": 12,
+   "time_s": 115.55999999999415,
+   "finished": true,
+   "gate_clean": true,
+   "balloon": true,
+   "wrong_balloon": false,
+   "contacts": 3,
+   "contact_list": [
+    [
+     67.28,
+     "maze_wall_right"
+    ],
+    [
+     72.94,
+     "maze_wall_right"
+    ],
+    [
+     90.88,
+     "obstacle_2"
+    ]
+   ],
+   "min_clearance": -0.024988715778155625,
+   "depth_rms": 0.02212288879326534
+  }
+ ],
+ "summary": {
+  "manual_0.05": {
+   "n": 12,
+   "finished": 12,
+   "gate_clean": 12,
+   "balloon": 12,
+   "wrong_balloon": 0,
+   "contacts_mean": 0.9166666666666666,
+   "contacts_std": 0.6400954789890507,
+   "clean_runs": 3,
+   "penalty_mean": 4.583333333333333,
+   "time_mean": 96.12499999999801,
+   "time_std": 0.32063738605049225,
+   "depth_rms_mean": 0.03364551261008588,
+   "min_clearance_mean": -0.00514368324777768
+  },
+  "manual_0.4": {
+   "n": 12,
+   "finished": 12,
+   "gate_clean": 12,
+   "balloon": 12,
+   "wrong_balloon": 0,
+   "contacts_mean": 0.9166666666666666,
+   "contacts_std": 0.759202798262025,
+   "clean_runs": 4,
+   "penalty_mean": 4.583333333333333,
+   "time_mean": 101.53833333333029,
+   "time_std": 1.1959224705452216,
+   "depth_rms_mean": 0.032888533817663275,
+   "min_clearance_mean": -0.0025219218073760236
+  },
+  "manual_1.0": {
+   "n": 12,
+   "finished": 12,
+   "gate_clean": 12,
+   "balloon": 12,
+   "wrong_balloon": 0,
+   "contacts_mean": 6.833333333333333,
+   "contacts_std": 3.912231531435167,
+   "clean_runs": 2,
+   "penalty_mean": 34.166666666666664,
+   "time_mean": 135.67166666666228,
+   "time_std": 2.5361579647626056,
+   "depth_rms_mean": 0.02971403812212252,
+   "min_clearance_mean": -0.019993802169858462
+  },
+  "assist_0.05": {
+   "n": 12,
+   "finished": 12,
+   "gate_clean": 12,
+   "balloon": 12,
+   "wrong_balloon": 0,
+   "contacts_mean": 0.4166666666666667,
+   "contacts_std": 0.4930066485916347,
+   "clean_runs": 7,
+   "penalty_mean": 2.0833333333333335,
+   "time_mean": 94.25833333333172,
+   "time_std": 0.22897719440052255,
+   "depth_rms_mean": 0.024664398134030402,
+   "min_clearance_mean": 0.0032454261600295283
+  },
+  "assist_0.4": {
+   "n": 12,
+   "finished": 12,
+   "gate_clean": 12,
+   "balloon": 12,
+   "wrong_balloon": 0,
+   "contacts_mean": 0.3333333333333333,
+   "contacts_std": 0.4714045207910317,
+   "clean_runs": 8,
+   "penalty_mean": 1.6666666666666665,
+   "time_mean": 98.48999999999755,
+   "time_std": 0.9795747376623618,
+   "depth_rms_mean": 0.024101860324241484,
+   "min_clearance_mean": 0.0008549525045298688
+  },
+  "assist_1.0": {
+   "n": 12,
+   "finished": 12,
+   "gate_clean": 12,
+   "balloon": 12,
+   "wrong_balloon": 0,
+   "contacts_mean": 5.916666666666667,
+   "contacts_std": 4.768967975941499,
+   "clean_runs": 1,
+   "penalty_mean": 29.583333333333336,
+   "time_mean": 130.67333333332655,
+   "time_std": 2.9336249855022407,
+   "depth_rms_mean": 0.020950261609865583,
+   "min_clearance_mean": -0.01844703177834314
+  },
+  "auto_0.05": {
+   "n": 12,
+   "finished": 12,
+   "gate_clean": 12,
+   "balloon": 12,
+   "wrong_balloon": 0,
+   "contacts_mean": 0.0,
+   "contacts_std": 0.0,
+   "clean_runs": 12,
+   "penalty_mean": 0.0,
+   "time_mean": 92.2449999999988,
+   "time_std": 0.04406434688799885,
+   "depth_rms_mean": 0.02491697153019222,
+   "min_clearance_mean": 0.0035046671607941705
+  },
+  "auto_0.4": {
+   "n": 12,
+   "finished": 12,
+   "gate_clean": 12,
+   "balloon": 12,
+   "wrong_balloon": 0,
+   "contacts_mean": 0.08333333333333333,
+   "contacts_std": 0.2763853991962833,
+   "clean_runs": 11,
+   "penalty_mean": 0.41666666666666663,
+   "time_mean": 93.38666666666522,
+   "time_std": 0.18481221700835138,
+   "depth_rms_mean": 0.02475725742608266,
+   "min_clearance_mean": 0.003514647655632778
+  },
+  "auto_1.0": {
+   "n": 12,
+   "finished": 12,
+   "gate_clean": 12,
+   "balloon": 12,
+   "wrong_balloon": 0,
+   "contacts_mean": 1.6666666666666667,
+   "contacts_std": 1.9720265943665387,
+   "clean_runs": 6,
+   "penalty_mean": 8.333333333333334,
+   "time_mean": 116.6999999999939,
+   "time_std": 1.414944050719275,
+   "depth_rms_mean": 0.022136638317020275,
+   "min_clearance_mean": -0.00888063912868513
+  }
+ },
+ "contact_penalty": 5
+}

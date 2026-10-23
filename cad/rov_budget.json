@@ -1,0 +1,428 @@
+{
+ "mass_kg": 9.97543381232778,
+ "displaced_m3": 0.010179307410696791,
+ "net_buoyancy_n": 2.0,
+ "cg_m": [
+  0.0030149543636450965,
+  -0.0025393620633034878
+ ],
+ "cb_m": [
+  0.003014954363645097,
+  0.04246063793669651
+ ],
+ "bg_m": 0.045,
+ "trim_offset_m": -4.336808689942018e-19,
+ "foam_l": 2.312424866124673,
+ "ballast_kg": 1.050602409920375,
+ "size_m": [
+  0.6,
+  0.44,
+  0.33
+ ],
+ "size_bonus": true,
+ "mass_limit_ok": true,
+ "mass_bonus": true,
+ "thrust_max_n": 30.0,
+ "arms": [
+  0.215,
+  0.15,
+  0.13,
+  0.17
+ ],
+ "envelope_n": {
+  "surge": {
+   "full": 84.8528137423857,
+   "one_lost": 42.42640687119285
+  },
+  "sway": {
+   "full": 84.8528137423857,
+   "one_lost": 42.42640687119285
+  },
+  "heave": {
+   "full": 120.0,
+   "one_lost": 60.0
+  },
+  "yaw": {
+   "full": 5.515432893255073,
+   "one_lost": 2.7577164466275366
+  }
+ },
+ "surge_speed_full": 0.7309542414611085,
+ "surge_speed_one_lost": 0.5037028927844299,
+ "sway_speed_full": 0.4787906055081258,
+ "heave_speed_full": 0.7107730128266316,
+ "ops_speed": 0.35,
+ "ops_force_n": 31.347068812050665,
+ "tether_trail_m": 8.0,
+ "ops_margin_one_lost": 1.3534409588842637,
+ "tether": {
+  "loop_resistance_ohm": 0.344,
+  "hotel_w": 44.0,
+  "peak_thruster_w": 969.8081388669066,
+  "uncapped_input_w": 1078.519296666922,
+  "peak_input_w": 800.0,
+  "thrust_all_eight_at_cap_n": 24.323134621786572,
+  "deliverable_w_at_floor": 1255.8139534883721,
+  "peak_current_a": 19.350038630979537,
+  "peak_vin_v": 41.34358671094304,
+  "peak_tether_loss_w": 128.80185428701773,
+  "fuse_a": 25,
+  "supply_a": 23,
+  "supply_w": 1200,
+  "ethernet_ok": true
+ },
+ "dynamics": {
+  "mass": 9.97543381232778,
+  "volume": 0.010179307410696791,
+  "r_b": [
+   0.0,
+   0.0,
+   0.045
+  ],
+  "inertia": [
+   0.17602484248003397,
+   0.2728530533516956,
+   0.3221400092461051
+  ],
+  "added_mass": [
+   4.760323171472912,
+   5.329166820894203,
+   13.981578119986477,
+   0.11661668013098425,
+   0.08329762866498876,
+   0.13697832269353705
+  ],
+  "lin_damp": [
+   13.620267031838411,
+   0.0,
+   33.15383883550567,
+   0.0,
+   1.0977882632652225,
+   0.0
+  ],
+  "quad_damp": [
+   140.1793906196508,
+   370.14765933251783,
+   190.8857387498811,
+   1.6329600416070185,
+   0.6449506046683182,
+   2.058352993622292
+  ]
+ },
+ "groups": {
+  "frame": 3.4859160000000005,
+  "hull": 1.494548667133691,
+  "electronics": 1.49,
+  "propulsion": 1.6199999999999999,
+  "payload": 0.38,
+  "safety": 0.05,
+  "tether": 0.15,
+  "buoyancy": 1.304969145194089
+ },
+ "parts": [
+  {
+   "name": "side plate port",
+   "mass": 1.172358,
+   "vol": 0.0012276,
+   "x": 0.0,
+   "z": 0.0,
+   "group": "frame"
+  },
+  {
+   "name": "side plate stbd",
+   "mass": 1.172358,
+   "vol": 0.0012276,
+   "x": 0.0,
+   "z": 0.0,
+   "group": "frame"
+  },
+  {
+   "name": "cross member",
+   "mass": 0.15280000000000002,
+   "vol": 0.00016,
+   "x": 0.22,
+   "z": 0.12,
+   "group": "frame"
+  },
+  {
+   "name": "cross member",
+   "mass": 0.15280000000000002,
+   "vol": 0.00016,
+   "x": -0.22,
+   "z": 0.12,
+   "group": "frame"
+  },
+  {
+   "name": "cross member",
+   "mass": 0.15280000000000002,
+   "vol": 0.00016,
+   "x": 0.22,
+   "z": -0.13,
+   "group": "frame"
+  },
+  {
+   "name": "cross member",
+   "mass": 0.15280000000000002,
+   "vol": 0.00016,
+   "x": -0.22,
+   "z": -0.13,
+   "group": "frame"
+  },
+  {
+   "name": "fasteners, A4 stainless",
+   "mass": 0.35,
+   "vol": 4.375e-05,
+   "x": 0.0,
+   "z": 0.0,
+   "group": "frame"
+  },
+  {
+   "name": "hull tube, cast acrylic",
+   "mass": 0.726763478110848,
+   "vol": 0.003062110359453971,
+   "x": 0.03,
+   "z": 0.04,
+   "group": "hull"
+  },
+  {
+   "name": "end cap, rear, 8 penetrators",
+   "mass": 0.28693246413108414,
+   "vol": 0.00010627128301151265,
+   "x": -0.128,
+   "z": 0.04,
+   "group": "hull"
+  },
+  {
+   "name": "end cap, front, port ring",
+   "mass": 0.2008527248917589,
+   "vol": 7.438989810805885e-05,
+   "x": 0.188,
+   "z": 0.04,
+   "group": "hull"
+  },
+  {
+   "name": "front port, 10 mm acrylic",
+   "mass": 0.1,
+   "vol": 8.403361344537815e-05,
+   "x": 0.198,
+   "z": 0.04,
+   "group": "hull"
+  },
+  {
+   "name": "o-rings, penetrators, vent",
+   "mass": 0.18,
+   "vol": 0.0,
+   "x": -0.13,
+   "z": 0.04,
+   "group": "hull"
+  },
+  {
+   "name": "flight computer, Raspberry Pi 5",
+   "mass": 0.07,
+   "vol": 0.0,
+   "x": 0.08,
+   "z": 0.025,
+   "group": "electronics"
+  },
+  {
+   "name": "actuator interface, ESP32",
+   "mass": 0.02,
+   "vol": 0.0,
+   "x": 0.009999999999999998,
+   "z": 0.025,
+   "group": "electronics"
+  },
+  {
+   "name": "IMU",
+   "mass": 0.01,
+   "vol": 0.0,
+   "x": 0.03,
+   "z": 0.025,
+   "group": "electronics"
+  },
+  {
+   "name": "camera module and lens",
+   "mass": 0.03,
+   "vol": 0.0,
+   "x": 0.16,
+   "z": 0.025,
+   "group": "electronics"
+  },
+  {
+   "name": "48 to 16 V converters, two",
+   "mass": 0.52,
+   "vol": 0.0,
+   "x": -0.05,
+   "z": 0.025,
+   "group": "electronics"
+  },
+  {
+   "name": "ESCs, eight",
+   "mass": 0.24,
+   "vol": 0.0,
+   "x": -0.010000000000000002,
+   "z": 0.025,
+   "group": "electronics"
+  },
+  {
+   "name": "power distribution, fuses, relay",
+   "mass": 0.2,
+   "vol": 0.0,
+   "x": -0.07,
+   "z": 0.025,
+   "group": "electronics"
+  },
+  {
+   "name": "ethernet interface and wiring",
+   "mass": 0.25,
+   "vol": 0.0,
+   "x": 0.03,
+   "z": 0.025,
+   "group": "electronics"
+  },
+  {
+   "name": "tray, printed",
+   "mass": 0.15,
+   "vol": 0.0,
+   "x": 0.03,
+   "z": 0.025,
+   "group": "electronics"
+  },
+  {
+   "name": "thruster, horizontal",
+   "mass": 0.17,
+   "vol": 8.5e-05,
+   "x": 0.215,
+   "z": -0.06,
+   "group": "propulsion"
+  },
+  {
+   "name": "thruster, horizontal",
+   "mass": 0.17,
+   "vol": 8.5e-05,
+   "x": 0.215,
+   "z": -0.06,
+   "group": "propulsion"
+  },
+  {
+   "name": "thruster, horizontal",
+   "mass": 0.17,
+   "vol": 8.5e-05,
+   "x": -0.215,
+   "z": -0.06,
+   "group": "propulsion"
+  },
+  {
+   "name": "thruster, horizontal",
+   "mass": 0.17,
+   "vol": 8.5e-05,
+   "x": -0.215,
+   "z": -0.06,
+   "group": "propulsion"
+  },
+  {
+   "name": "thruster, vertical",
+   "mass": 0.17,
+   "vol": 8.5e-05,
+   "x": 0.13,
+   "z": 0.1,
+   "group": "propulsion"
+  },
+  {
+   "name": "thruster, vertical",
+   "mass": 0.17,
+   "vol": 8.5e-05,
+   "x": 0.13,
+   "z": 0.1,
+   "group": "propulsion"
+  },
+  {
+   "name": "thruster, vertical",
+   "mass": 0.17,
+   "vol": 8.5e-05,
+   "x": -0.13,
+   "z": 0.1,
+   "group": "propulsion"
+  },
+  {
+   "name": "thruster, vertical",
+   "mass": 0.17,
+   "vol": 8.5e-05,
+   "x": -0.13,
+   "z": 0.1,
+   "group": "propulsion"
+  },
+  {
+   "name": "lamp, 15 W LED, two",
+   "mass": 0.24,
+   "vol": 0.00016,
+   "x": 0.27,
+   "z": -0.02,
+   "group": "payload"
+  },
+  {
+   "name": "depth and temperature sensor",
+   "mass": 0.02,
+   "vol": 1e-05,
+   "x": -0.1,
+   "z": 0.0,
+   "group": "payload"
+  },
+  {
+   "name": "touch probe and bumper",
+   "mass": 0.12,
+   "vol": 8e-05,
+   "x": 0.29,
+   "z": -0.06,
+   "group": "payload"
+  },
+  {
+   "name": "external kill switch",
+   "mass": 0.05,
+   "vol": 2e-05,
+   "x": -0.2,
+   "z": 0.15,
+   "group": "safety"
+  },
+  {
+   "name": "tether termination, strain relief",
+   "mass": 0.15,
+   "vol": 5e-05,
+   "x": -0.29,
+   "z": 0.05,
+   "group": "tether"
+  },
+  {
+   "name": "thruster cables, eight",
+   "mass": 0.26,
+   "vol": 0.00012,
+   "x": 0.0,
+   "z": 0.0,
+   "group": "propulsion"
+  },
+  {
+   "name": "skids, HDPE",
+   "mass": 0.18,
+   "vol": 0.00018848167539267015,
+   "x": 0.0,
+   "z": -0.16,
+   "group": "frame"
+  },
+  {
+   "name": "buoyancy foam, closed cell",
+   "mass": 0.254366735273714,
+   "vol": 0.002312424866124673,
+   "x": -0.0540966313761893,
+   "z": 0.145,
+   "group": "buoyancy"
+  },
+  {
+   "name": "trim ballast, lead",
+   "mass": 1.050602409920375,
+   "vol": 9.26457151605269e-05,
+   "x": 0.0,
+   "z": -0.15,
+   "group": "buoyancy"
+  }
+ ]
+}
