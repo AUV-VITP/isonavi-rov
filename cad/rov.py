@@ -245,7 +245,7 @@ def tether():
         "peak_tether_loss_w": i_peak ** 2 * r_loop,
         "fuse_a": int(math.ceil(i_peak * 1.25 / 5.0) * 5),
         "supply_a": V_SUPPLY and int(math.ceil(i_peak * 1.15)),
-        "supply_w": int(math.ceil(V_SUPPLY * i_peak * 1.2 / 100) * 100),
+        "supply_w": int(math.ceil(V_SUPPLY * i_peak * 1.05 / 100) * 100),   # output at the governed peak, 5 % headroom
         "ethernet_ok": bool(TETHER_LEN + 5 <= 100),
     }
 

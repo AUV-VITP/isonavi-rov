@@ -68,7 +68,7 @@
   "peak_tether_loss_w": 128.80185428701773,
   "fuse_a": 25,
   "supply_a": 23,
-  "supply_w": 1200,
+  "supply_w": 1000,
   "ethernet_ok": true
  },
  "dynamics": {
