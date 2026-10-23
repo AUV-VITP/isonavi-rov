@@ -2,13 +2,13 @@
  "rows": [
   {
    "group": "propulsion",
-   "item": "BLDC outrunner, 3536 class, 1000 KV",
+   "item": "BLDC outrunner, 3536 class, 750 KV",
    "qty": 8,
    "unit_inr": 1690,
    "cost_inr": 13520,
    "basis": "market",
    "in_house": false,
-   "reason": "runs flooded; epoxy potted stator, stainless bearings"
+   "reason": "KV matched to the propeller in thruster.py; runs flooded, potted stator"
   },
   {
    "group": "propulsion",

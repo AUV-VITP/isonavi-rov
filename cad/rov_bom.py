@@ -23,8 +23,8 @@ USD_INR = 95.64            # mid-market, 24 August 2026, as in the isonavi budge
 # group, item, qty, unit INR, basis, made in house, reason
 LINES = [
     # Propulsion: eight thrusters built in house around a hobby outrunner.
-    ("propulsion", "BLDC outrunner, 3536 class, 1000 KV", 8, 1690, "market", False,
-     "runs flooded; epoxy potted stator, stainless bearings"),
+    ("propulsion", "BLDC outrunner, 3536 class, 750 KV", 8, 1690, "market", False,
+     "KV matched to the propeller in thruster.py; runs flooded, potted stator"),
     ("propulsion", "bidirectional ESC, 30 A, 2 to 4S", 8, 844, "market", False,
      "reversible thrust for the vectored layout"),
     ("propulsion", "duct, propeller and mount, printed PETG", 8, 300, "estimate", True,

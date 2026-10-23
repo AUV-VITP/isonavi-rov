@@ -88,6 +88,7 @@ degree 3/2 in thrust; all eight together still make 24.3 N each.
 | `simulation/isonavi/safety.py` | Power governor and the latching supervisor |
 | `simulation/isonavi/dynamics.py` | isonavi-rov preset, read from the solved budget; external wrench input |
 | `cad/rov.py` | Mass, buoyancy and trim solve, size check, thrust envelope with a unit lost, tether, fuse |
+| `cad/thruster.py` | Motor KV matched to the propeller at the bench thrust point |
 | `cad/rov_bom.py` | Bill of materials in rupees with the basis of every price and what is made in house |
 | `ros/isonavi_rov_ros/` | ROS 2 nodes: pilot, safety, actuator, vision, and a launch file |
 | `hil/` | Flight computer and ESP32 actuator interface, validated on hardware for isonavi |
@@ -111,11 +112,19 @@ end caps, the frame, the buoyancy, the lamp housings, the kill switch, the
 tether floats and the thrust rig: 12 of 34 lines. The bench thrust target is
 30 N per unit, checked on the rig before a thruster is fitted.
 
+The motor is matched to the propeller rather than picked by habit
+(`cad/thruster.py`). A 76 mm ducted propeller makes 30 N at about 2850 rpm,
+so a 1000 KV winding would carry 27.4 A of phase current, past 80 % of its
+30 A controller. The 750 KV winding carries 20.5 A and draws 114 W at the
+bench point, and its motor and propeller efficiencies together reproduce
+the 0.45 drive efficiency the power path was sized on.
+
 ## Running it
 
 ```bash
 cd cad
 python rov.py                                   # vehicle budget, envelope, tether, fuse
+python thruster.py                              # motor and propeller match
 python rov_bom.py                               # bill of materials
 
 cd ../simulation
