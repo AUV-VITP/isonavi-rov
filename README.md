@@ -1,6 +1,6 @@
 # isonavi-rov
 
-isonavi as a tethered, piloted vehicle for confined water: a 10 kg, 60 cm
+isonavi as a tethered, piloted vehicle for confined water: a 10.5 kg, 60 cm
 open frame ROV that threads a 1 m gate, finds and touches a coloured target in
 an unlit pool by its own light, and flies a walled maze without touching it.
 It keeps the isonavi engines (ray casting, 6-DOF dynamics, the eight thruster
@@ -14,32 +14,36 @@ Operator console of one run, onboard camera beside the track:
 
 | isonavi-1 | isonavi-rov | Reason |
 | --- | --- | --- |
-| Autonomous survey | Piloted over a 50 m tether, with assist and vision modes | A person flies it; the assist and vision loops are what cut contacts |
-| 28 kg, 1074 mm faired hull, fins | 9.98 kg, 60 x 44 x 33 cm open frame | No current to fight; a small box clears a 1 m corridor |
+| Autonomous survey | Piloted over a 50 m tether, with assist and vision modes | A person flies it; the assist cuts contacts in clear water, camera centring in murky water |
+| 28 kg, 1074 mm faired hull, fins | 10.49 kg, 66 x 44 x 33 cm open frame, probe included | No current to fight; a small box clears a 1 m corridor |
 | 50 m pressure rating, ring frames | One acrylic housing, 2 m water | Pool depth is under 2 m |
 | Forward-looking sonar and DVL | Camera and two lamps, IMU, depth | The targets are identified by colour, in the dark |
 | 1.5 kWh battery aboard | 48 V down the tether from a 230 V supply, no battery | Removes the battery and its leak risk from the vehicle |
 | Mission state machine | Pilot assist, power governor, safety supervisor, ROS 2 | The vehicle must stop safely on a kill, a leak or a lost link |
 
 The river survey stack (`acoustics.py`, `scene.py`, `mapping.py`, the
-learned sonar perception and `docs/`) is unchanged and still runs. The
-documents in `docs/` describe isonavi-1.
+learned sonar perception) and the isonavi-1 documents in `docs/` are
+unchanged and still run. The ROV report is `docs/isonavi_rov_report.tex`.
 
 ## Headline results
 
-Pilot-in-the-loop course runs, 12 seeds per cell, in three water clarities
-(scattering coefficient b). Every run in every cell finished the course,
-passed the gate clean and touched the right target.
+Pilot-in-the-loop course runs on the reference layout, 20 seeds per cell, in
+three water clarities (scattering coefficient b). Every run finished and
+touched the right target. Contacts per run:
 
-| Mode | Contacts, b = 0.05 /m | b = 0.4 /m | b = 1.0 /m | Time at b = 1.0 /m |
-| --- | --- | --- | --- | --- |
-| manual | 0.92 +/- 0.64 | 0.92 +/- 0.76 | 6.83 +/- 3.91 | 135.7 s |
-| assist (depth, heading, attitude hold) | 0.42 +/- 0.49 | 0.33 +/- 0.47 | 5.42 +/- 4.35 | 130.6 s |
-| auto (vision in the lateral loop) | 0.08 +/- 0.28 | 0.08 +/- 0.28 | 1.50 +/- 1.71 | 116.6 s |
+| Mode | b = 0.05 /m | b = 0.4 /m | b = 1.0 /m |
+| --- | --- | --- | --- |
+| manual | 0.50 +/- 0.67 | 0.70 +/- 0.84 | 8.60 +/- 5.94 |
+| assist (depth, heading, attitude hold) | 0.20 +/- 0.51 | 0.55 +/- 0.67 | 4.80 +/- 4.66 |
+| camera centring in the lateral loop | 3.05 +/- 1.24 | 3.00 +/- 0.63 | 3.00 +/- 0.71 |
+
+The camera mode is the best of the three in murky water and the worst in
+clear water, so it is a switch the pilot throws, not the default. Forty random
+layouts per cell give the same ordering (`docs/isonavi_rov_report.tex`).
 
 | Vehicle | |
 | --- | --- |
-| Mass, envelope | 9.98 kg, 60 x 44 x 33 cm |
+| Mass, envelope | 10.49 kg, 66 x 44 x 33 cm |
 | Net buoyancy, BG, trim | +2.00 N, 45 mm, level |
 | Surge force, all units / one lost | 84.9 N / 42.4 N |
 | Speed, all units / one lost | 0.73 m/s / 0.50 m/s |
@@ -47,28 +51,32 @@ passed the gate clean and touched the right target.
 | Tether loop resistance | 0.344 ohm |
 | Governed input, peak current, voltage aboard | 800 W, 19.4 A, 41.3 V |
 | Surface supply, main fuse | 48 V 1000 W, 25 A |
-| Unpowered rise from 1.6 m | 30 s |
-| Target colour identified, lamps 0.2 m off axis | to 2.0 m at b = 0.05, 1.5 m at b = 0.4, 1.0 m at b = 1.0 |
-| Cost, vehicle / with tether and surface station / total | ₹73,822 / ₹1,14,179 / ₹1,37,037 |
+| Link loss to zero thrust, rise in hold | 0.52 s, 0.42 m |
+| Target colour identified, lamps as built | all to 2.0 m at b = 0.05, 78 % at 1.5 m at b = 0.4, all to 1.0 m at b = 1.0 |
+| Cost, vehicle / with tether and surface station / total | Rs 73,872 / Rs 1,14,229 / Rs 1,37,092 |
 
 ## What the simulation decided
 
-**Lateral perception, not depth, is what costs contacts in murky water.**
-Depth and heading hold halve contacts in clear water but barely help at
-b = 1.0 /m, because the pilot's read of the corridor degrades with the two
-way attenuation of the vehicle's own light. Closing the lateral loop on the
-camera (`auto`) is the change that holds up: 1.5 contacts against 6.8.
+**In murky water the pilot's read fails; in clear water the camera's does.**
+Depth and heading hold cut contacts in clear and turbid water, but at
+b = 1.0 /m the pilot's read of the corridor degrades with the two way
+attenuation of the vehicle's own light, and contacts rise to 8.60 +/- 5.94.
+Centring on the camera holds about three contacts at every clarity, because
+its error comes from the estimator, not the water. The three are at the first
+two slalom posts, where the gap leaves 142 mm a side and the wall estimate,
+disturbed by the posts, errs by 92 mm RMS. Blending the camera with the
+pilot's stick by their errors is the next change.
 
 **Colour goes before the target does.** Red is absorbed several times faster
 than blue, and the lamps light the water in front of the lens. Undoing the
 water using range from the target's known size beats a fixed threshold at the
 edge of the envelope (0.75 against 0.50 at 2.5 m in clear water), but the
 hard limit is signal against backscatter. The rule that follows: close to
-1 m before committing to a colour.
+1 m before committing to a colour; every run touched the right target.
 
-**Lamps belong 0.2 m off the lens axis.** At b = 0.4 /m and 1.5 m, lamps
-0.10 m off axis identify 69 % of targets; 0.20 m or more identify all of
-them. The 44 cm beam has room for that.
+**Lamps belong well off the lens axis.** At b = 0.4 /m and 1.5 m, lamps
+0.10 m off axis identify 41 % of targets; at 0.18 m, as built, 78 %. The
+44 cm beam has room for that.
 
 **The tether is a third of the load.** At 0.35 m/s, 8 m of trailing tether
 adds 9.4 N to the frame's 21.9 N. Sized against that with one unit lost, a
@@ -86,15 +94,17 @@ degree 3/2 in thrust; all eight together still make 24.3 N each.
 | --- | --- |
 | `simulation/isonavi/pool.py` | Pool arena: sloping floor, gate, coloured targets, three section maze; contact model |
 | `simulation/isonavi/optics.py` | Camera image formation under the vehicle's lamps: attenuation per channel, backscatter integrated per ray, sensor noise |
-| `simulation/isonavi/vision.py` | Target finder: veil removal, blobs, range from size, attenuation correction, colour |
+| `simulation/isonavi/vision.py` | Target finder (veil removal, blobs, range from size, attenuation correction, colour) and course estimators (posts, walls, target) |
 | `simulation/isonavi/pilot.py` | Operator model, assist controller, scored course run with tether drag |
 | `simulation/isonavi/safety.py` | Power governor and the latching supervisor |
 | `simulation/isonavi/dynamics.py` | isonavi-rov preset, read from the solved budget; external wrench input |
 | `cad/rov.py` | Mass, buoyancy and trim solve, size check, thrust envelope with a unit lost, tether, fuse |
+| `cad/rov_cad.py` | CadQuery assembly from the budget, with volume, envelope, clearance and interference checks |
 | `cad/thruster.py` | Motor KV matched to the propeller at the bench thrust point |
 | `cad/rov_bom.py` | Bill of materials in rupees with the basis of every price and what is made in house |
 | `ros/isonavi_rov_ros/` | ROS 2 nodes: pilot, safety, actuator, vision, and a launch file |
-| `hil/` | Flight computer and ESP32 actuator interface, validated on hardware for isonavi |
+| `hil/` | Flight computer and ESP32 actuator interface, validated on hardware for isonavi; ROV bench over the same link |
+| `docs/isonavi_rov_report.tex` | Technical report; every number from `simulation/eval/make_rov_metrics.py` |
 
 ## Safety chain
 
@@ -133,17 +143,22 @@ python rov_bom.py                               # bill of materials
 cd ../simulation
 PYTHONPATH=. python tests/smoke_rov.py          # arena, camera, vision, pilot, safety
 PYTHONPATH=. python eval/run_trials.py          # course runs by mode and water clarity
+PYTHONPATH=. python eval/vision_calibrate.py    # course estimator fit and held-out error
 PYTHONPATH=. python eval/vision_eval.py         # identification by range, clarity, lamp placement
 PYTHONPATH=. python eval/rov_figures.py         # figures
 PYTHONPATH=. python eval/make_rov_video.py      # operator console video of one run
 
-bash ../ros/test_chain.sh                       # ROS 2 build and chain test, under Jazzy
+cd ..
+python hil/test_rov_loopback.py                 # vehicle software over the link, link loss, kill
+bash docs/build.sh                              # reports, and the check that README numbers match
+bash ros/test_chain.sh                          # ROS 2 build and chain test, under Jazzy
 ```
 
 ## Status
 
-Vehicle budget, power path, pilot model, vision and safety chain are complete
-and verified in simulation, and the ROS 2 layer runs end to end. The actuator
+Vehicle budget, CAD, power path, pilot model, vision and safety chain are
+complete and verified in simulation; the vehicle software reproduces the
+simulation over the link on the bench, and the ROS 2 layer runs end to end. The actuator
 interface and the flight computer pattern carry over from isonavi, where they
 were validated on hardware. The course geometry is parametric and set to
 representative values; element sizes and spacing go in `ArenaConfig`. Next is

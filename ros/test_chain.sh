@@ -19,14 +19,29 @@ ros2 topic pub -r 20 depth std_msgs/msg/Float64 "{data: 0.8}" > /dev/null &
 ros2 topic pub -r 50 imu sensor_msgs/msg/Imu "{orientation: {w: 1.0}}" > /dev/null &
 ros2 topic pub -r 20 joy sensor_msgs/msg/Joy "{axes: [0.0, 0.5, 0.0, 0.0, 0.0]}" > /dev/null &
 JOY=$!
-sleep 6
+sleep 9
 echo "live link:"
-timeout 5 ros2 topic echo --once safety_state | head -1
-timeout 5 ros2 topic echo --once pwm_us | head -12 | tr '\n' ' '; echo
+timeout 12 ros2 topic echo --once safety_state | head -1
+timeout 12 ros2 topic echo --once pwm_us | head -12 | tr '\n' ' '; echo
 kill $JOY
 sleep 2
 echo "after joystick silence:"
-timeout 5 ros2 topic echo --once safety_state | head -1
-timeout 5 ros2 topic echo --once pwm_us | head -12 | tr '\n' ' '; echo
+timeout 12 ros2 topic echo --once safety_state | head -1
+timeout 12 ros2 topic echo --once pwm_us | head -12 | tr '\n' ' '; echo
+kill $(jobs -p) 2>/dev/null || true
+pkill -f isonavi_rov_ros/lib 2>/dev/null || true
+sleep 1
+
+# Corridor centring: auto mode, button pressed, vehicle 0.15 m left of centre.
+# Expected sway: -k_lat * 0.15 = -8.25 N, back towards the centreline.
+ros2 run isonavi_rov_ros pilot --ros-args -p mode:=auto > /tmp/rov_pilot2.log 2>&1 &
+ros2 topic pub -r 20 depth std_msgs/msg/Float64 "{data: 0.8}" > /dev/null &
+ros2 topic pub -r 50 imu sensor_msgs/msg/Imu "{orientation: {w: 1.0}}" > /dev/null &
+ros2 topic pub -r 5 corridor_offset std_msgs/msg/Float64 "{data: 0.15}" > /dev/null &
+ros2 topic pub -r 20 joy sensor_msgs/msg/Joy "{axes: [0.0, 0.0, 0.0, 0.0, 0.0], buttons: [1]}" > /dev/null &
+sleep 9
+echo "centring engaged, offset 0.15 m:"
+timeout 12 ros2 topic echo --once wrench_cmd | grep -A3 force | tr '
+' ' '; echo
 kill $(jobs -p) 2>/dev/null || true
 pkill -f isonavi_rov_ros/lib 2>/dev/null || true

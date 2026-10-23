@@ -43,6 +43,8 @@ RHO, G = 1000.0, 9.81
 
 # Envelope, metres. Frame plates set L and H, the thruster ducts set B.
 FRAME_L, FRAME_B, FRAME_H = 0.600, 0.440, 0.330
+PROBE_TIP_X, TETHER_END_X = 0.360, -0.300   # the probe and the tether gland stand proud of the frame
+OVERALL_L = PROBE_TIP_X - TETHER_END_X
 SIZE_TARGET = (0.75, 0.65, 0.60)            # envelope target, L B H
 MASS_LIMIT, MASS_TARGET = 35.0, 20.0       # ceiling, and the target the design works to
 
@@ -58,7 +60,7 @@ N_THR = 8
 THRUST_MAX_N = 30.0        # forward, at 16 V, the bench test acceptance figure; reverse held to the same
 PROP_D = 0.076
 DRIVE_ETA = 0.45           # motor, controller and printed propeller together
-ARMS = (0.215, 0.150, 0.130, 0.170)   # lx, ly, vx, vy as in vectored_allocation
+ARMS = (0.215, 0.150, 0.130, 0.155)   # lx, ly, vx, vy; vy set by duct clearance to the plates, see rov_cad.py
 
 # Power path: mains to a surface supply, down the tether, bucked aboard.
 V_SUPPLY = 48.0
@@ -99,7 +101,7 @@ def fixed_parts():
     for s in (+1, -1):
         a(Part(f"side plate {'port' if s > 0 else 'stbd'}", side * HDPE, side,
                (0.0, 0.0), "frame"))
-    cross = 0.40 * 0.040 * 0.010
+    cross = (FRAME_B - 0.020) * 0.040 * 0.010
     for x, z in ((0.22, 0.12), (-0.22, 0.12), (0.22, -0.13), (-0.22, -0.13)):
         a(Part("cross member", cross * HDPE, cross, (x, z), "frame"))
     a(Part("fasteners, A4 stainless", 0.35, 0.35 / 8000, (0.0, 0.0), "frame"))
@@ -109,10 +111,11 @@ def fixed_parts():
     hz, hx = 0.040, 0.030
     a(Part("hull tube, cast acrylic", tube(od, wall, ln) * ACRYLIC,
            math.pi / 4 * od ** 2 * ln, (hx, hz), "hull"))
-    cap = math.pi / 4 * 0.124 ** 2 * 0.016 * 0.55   # pocketed
-    a(Part("end cap, rear, 8 penetrators", cap * AL, cap, (hx - 0.158, hz), "hull"))
-    a(Part("end cap, front, port ring", cap * AL * 0.7, cap * 0.7, (hx + 0.158, hz), "hull"))
-    a(Part("front port, 10 mm acrylic", 0.10, 0.10 / ACRYLIC, (hx + 0.168, hz), "hull"))
+    # Caps displace their full outer disc; the pockets are on the dry side.
+    cap = math.pi / 4 * 0.124 ** 2 * 0.016
+    a(Part("end cap, rear, 8 penetrators", cap * 0.55 * AL, cap, (hx - 0.158, hz), "hull"))
+    a(Part("end cap, front, port ring", cap * 0.55 * 0.7 * AL, cap, (hx + 0.158, hz), "hull"))
+    a(Part("front port, 10 mm acrylic", 0.10, 0.0, (hx + 0.168, hz), "hull"))
     a(Part("o-rings, penetrators, vent", 0.18, 0.0, (hx - 0.16, hz), "hull"))
 
     # Inside the hull: the hull displacement already counts their volume.
@@ -131,18 +134,20 @@ def fixed_parts():
     lx, ly, vx, vy = ARMS
     for x in (+lx, -lx):
         for _ in (0, 1):
-            a(Part("thruster, horizontal", 0.17, 0.000085, (x, -0.06), "propulsion"))
+            a(Part("thruster, horizontal", 0.17, 0.000127, (x, -0.06), "propulsion"))
     for x in (+vx, -vx):
         for _ in (0, 1):
-            a(Part("thruster, vertical", 0.17, 0.000085, (x, 0.10), "propulsion"))
+            a(Part("thruster, vertical", 0.17, 0.000127, (x, 0.10), "propulsion"))
 
-    a(Part("lamp, 15 W LED, two", 0.24, 0.00016, (0.27, -0.02), "payload"))
+    a(Part("lamp, 15 W LED, two", 0.24, 0.000122, (0.23, 0.04), "payload"))
+    a(Part("lamp brackets, two", 0.01, 0.000004, (0.23, 0.04), "payload"))
     a(Part("depth and temperature sensor", 0.02, 0.00001, (-0.10, 0.0), "payload"))
-    a(Part("touch probe and bumper", 0.12, 0.00008, (0.29, -0.06), "payload"))
-    a(Part("external kill switch", 0.05, 0.00002, (-0.20, 0.15), "safety"))
-    a(Part("tether termination, strain relief", 0.15, 0.00005, (-0.29, 0.05), "tether"))
+    a(Part("touch probe and bracket", 0.05, 0.000035, (0.29, -0.07), "payload"))
+    a(Part("external kill switch", 0.05, 0.000014, (-0.22, 0.135), "safety"))
+    a(Part("tether termination, strain relief", 0.15, 0.000028, (-0.28, 0.05), "tether"))
     a(Part("thruster cables, eight", 0.26, 0.00012, (0.0, 0.0), "propulsion"))
-    a(Part("skids, HDPE", 0.18, 0.18 / HDPE, (0.0, -0.16), "frame"))
+    skid = 2 * FRAME_L * 0.95 * 0.020 * 0.020
+    a(Part("skids, HDPE", skid * HDPE, skid, (0.0, -0.155), "frame"))
     return P
 
 
@@ -275,7 +280,7 @@ def main(write=True):
     heave_v = speed_for(env["heave"]["full"], lin[2], quad[2])
 
     tt = tether()
-    size_ok = FRAME_L < SIZE_TARGET[0] and FRAME_B < SIZE_TARGET[1] and FRAME_H < SIZE_TARGET[2]
+    size_ok = OVERALL_L < SIZE_TARGET[0] and FRAME_B < SIZE_TARGET[1] and FRAME_H < SIZE_TARGET[2]
 
     out = {
         "mass_kg": M, "displaced_m3": V,
@@ -284,7 +289,7 @@ def main(write=True):
         "trim_offset_m": float(cg[0] - cb[0]),
         "foam_l": next(p.vol for p in parts if p.group == "buoyancy" and "foam" in p.name) * 1000,
         "ballast_kg": next(p.mass for p in parts if "lead" in p.name),
-        "size_m": [FRAME_L, FRAME_B, FRAME_H], "size_target_met": bool(size_ok),
+        "size_m": [FRAME_L, FRAME_B, FRAME_H], "overall_l_m": OVERALL_L, "size_target_met": bool(size_ok),
         "mass_limit_ok": bool(M <= MASS_LIMIT), "mass_target_met": bool(M < MASS_TARGET),
         "thrust_max_n": THRUST_MAX_N, "arms": list(ARMS),
         "envelope_n": env,
@@ -306,7 +311,8 @@ def main(write=True):
     print("isonavi-rov vehicle budget")
     print(f"  mass {M:6.2f} kg   limit {MASS_LIMIT:.0f} ({'ok' if M <= MASS_LIMIT else 'OVER'}), "
           f"target below {MASS_TARGET:.0f} ({'met' if M < MASS_TARGET else 'missed'})")
-    print(f"  size {FRAME_L*100:.0f} x {FRAME_B*100:.0f} x {FRAME_H*100:.0f} cm, envelope target "
+    print(f"  size {OVERALL_L*100:.0f} x {FRAME_B*100:.0f} x {FRAME_H*100:.0f} cm over the probe "
+          f"(frame {FRAME_L*100:.0f} cm), envelope target "
           f"{'met' if size_ok else 'missed'}")
     print(f"  displaced {V*1000:.2f} L, net buoyancy {out['net_buoyancy_n']:+.2f} N, "
           f"BG {out['bg_m']*1000:.1f} mm, trim offset {out['trim_offset_m']*1000:.2f} mm")

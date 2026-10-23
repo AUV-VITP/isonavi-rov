@@ -91,5 +91,17 @@ recv = len(got)
 ok(recv == sent and got == expected,
    f"{recv}/{sent} frames intact, {dec.crc_errors} crc errors")
 
+print("10. Pilot and safety messages, isonavi-rov")
+pp = P.pack_pilot(12.5, (20.0, -3.5, 0, 0, 0, 0), -0.55, 0.031, P.F_MANUAL | P.F_KILL)
+d = P.unpack_pilot(pp)
+ok(d["t"] == 12.5 and d["tau"][1] == -3.5 and d["z_ref"] == -0.55 and d["hdg_err"] == 0.031,
+   "pilot values round trip exactly")
+ok(d["manual"] and d["kill"] and not d["leak"] and not d["done"], "pilot flags decode")
+fr = P.encode(P.MSG_PILOT, pp)
+got = P.FrameDecoder().feed(fr)
+ok(len(got) == 1 and got[0] == (P.MSG_PILOT, pp), "pilot frame decodes")
+sf = P.unpack_safety(P.pack_safety(3.0, "HOLD", 0.811))
+ok(sf["state"] == "HOLD" and sf["scale"] == 0.811, "safety report round trips")
+
 print()
 print("protocol test complete")

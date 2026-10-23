@@ -39,7 +39,9 @@ MSG_SENSOR_REQ = 0x10     # board -> host: give me the sample at time t
 MSG_SENSOR = 0x11         # host -> board: imu, dvl, depth for this tick
 MSG_THRUST = 0x20         # board -> host: applied body wrench + per-thruster N
 MSG_STATE = 0x21          # board -> host: current EKF pose estimate + phase
-MSG_ACK = 0x2F            # either way: liveness
+MSG_PILOT = 0x12          # host -> board: pilot command for this tick (isonavi-rov)
+MSG_SAFETY = 0x22         # board -> host: supervisor state and governor scale (isonavi-rov)
+MSG_ACK = 0x2F            # either way: liveness; in place of MSG_PILOT, no pilot packet this tick
 MSG_PWM = 0x30            # board -> ESP32: 8 pulse widths in microseconds
 MSG_PWM_ECHO = 0x31       # ESP32 -> board: measured/applied pulse widths
 
@@ -213,3 +215,42 @@ def unpack_pwm(p):
 PHASES = ("DEPLOY", "ACQUIRE", "TRANSIT", "SEARCH", "INSPECT", "RETURN",
           "REPORT", "DONE")
 PHASE_ID = {name: i for i, name in enumerate(PHASES)}
+
+
+# Pilot command, the surface side of the tether: the stick wrench, the held
+# depth and the heading error, and flags. Manual passes the wrench straight
+# through; otherwise the board fills heave, roll, pitch and yaw from its own
+# hold loops. Kill and leak stand in on the bench for the vehicle's own inputs.
+#   t, tau(6), z_ref, hdg_err, flags
+PILOT_FMT = "<d6dddB"
+F_MANUAL = 1
+F_KILL = 2
+F_LEAK = 4
+F_DONE = 8
+
+
+def pack_pilot(t, tau, z_ref, hdg_err, flags=0):
+    return struct.pack(PILOT_FMT, t, *tau, z_ref, hdg_err, int(flags))
+
+
+def unpack_pilot(p):
+    v = struct.unpack(PILOT_FMT, p)
+    f = v[9]
+    return {"t": v[0], "tau": v[1:7], "z_ref": v[7], "hdg_err": v[8],
+            "manual": bool(f & F_MANUAL), "kill": bool(f & F_KILL),
+            "leak": bool(f & F_LEAK), "done": bool(f & F_DONE)}
+
+
+# Supervisor report: state id (index into SAFETY_STATES) and the governor's
+# thrust scale for this tick.
+SAFETY_FMT = "<dBd"
+SAFETY_STATES = ("ARMED", "HOLD", "KILLED")
+
+
+def pack_safety(t, state, scale):
+    return struct.pack(SAFETY_FMT, t, SAFETY_STATES.index(state), scale)
+
+
+def unpack_safety(p):
+    v = struct.unpack(SAFETY_FMT, p)
+    return {"t": v[0], "state": SAFETY_STATES[v[1]], "scale": v[2]}

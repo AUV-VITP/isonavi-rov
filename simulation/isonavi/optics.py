@@ -62,13 +62,14 @@ class CameraConfig:
     width: int = 160
     height: int = 120
     hfov_deg: float = 80.0           # in water, behind a flat port
-    pos: tuple = (0.30, 0.0, 0.0)    # body frame
+    pos: tuple = (0.19, 0.0, 0.04)   # body frame: behind the front port, cad/rov_cad.py
     exposure: float = 2.0            # gain from radiance to full scale
     read_noise: float = 0.004
     full_well: float = 4000.0        # electrons at full scale, sets shot noise
     backscatter_samples: int = 24
+    # Relative to the lens: the lamp faces sit 0.07 m ahead of it, 0.18 m to each side.
     lamps: tuple = field(default_factory=lambda: (
-        Lamp((0.0, 0.18, 0.0)), Lamp((0.0, -0.18, 0.0))))
+        Lamp((0.07, 0.18, 0.0)), Lamp((0.07, -0.18, 0.0))))
 
 
 class Camera:
