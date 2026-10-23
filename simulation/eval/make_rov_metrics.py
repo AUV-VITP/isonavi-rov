@@ -11,11 +11,15 @@ import json
 import os
 import sys
 
+import numpy as np
+
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..")
 LOGS = os.path.join(ROOT, "simulation", "results", "logs")
 CAD = os.path.join(ROOT, "cad")
 sys.path.insert(0, os.path.join(ROOT, "simulation"))
 from isonavi.pool import ArenaConfig   # noqa: E402
+from isonavi.pilot import PilotConfig, blend_weight, read_error   # noqa: E402
+from isonavi.vision import load_errors   # noqa: E402
 
 
 def load(*p):
@@ -133,6 +137,29 @@ def collect():
                 if r is not None:
                     m[p + "vis" + ref] = f"{r * 1000:.0f}"
 
+    # Shared against the pilot modes, paired run by run on the same seed or
+    # layout: the mean difference in contacts and its standard error.
+    runs = load(LOGS, "course_trials.json")["runs"]
+    for exp, pre in (("reference", "ref"), ("layouts", "lay")):
+        for bb, w in words.items():
+            def by(mode):
+                return {(r["seed"], r["layout"]): r["contacts"] for r in runs
+                        if r["exp"] == exp and r["mode"] == mode and r["turbidity"] == float(bb)}
+            sh = by("shared")
+            if not sh:
+                continue
+            for other in ("manual", "assist"):
+                o = by(other)
+                d = np.array([sh[k] - o[k] for k in sorted(sh)])
+                m[f"{pre}{w}diff{other}"] = f"{d.mean():+.2f}"
+                m[f"{pre}{w}diff{other}se"] = f"{d.std(ddof=1) / np.sqrt(len(d)):.2f}"
+            # Where the contacts are: maze walls against slalom posts.
+            for mode in ("assist", "shared"):
+                names = [n for r in runs if r["exp"] == exp and r["mode"] == mode
+                         and r["turbidity"] == float(bb) for _, n in r["contact_list"]]
+                m[f"{pre}{mode}{w}wallhits"] = f"{sum(n.startswith('maze') for n in names)}"
+                m[f"{pre}{mode}{w}posthits"] = f"{sum(n.startswith('obstacle') for n in names)}"
+
     # Target identification, lamps as built.
     sep = "0.18"
     for bb, w in words.items():
@@ -166,6 +193,12 @@ def collect():
             m[f"gate{w}{rw}avail"] = f"{gk['available'] * 100:.0f}"
             m[f"tgt{w}{rw}"] = "-" if tk["rms"] is None else f"{tk['rms'] * 1000:.0f}"
             m[f"tgt{w}{rw}avail"] = f"{tk['available'] * 100:.0f}"
+
+    # The camera's share in the ROS 2 pilot node's shared mode, as the node sets
+    # it: worst wall section against the pilot's read at the default 1.5 m.
+    for bb, w in cw.items():
+        e = load_errors(float(bb))
+        m[f"rosweight{w}"] = f"{blend_weight(read_error(PilotConfig(), 1.5, float(bb)), max(e.walls.values())):.2f}"
 
     # Bench.
     e, ll = hl["equivalence"], hl["link_loss"]

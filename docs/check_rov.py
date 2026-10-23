@@ -27,11 +27,11 @@ undefined = sorted(u for u in used if u not in m and u not in LATEX)
 if undefined:
     fails.append(f"report uses undefined metrics: {', '.join(undefined)}")
 
-if re.search("—|–", tex):
+if re.search("\u2014|\u2013", tex):
     fails.append("report carries an em or en dash")
 
 readme = open(os.path.join(ROOT, "README.md"), encoding="utf-8").read()
-if re.search("—|–", readme):
+if re.search("\u2014|\u2013", readme):
     fails.append("README carries an em or en dash")
 # README fragments, each built from the generated values.
 expected = [
@@ -53,6 +53,11 @@ expected = [
     f"{m['refmanualclearcontacts']} +/- {m['refmanualclearcontactsd']}",
     f"{m['refassistclearcontacts']} +/- {m['refassistclearcontactsd']}",
     f"{m['refautoclearcontacts']} +/- {m['refautoclearcontactsd']}",
+    f"{m['refsharedclearcontacts']} +/- {m['refsharedclearcontactsd']}",
+    f"{m['refsharedmidcontacts']} +/- {m['refsharedmidcontactsd']}",
+    f"{m['refsharedmurkycontacts']} +/- {m['refsharedmurkycontactsd']}",
+    f"{m['laymiddiffassist']} +/- {m['laymiddiffassistse']}",
+    f"{m['laymurkydiffassist'].lstrip('-')} +/- {m['laymurkydiffassistse']}",
     f"{m['slalomside']} mm a side", f"{m['wallmidobstacles']} mm RMS",
     f"identify {m['lampnarrowmid']} %", f"as built, {m['lampbuiltmid']} %",
     f"{m['idmidonehalf']} % at 1.5 m", f"({int(m['idcleartwohalf']) / 100:.2f} against {int(m['idrawcleartwohalf']) / 100:.2f}",
