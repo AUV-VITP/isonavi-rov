@@ -9,10 +9,13 @@ from __future__ import annotations
 
 import json
 import os
+import sys
 
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..")
 LOGS = os.path.join(ROOT, "simulation", "results", "logs")
 CAD = os.path.join(ROOT, "cad")
+sys.path.insert(0, os.path.join(ROOT, "simulation"))
+from isonavi.pool import ArenaConfig   # noqa: E402
 
 
 def load(*p):
@@ -75,6 +78,12 @@ def collect():
     frame = lin * v + quad * v * v
     m["framedrag"] = f"{frame:.1f}"
     m["tetherdrag"] = f"{b['ops_force_n'] - frame:.1f}"
+
+    # Slalom: the gap beside each post, and what the beam leaves of it a side.
+    ac = ArenaConfig()
+    gap = ac.maze_width / 2 + min(abs(o) for o in ac.obstacle_offsets) - ac.pipe_radius
+    m["slalomgap"] = f"{gap * 100:.1f}"
+    m["slalomside"] = f"{(gap - b['size_m'][1]) / 2 * 1000:.0f}"
 
     # Thruster match.
     rows = {r["kv"]: r for r in th["rows"]}

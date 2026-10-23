@@ -21,8 +21,9 @@ from make_rov_metrics import collect   # noqa: E402
 fails = []
 m = collect()
 tex = open(os.path.join(HERE, "isonavi_rov_report.tex"), encoding="utf-8").read()
-used = set(re.findall(r"\m([a-z]+)", tex))
-undefined = sorted(u for u in used if u not in m)
+used = set(re.findall(r"\\m([a-z]+)", tex))
+LATEX = {"etre", "idrule", "illi", "inute", "ega", "athrm", "athbf"}
+undefined = sorted(u for u in used if u not in m and u not in LATEX)
 if undefined:
     fails.append(f"report uses undefined metrics: {', '.join(undefined)}")
 
@@ -52,6 +53,9 @@ expected = [
     f"{m['refmanualclearcontacts']} +/- {m['refmanualclearcontactsd']}",
     f"{m['refassistclearcontacts']} +/- {m['refassistclearcontactsd']}",
     f"{m['refautoclearcontacts']} +/- {m['refautoclearcontactsd']}",
+    f"{m['slalomside']} mm a side", f"{m['wallmidobstacles']} mm RMS",
+    f"identify {m['lampnarrowmid']} %", f"as built, {m['lampbuiltmid']} %",
+    f"{m['idmidonehalf']} % at 1.5 m", f"({int(m['idcleartwohalf']) / 100:.2f} against {int(m['idrawcleartwohalf']) / 100:.2f}",
 ]
 for e in expected:
     if e not in readme:

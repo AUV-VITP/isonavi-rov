@@ -99,9 +99,9 @@ bench over the same protocol as isonavi, and reproduces the simulation.
 \begin{tabular}{@{}lc@{\hspace{7mm}}lc@{}}
 \toprule
 Mass, envelope & \SI{\mmass}{\kilo\gram}, \mlenoverall{} x \mbeam{} x \mheight{} cm &
-Contacts per run, camera in the loop & \mrefautomidcontacts{} at $b = 0.4$ \\
+Contacts per run, murky: pilot, camera & \mrefmanualmurkycontacts{}, \mrefautomurkycontacts{} \\
 Surge force, one unit lost & \SI{\msurgelost}{\newton} &
-Contacts per run, manual & \mrefmanualmidcontacts{} at $b = 0.4$ \\
+Contacts per run, turbid: assist, camera & \mrefassistmidcontacts{}, \mrefautomidcontacts{} \\
 Governed input, peak current & \SI{\mcapw}{\watt}, \SI{\mpeakamps}{\ampere} &
 Target colour, \SI{1}{\metre}, murky water & \midmurkyone{}\,\% \\
 Link loss to zero thrust & \SI{\mholdtime}{\second} &
@@ -356,7 +356,7 @@ placement, from rendered frames at jittered poses.}{fig:id}
 \subsection{Where the vehicle is on the course, from the image}
 
 The camera mode measures the vehicle's position across the course from each
-frame at \SI{5}{\hertz} (\texttt{vision.CourseEstimator}):
+frame at \SI{5}{\hertz}, in \texttt{vision.}\allowbreak\texttt{CourseEstimator}:
 \begin{itemize}
 \item \textbf{gate and obstacles}: posts are found as narrow bright columns.
 With the distance to the post known, each bearing, rotated by the IMU heading,
@@ -442,8 +442,42 @@ camera, $b = 1.0$ & \mrefautomurkydone/\mrefautomurkyn & \mrefautomurkygate & \m
 \caption{Course runs on the reference layout, 20 seeds per row.}\label{tab:ref}
 \end{table}
 
+Every run in every row finished and touched the right target. A pilot's
+contacts are set by the water. In clear and turbid water a manual pilot
+averages under one contact a run and the assist roughly halves that, because
+the pilot no longer flies depth and attitude. At $b = 1.0$ the pilot's read
+of the corridor fails with the two way attenuation of the vehicle's own
+light, and contacts rise to \mrefmanualmurkycontacts{} manual and
+\mrefassistmurkycontacts{} assisted, with a spread as large as the mean.
+
+The camera mode behaves the other way. It makes \mrefautoclearcontacts{},
+\mrefautomidcontacts{} and \mrefautomurkycontacts{} contacts a run at the
+three clarities, with a small spread, because its error comes from the
+estimators, which depend little on clarity, and not from a read that fails
+with range. That is less than half the pilot's contacts in murky water and
+several times more in clear and turbid water. The contacts are at the first
+two slalom posts in every run traced. The gap beside a post is
+\SI{\mslalomgap}{\centi\metre}, which leaves the \SI{\mbeam}{\centi\metre}
+beam \SI{\mslalomside}{\milli\metre} a side when centred. There the wall
+ratio, which assumes two plain walls, is disturbed by the posts
+(\SI{\mwallmidobstacles}{\milli\metre} RMS at $b = 0.4$ against
+\SI{\mwallmidstraight}{\milli\metre} in the straight section), and the post fit
+is available in \mpostsmidavail\,\% of frames. In clear water the camera mode
+also clips the gate in some runs (\mrefautocleargate{} of 20 clean): in
+closed loop the gate estimate errs by \SI{\mrefautoclearvisgate}{\milli\metre}
+RMS against \SI{\mgateclearone}{\milli\metre} at \SI{1}{\metre} on the held-out
+frames of Table~\ref{tab:est}, because the vehicle arrives off the poses the
+estimator was tested at, and the bright far wall competes with the posts.
+
+The operating rule that follows is the one the ROS~2 pilot node implements:
+the pilot flies, with the assist always on, and engages camera centring when
+the water is too murky to read the course. Blending the camera's correction
+with the pilot's stick, weighted by the error each has at that range and
+clarity, is the next change to the camera mode; it is not done here.
+
 \keyfig{../simulation/results/figures/r1_course_tracks.png}{Tracks of one seed
-in each mode, in turbid and murky water. Crosses mark contacts.}{fig:tracks}
+in each mode, in turbid and murky water; auto is the camera mode. Crosses mark
+contacts.}{fig:tracks}
 
 
 \subsection{Random layouts}
@@ -465,6 +499,15 @@ camera, $b = 1.0$ & \mlayautomurkydone/\mlayautomurkyn & \mlayautomurkygate & \m
 order, which colour is the target, corridor width and slalom offsets all
 vary.}\label{tab:lay}
 \end{table}
+
+The random layouts confirm the pattern. In turbid water the assist and the
+manual pilot are close (\mlayassistmidcontacts{} and \mlaymanualmidcontacts{}
+contacts a run) and the camera mode is behind (\mlayautomidcontacts{}, gate
+clean in \mlayautomidgate{} of \mlayautomidn{}); in murky water the camera
+mode makes \mlayautomurkycontacts{} against \mlaymanualmurkycontacts{} for
+the manual pilot. The identification step is not where runs fail: the right
+target was touched in every run, and a wrong target was touched first in
+\mlaymanualmidwrong{} manual runs out of \mlaymanualmidn{} in turbid water.
 
 % ======================================================================
 \section{Hardware in the loop}\label{sec:hil}
@@ -554,7 +597,9 @@ against the \mthrustmax{}~N target;
 \item trim in a tank, against the solved foam and ballast;
 \item camera frames in the pool to calibrate the attenuation coefficient and
 the corridor gain, which the simulation takes from its model;
-\item pilot hours on a mock course.
+\item pilot hours on a mock course;
+\item camera centring blended with the pilot's stick, so that the camera
+mode is no worse than the assist in clear water.
 \end{enumerate}
 The hydrodynamic coefficients are scaled from a reference vehicle rather than
 measured, and the operator model stands in for a real pilot; both are
