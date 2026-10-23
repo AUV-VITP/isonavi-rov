@@ -73,8 +73,8 @@ def frame(k):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--mode", default="auto")
-    ap.add_argument("--b", type=float, default=0.4)
+    ap.add_argument("--mode", default="shared")
+    ap.add_argument("--b", type=float, default=1.0)
     ap.add_argument("--seed", type=int, default=3)
     ap.add_argument("--speed", type=float, default=2.0, help="playback speed")
     args = ap.parse_args()

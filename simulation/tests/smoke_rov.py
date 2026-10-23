@@ -10,8 +10,8 @@ import numpy as np
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
 from isonavi.pool import PoolArena                              # noqa: E402
 from isonavi.optics import Camera, WaterConfig                  # noqa: E402
-from isonavi.vision import TargetFinder                         # noqa: E402
-from isonavi.pilot import CourseRun                             # noqa: E402
+from isonavi.vision import CourseEstimator, TargetFinder, load_errors   # noqa: E402
+from isonavi.pilot import CourseRun, PilotConfig, blend_weight, read_error   # noqa: E402
 from isonavi.safety import PowerGovernor, Supervisor            # noqa: E402
 from isonavi.dynamics import VehicleDynamics, isonavi_rov       # noqa: E402
 
@@ -43,6 +43,34 @@ img, _, _ = cam.render(a.scene, np.array([tgt[0] - 1.3, tgt[1], tgt[2], 0, 0, 0]
 d = TargetFinder(scattering=0.4).nearest_to_centre(img)
 check("red balloon identified at 1 m", d is not None and d.colour == "red",
       "" if d is None else f"range estimate {d.range_m:.2f} m")
+
+# Gate fit on synthetic frames: two post columns give the offset; a lone
+# column, near the gate or far from it, is not taken for a post.
+est = CourseEstimator(scattering=0.4)
+hs = a.cfg.gate_width / 2 + a.cfg.pipe_radius
+
+
+def frame(bearings):
+    img = np.full((120, 160, 3), 20, np.uint8)
+    for phi in bearings:
+        u = int(round(80 - est.f * np.tan(phi)))
+        img[:, u - 1:u + 2] = 200
+    return img
+
+
+g2 = est.gate(frame([np.arctan2(hs - 0.1, 2.0), np.arctan2(-hs - 0.1, 2.0)]), 0.0, 2.0, 4.0, 0.0, hs, 0.0,
+              span=0.5)
+lone = [est.gate(frame([np.radians(-22)]), 0.0, 4.0 - r, 4.0, 0.0, hs, 0.0, span=0.5) for r in (0.6, 2.0)]
+check("gate fit from two posts", g2 is not None and abs(g2 - 0.1) < 0.02,
+      "" if g2 is None else f"{g2:+.3f} m for +0.100 m")
+check("gate fit refuses a lone column", lone == [None, None])
+
+# Shared control: the camera's share follows the errors, and grows with murk.
+pc = PilotConfig()
+w = [blend_weight(read_error(pc, 1.5, b), load_errors(b).walls["straight"]) for b in (0.05, 1.0)]
+check("camera share grows with turbidity", 0.0 < w[0] < w[1] < 1.0,
+      f"{w[0]:.2f} at b 0.05, {w[1]:.2f} at b 1.0, 1.5 m")
+check("equal errors split the command", abs(blend_weight(0.05, 0.05) - 0.5) < 1e-12)
 
 # Pilot run, assisted, completes the course.
 r = CourseRun(a, mode="assist", seed=2).run()

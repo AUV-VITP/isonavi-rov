@@ -60,8 +60,30 @@ class PilotConfig:
     stick_noise: float = 0.06    # fraction of full stick
     read_sigma0: float = 0.03    # m, lateral read error at close range
     read_sigma_per_m: float = 0.025
+    read_filter: float = 0.03    # per tick; the read error wanders rather than jitters
     cruise_n: float = 26.0       # surge thrust the pilot holds in the open
     slow_n: float = 13.0         # surge thrust near elements
+
+
+def read_sigma(pc, rng, turbidity):
+    """Scale of the pilot's lateral read error at a range, lit by the vehicle's lamps.
+
+    Contrast falls as exp(-2 c r) over the two way path, so the read error
+    grows by the inverse of it.
+    """
+    loss = np.exp(2.0 * (WATER_ABSORPTION[1] + turbidity) * rng)
+    return pc.read_sigma0 + pc.read_sigma_per_m * rng * loss
+
+
+def read_error(pc, rng, turbidity):
+    """Spread of the pilot's read: the low-passed error, sigma * sqrt(k / (2 - k))."""
+    k = pc.read_filter
+    return read_sigma(pc, rng, turbidity) * np.sqrt(k / (2.0 - k))
+
+
+def blend_weight(err_pilot, err_camera):
+    """Share of the lateral command given to the camera, by inverse error variance."""
+    return err_pilot ** 2 / (err_pilot ** 2 + err_camera ** 2)
 
 
 @dataclass
@@ -186,13 +208,16 @@ class CourseRun:
         self.yaw_ref = 0.0
         self.read_bias = 0.0
         self.assist = AssistController(params.buoyancy - params.weight, pc_yaw=self.pc.k_yaw)
-        self.vis = None                         # (time, vehicle y) from the last usable frame
-        self.vis_log = []                       # (time, reference, estimate, truth)
-        if mode == "auto":
+        self.vis = None                         # (time, vehicle y, error) from the last usable frame
+        self.vis_log = []                       # (time, reference, estimate, truth, x, error)
+        self.cam_lat = None                     # shared mode: camera lateral error, blend weight
+        self.prev_cam_lat = None
+        if mode in ("auto", "shared"):
             from .optics import Camera, WaterConfig
-            from .vision import CourseEstimator, load_calibration
+            from .vision import CourseEstimator, load_calibration, load_errors
             self.cam = Camera(water=WaterConfig(scattering=turbidity), seed=seed + 5)
             self.est = CourseEstimator(scattering=turbidity, calib=load_calibration(turbidity))
+            self.err = load_errors(turbidity)
             self.next_frame = 0.0
             self.posts_xy = [(e.cx, e.cy) for e in self.arena.scene.primitives
                              if getattr(e, "name", "").startswith("obstacle")]
@@ -218,7 +243,6 @@ class CourseRun:
         if ref == 0:
             return
         img, _, _ = self.cam.render(self.arena.scene, eta)
-        prior = self.vis[1] if self.vis is not None else float(self.path[self.wi, 1])
         y_cam = None
         tag = ref
         x_cam = eta[0] + self.cam.cfg.pos[0] * np.cos(yaw_meas)
@@ -244,8 +268,25 @@ class CourseRun:
         if y_cam is None:
             return
         y = y_cam - self.cam.cfg.pos[0] * np.sin(yaw_meas)
-        self.vis = (t, y)
-        self.vis_log.append((t, tag, y, float(eta[1]), float(eta[0])))
+        self.vis = (t, y, self._vis_error(tag, x_cam))
+        self.vis_log.append((t, tag, y, float(eta[1]), float(eta[0]), self.vis[2]))
+
+    def _vis_error(self, tag, x_cam):
+        """The estimator's held-out RMS error for this measurement, from the calibration."""
+        e, c = self.err, self.arena.cfg
+        if e is None:
+            return 0.05
+        if tag == 1:
+            return e.at("gate", c.gate_x - x_cam)
+        if tag == 2:
+            return e.at("target", c.balloon_x - x_cam)
+        if tag == 4:
+            return e.posts
+        for name in ("straight", "obstacles", "passage"):
+            x0, x1 = self.arena.sections[name]
+            if x0 <= x_cam < x1:
+                return e.walls[name]
+        return e.walls["passage"]
 
     def external_wrench(self, eta, nu):
         """Everything that is not the thrusters: the tether's drag and the course pushing back."""
@@ -263,18 +304,22 @@ class CourseRun:
         lat = float(rel @ n)
         along = float(rel @ t)
         rng_ref = float(np.clip(L - along, 0.3, 3.0))
-        # Lit by the vehicle's own lamps, contrast falls as exp(-2 c r) over the
-        # two way path, so the read error grows by the inverse of it.
-        c_att = WATER_ABSORPTION[1] + self.turb
-        loss = np.exp(2.0 * c_att * rng_ref)
-        sigma = self.pc.read_sigma0 + self.pc.read_sigma_per_m * rng_ref * loss
+        sigma = read_sigma(self.pc, rng_ref, self.turb)
         if self.mode == "auto":
+            loss = np.exp(2.0 * (WATER_ABSORPTION[1] + self.turb) * rng_ref)
             sigma = 0.02 + 0.01 * rng_ref * loss
-        self.read_bias = 0.97 * self.read_bias + 0.03 * self.rng.normal(0, sigma)
+        k = self.pc.read_filter
+        self.read_bias = (1.0 - k) * self.read_bias + k * self.rng.normal(0, sigma)
         lat_read = lat + self.read_bias
-        if (self.mode == "auto" and self.path[self.wi, 5] > 0 and self.vis is not None
-                and now - self.vis[0] <= 0.45):
+        fresh = self.path[self.wi, 5] > 0 and self.vis is not None and now - self.vis[0] <= 0.45
+        if self.mode == "auto" and fresh:
             lat_read = float((np.array([eta[0], self.vis[1]]) - a) @ n)
+        if self.mode == "shared":
+            self.cam_lat = None
+            if fresh:
+                # Weight the camera against the pilot by the error each has here.
+                w = blend_weight(read_error(self.pc, rng_ref, self.turb), self.vis[2])
+                self.cam_lat = (float((np.array([eta[0], self.vis[1]]) - a) @ n), float(w))
         heading = float(np.arctan2(t[1], t[0]))
         if np.isfinite(self.path[self.wi, 4]):
             heading = float(self.path[self.wi, 4])
@@ -287,7 +332,7 @@ class CourseRun:
     def pilot(self, t, eta, att, gyro, z_meas):
         """Pilot command for this tick; None when the course is done, "advance" on a waypoint change."""
         pc, dt = self.pc, self.dt
-        if self.mode == "auto" and t >= self.next_frame:
+        if self.mode in ("auto", "shared") and t >= self.next_frame:
             self._measure(t, eta, att[2])
             self.next_frame = t + 0.2
         lat, heading, along, L, tdir = self._perceive(eta, t)
@@ -313,6 +358,16 @@ class CourseRun:
             cmd = cmd + self.rng.normal(0, pc.stick_noise, 3) * np.array([30.0, 30.0, 0.3])
         self.buf.append(cmd)
         surge, sway, hdg_err = self.buf[0]
+        if self.mode == "shared":
+            # The pilot's stick arrives through the reaction and video delay; the
+            # camera's correction is formed aboard and does not wait for it.
+            if self.cam_lat is None:
+                self.prev_cam_lat = None
+            else:
+                y_c, w = self.cam_lat
+                d_c = 0.0 if self.prev_cam_lat is None else (y_c - self.prev_cam_lat) / dt
+                self.prev_cam_lat = y_c
+                sway = (1.0 - w) * sway - w * pc.k_lat * (y_c + pc.k_lat_d * d_c)
         sway = float(np.clip(sway, -40, 40))
 
         # Sticks act in the body frame; the pilot resolves the leg into it.
@@ -413,5 +468,5 @@ class CourseRun:
             min_clearance=float(min_clear),
             depth_rms=float(np.sqrt(np.mean(np.square(depth_err)))) if depth_err else 0.0,
             log={**{k: np.array(v) for k, v in log.items()},
-                 "vision": np.array(self.vis_log).reshape(-1, 5)},
+                 "vision": np.array(self.vis_log).reshape(-1, 6)},
         )

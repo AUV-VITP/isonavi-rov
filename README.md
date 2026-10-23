@@ -7,14 +7,15 @@ It keeps the isonavi engines (ray casting, 6-DOF dynamics, the eight thruster
 vectored layout, the hardware-validated actuator path, the solved mass budget
 and the generated bill of materials) and replaces what a pool does not need.
 
-Operator console of one run, onboard camera beside the track:
-[`simulation/results/video/rov_course_auto.mp4`](simulation/results/video/rov_course_auto.mp4).
+Operator console of one run in murky water, shared mode, onboard camera
+beside the track:
+[`simulation/results/video/rov_course_shared.mp4`](simulation/results/video/rov_course_shared.mp4).
 
 ## What changed from isonavi, and why
 
 | isonavi-1 | isonavi-rov | Reason |
 | --- | --- | --- |
-| Autonomous survey | Piloted over a 50 m tether, with assist and vision modes | A person flies it; the assist cuts contacts in clear water, camera centring in murky water |
+| Autonomous survey | Piloted over a 50 m tether, with assist and a shared camera mode | A person flies it; the vehicle holds depth and attitude and adds the camera where it sees better than the pilot |
 | 28 kg, 1074 mm faired hull, fins | 10.49 kg, 66 x 44 x 33 cm open frame, probe included | No current to fight; a small box clears a 1 m corridor |
 | 50 m pressure rating, ring frames | One acrylic housing, 2 m water | Pool depth is under 2 m |
 | Forward-looking sonar and DVL | Camera and two lamps, IMU, depth | The targets are identified by colour, in the dark |
@@ -28,18 +29,20 @@ unchanged and still run. The ROV report is `docs/isonavi_rov_report.tex`.
 ## Headline results
 
 Pilot-in-the-loop course runs on the reference layout, 20 seeds per cell, in
-three water clarities (scattering coefficient b). Every run finished and
-touched the right target. Contacts per run:
+three water clarities (scattering coefficient b). Every run finished, passed
+the gate clean and touched the right target. Contacts per run:
 
 | Mode | b = 0.05 /m | b = 0.4 /m | b = 1.0 /m |
 | --- | --- | --- | --- |
 | manual | 0.50 +/- 0.67 | 0.70 +/- 0.84 | 8.60 +/- 5.94 |
 | assist (depth, heading, attitude hold) | 0.20 +/- 0.51 | 0.55 +/- 0.67 | 4.80 +/- 4.66 |
-| camera centring in the lateral loop | 3.05 +/- 1.24 | 3.00 +/- 0.63 | 3.00 +/- 0.71 |
+| camera alone in the lateral loop | 2.55 +/- 0.59 | 2.65 +/- 0.65 | 2.55 +/- 0.67 |
+| shared: pilot and camera blended by their errors | 0.20 +/- 0.40 | 0.25 +/- 0.43 | 0.50 +/- 0.87 |
 
-The camera mode is the best of the three in murky water and the worst in
-clear water, so it is a switch the pilot throws, not the default. Forty random
-layouts per cell give the same ordering (`docs/isonavi_rov_report.tex`).
+On forty random layouts per cell, shared is level with the assist in turbid
+water (+0.10 +/- 0.14 contacts a run, paired by layout) and 3.20 +/- 0.57
+below it in murky water. Fly shared throughout; the weighting decides how much
+to trust the camera from the water clarity (`docs/isonavi_rov_report.tex`).
 
 | Vehicle | |
 | --- | --- |
@@ -60,12 +63,24 @@ layouts per cell give the same ordering (`docs/isonavi_rov_report.tex`).
 **In murky water the pilot's read fails; in clear water the camera's does.**
 Depth and heading hold cut contacts in clear and turbid water, but at
 b = 1.0 /m the pilot's read of the corridor degrades with the two way
-attenuation of the vehicle's own light, and contacts rise to 8.60 +/- 5.94.
-Centring on the camera holds about three contacts at every clarity, because
-its error comes from the estimator, not the water. The three are at the first
-two slalom posts, where the gap leaves 142 mm a side and the wall estimate,
-disturbed by the posts, errs by 92 mm RMS. Blending the camera with the
-pilot's stick by their errors is the next change.
+attenuation of the vehicle's own light, and contacts rise to 8.60 +/- 5.94,
+most of them with the maze walls. The camera alone holds about two and a half
+contacts at every clarity, because its error comes from the estimator, not the
+water; they are at the first two slalom posts, where the gap leaves
+142 mm a side and the wall estimate, disturbed by the posts, errs by
+92 mm RMS.
+
+**So blend them by their errors.** The shared mode weights the camera's
+lateral command against the pilot's by inverse error variance: the
+estimator's held-out error for that section and range against the spread of
+the pilot's read at that range and clarity. It is no worse than the assist
+where the pilot can see and removes the wall contacts where the pilot cannot.
+
+**A lone column is not a gate post.** Close to the gate one post leaves the
+frame, and the gate fit took an object far beyond it for the missing post and
+steered towards the post it could no longer see. The fit now needs both posts
+in frame, each with its own column, or gives no measurement; the gate is then
+passed clean in every run of every mode.
 
 **Colour goes before the target does.** Red is absorbed several times faster
 than blue, and the lamps light the water in front of the lens. Undoing the
@@ -95,14 +110,14 @@ degree 3/2 in thrust; all eight together still make 24.3 N each.
 | `simulation/isonavi/pool.py` | Pool arena: sloping floor, gate, coloured targets, three section maze; contact model |
 | `simulation/isonavi/optics.py` | Camera image formation under the vehicle's lamps: attenuation per channel, backscatter integrated per ray, sensor noise |
 | `simulation/isonavi/vision.py` | Target finder (veil removal, blobs, range from size, attenuation correction, colour) and course estimators (posts, walls, target) |
-| `simulation/isonavi/pilot.py` | Operator model, assist controller, scored course run with tether drag |
+| `simulation/isonavi/pilot.py` | Operator model, assist controller, shared blend, scored course run with tether drag |
 | `simulation/isonavi/safety.py` | Power governor and the latching supervisor |
 | `simulation/isonavi/dynamics.py` | isonavi-rov preset, read from the solved budget; external wrench input |
 | `cad/rov.py` | Mass, buoyancy and trim solve, size check, thrust envelope with a unit lost, tether, fuse |
 | `cad/rov_cad.py` | CadQuery assembly from the budget, with volume, envelope, clearance and interference checks |
 | `cad/thruster.py` | Motor KV matched to the propeller at the bench thrust point |
 | `cad/rov_bom.py` | Bill of materials in rupees with the basis of every price and what is made in house |
-| `ros/isonavi_rov_ros/` | ROS 2 nodes: pilot, safety, actuator, vision, and a launch file |
+| `ros/isonavi_rov_ros/` | ROS 2 nodes: pilot (assist and shared), safety, actuator, vision, and a launch file |
 | `hil/` | Flight computer and ESP32 actuator interface, validated on hardware for isonavi; ROV bench over the same link |
 | `docs/isonavi_rov_report.tex` | Technical report; every number from `simulation/eval/make_rov_metrics.py` |
 
@@ -116,7 +131,9 @@ flight computer goes quiet, which its firmware already does. The vehicle floats
 positive, so zero thrust is the safe state. The ROS 2 chain was run end to end
 under Jazzy: with the pilot link live the actuator node emits the expected
 pulse widths, and when the joystick stops it reports `HOLD: pilot link lost`
-and all eight channels go to 1500 us.
+and all eight channels go to 1500 us. The pilot node runs the shared blend
+with the simulation's own functions, and the chain test checks its sway
+command against them.
 
 ## Made in house
 
@@ -142,11 +159,11 @@ python rov_bom.py                               # bill of materials
 
 cd ../simulation
 PYTHONPATH=. python tests/smoke_rov.py          # arena, camera, vision, pilot, safety
-PYTHONPATH=. python eval/run_trials.py          # course runs by mode and water clarity
 PYTHONPATH=. python eval/vision_calibrate.py    # course estimator fit and held-out error
+PYTHONPATH=. python eval/run_trials.py          # course runs by mode and water clarity
 PYTHONPATH=. python eval/vision_eval.py         # identification by range, clarity, lamp placement
 PYTHONPATH=. python eval/rov_figures.py         # figures
-PYTHONPATH=. python eval/make_rov_video.py      # operator console video of one run
+PYTHONPATH=. python eval/make_rov_video.py      # operator console video, shared mode in murky water
 
 cd ..
 python hil/test_rov_loopback.py                 # vehicle software over the link, link loss, kill
@@ -158,9 +175,9 @@ bash ros/test_chain.sh                          # ROS 2 build and chain test, un
 
 Vehicle budget, CAD, power path, pilot model, vision and safety chain are
 complete and verified in simulation; the vehicle software reproduces the
-simulation over the link on the bench, and the ROS 2 layer runs end to end. The actuator
-interface and the flight computer pattern carry over from isonavi, where they
-were validated on hardware. The course geometry is parametric and set to
+simulation over the link on the bench, and the ROS 2 layer runs end to end.
+The actuator interface and the flight computer pattern carry over from
+isonavi, where they were validated on hardware. The course geometry is parametric and set to
 representative values; element sizes and spacing go in `ArenaConfig`. Next is
 water: thruster bench curves, a hull vacuum and dunk test, trim in a tank, and
 pilot hours on a mock course.
