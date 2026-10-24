@@ -105,7 +105,7 @@ def three_view(tris, norms, cols, b):
             ("foam, ballast", f"{b['foam_l']:.2f} L, {b['ballast_kg']:.2f} kg"),
             ("thrusters", f"8 x {b['thrust_max_n']:.0f} N, vectored"),
             ("surge, all units / one lost", f"{b['envelope_n']['surge']['full']:.0f} N / {b['envelope_n']['surge']['one_lost']:.0f} N"),
-            ("power", "48 V tether, 800 W governed")]
+            ("power", f"{b['tether']['supply_v']:.0f} V tether, {b['tether']['peak_input_w']:.0f} W governed")]
     ax.text(0.02, 0.97, "isonavi-rov", fontsize=15, fontweight="bold", color=RV.BLUE, va="top")
     for i, (k, v) in enumerate(rows):
         y = 0.82 - i * 0.095

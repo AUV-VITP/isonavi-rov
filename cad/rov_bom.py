@@ -10,6 +10,9 @@ and whether the part is made in house. Basis is one of:
 The in house share is reported against the build cost, because making the
 thrusters, the hull and the frame is where the design work sits and where
 most of the cost saving comes from.
+
+Lines that depend on the solved vehicle, the foam, the ballast, the supply
+voltage and the fuse, are written from rov_budget.json, so run rov.py first.
 """
 
 from __future__ import annotations
@@ -19,6 +22,8 @@ import os
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 USD_INR = 95.64            # mid-market, 24 August 2026, as in the isonavi budget
+BUDGET = json.load(open(os.path.join(HERE, "rov_budget.json")))
+TT = BUDGET["tether"]
 
 # group, item, qty, unit INR, basis, made in house, reason
 LINES = [
@@ -40,11 +45,12 @@ LINES = [
     ("hull", "o-rings, cable penetrators, vent plug", 1, 2500, "market", False,
      "ten IP68 penetrators, nitrile o-ring kit, vent for the vacuum test"),
     ("frame", "HDPE sheet, 10 mm, 1220 x 610 mm", 1, 4500, "estimate", True,
-     "side plates, cross members and skids, cut in house"),
+     "side plates, cross members, skids and the tow post, cut in house"),
     ("frame", "A4 stainless fasteners", 1, 1200, "market", False, "no galvanic pairs with the aluminium"),
     ("frame", "closed cell foam, 3 L, epoxy coated", 1, 1500, "estimate", True,
-     "2.1 L needed for +2 N net buoyancy, see rov.py"),
-    ("frame", "lead trim ballast, 1.3 kg", 1, 450, "estimate", True, "sets 45 mm BG, see rov.py"),
+     f"{BUDGET['foam_l']:.2f} L needed for {BUDGET['net_buoyancy_n']:+.0f} N net buoyancy, see rov.py"),
+    ("frame", f"lead trim ballast, {BUDGET['ballast_kg']:.2f} kg", 1, 450, "estimate", True,
+     f"sets {BUDGET['bg_m'] * 1000:.0f} mm BG, see rov.py"),
     # Electronics.
     ("electronics", "Raspberry Pi 5, 4 GB, with cooler and card", 1, 7600, "market", False,
      "flight computer: camera, vision, supervisor, ROS 2"),
@@ -53,14 +59,16 @@ LINES = [
     ("electronics", "camera module, wide angle", 1, 3200, "market", False, "pilot feed and vision"),
     ("electronics", "IMU with onboard fusion", 1, 2500, "market", False, "attitude and heading hold"),
     ("electronics", "depth sensor, MS5837-30BA module", 1, 2800, "market", False, "depth hold"),
-    ("electronics", "DC-DC converter, 48 to 16 V, 400 W", 2, 3500, "estimate", False,
-     "thruster rail; two share the 800 W governor cap"),
-    ("electronics", "DC-DC converter, 48 to 5 V, 5 A", 1, 600, "market", False, "computer rail"),
+    ("electronics", "DC-DC converter, 36 to 75 V in, 16 V out, 400 W", 2, 3500, "estimate", False,
+     "thruster rail; two share the 800 W governor cap; the input range covers the supply with margin"),
+    ("electronics", "DC-DC converter, 36 to 75 V in, 5 V out, 5 A", 1, 600, "market", False, "computer rail"),
     ("electronics", "kill switch: reed input and 100 A high side switch", 1, 1800, "estimate", True,
      "external magnet switch opens the thruster rail"),
     ("electronics", "fuses, holders, distribution board", 1, 1500, "market", False,
      "one fuse per converter, one per thruster pair"),
     ("electronics", "leak probes", 2, 150, "market", False, "end caps; trips the supervisor"),
+    ("electronics", "thermal bridge, 6061 plate and pads to the rear end cap", 1, 850, "estimate", True,
+     "conducts the converter losses to the water-cooled cap instead of the still air in the tube"),
     ("electronics", "lamp, 15 W COB LED and driver, potted housing", 2, 1200, "estimate", True,
      "placed 0.2 m either side of the lens, see vision_eval.py"),
     ("electronics", "wire, connectors, heat shrink", 1, 2000, "market", False, "silicone wire, XT60, JST"),
@@ -71,9 +79,9 @@ LINES = [
      "plain Ethernet; 50 m is inside the 100 m limit, no modem needed"),
     ("tether", "floats, braid sleeve, strain relief", 1, 1500, "estimate", True,
      "makes the bundle neutrally buoyant, so it does not drag on the floor"),
-    ("surface", "power supply, 48 V 21 A, Mean Well RSP-1000-48", 1, round(268 * USD_INR), "converted", False,
-     "mains input 90 to 264 V AC, so 230 V 50 Hz compatible"),
-    ("surface", "emergency stop, 25 A DC breaker, main fuse", 1, 1800, "estimate", False,
+    ("surface", f"power supply, Mean Well RSP-1000-48, set to {TT['supply_v']:.0f} V", 1, round(268 * USD_INR),
+     "converted", False, "mains input 90 to 264 V AC, so 230 V 50 Hz compatible; output adjusts 43 to 55 V"),
+    ("surface", f"emergency stop, {TT['fuse_a']} A DC breaker, main fuse", 1, 1800, "estimate", False,
      "fuse sized at 1.25 times the governed peak current"),
     ("surface", "enclosure and mains inlet", 1, 1500, "estimate", True, "keeps the supply off a wet deck"),
     ("surface", "gamepad", 1, 2500, "market", False, "pilot input"),

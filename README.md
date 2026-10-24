@@ -16,10 +16,10 @@ beside the track:
 | isonavi-1 | isonavi-rov | Reason |
 | --- | --- | --- |
 | Autonomous survey | Piloted over a 50 m tether, with assist and a shared camera mode | A person flies it; the vehicle holds depth and attitude and adds the camera where it sees better than the pilot |
-| 28 kg, 1074 mm faired hull, fins | 10.49 kg, 66 x 44 x 33 cm open frame, probe included | No current to fight; a small box clears a 1 m corridor |
+| 28 kg, 1074 mm faired hull, fins | 10.48 kg, 66 x 44 x 33 cm open frame, probe included | No current to fight; a small box clears a 1 m corridor |
 | 50 m pressure rating, ring frames | One acrylic housing, 2 m water | Pool depth is under 2 m |
 | Forward-looking sonar and DVL | Camera and two lamps, IMU, depth | The targets are identified by colour, in the dark |
-| 1.5 kWh battery aboard | 48 V down the tether from a 230 V supply, no battery | Removes the battery and its leak risk from the vehicle |
+| 1.5 kWh battery aboard | 54 V down the tether from a 230 V supply, no battery | Removes the battery and its leak risk from the vehicle |
 | Mission state machine | Pilot assist, power governor, safety supervisor, ROS 2 | The vehicle must stop safely on a kill, a leak or a lost link |
 
 The river survey stack (`acoustics.py`, `scene.py`, `mapping.py`, the
@@ -34,37 +34,37 @@ the gate clean and touched the right target. Contacts per run:
 
 | Mode | b = 0.05 /m | b = 0.4 /m | b = 1.0 /m |
 | --- | --- | --- | --- |
-| manual | 0.50 +/- 0.67 | 0.70 +/- 0.84 | 8.60 +/- 5.94 |
-| assist (depth, heading, attitude hold) | 0.20 +/- 0.51 | 0.55 +/- 0.67 | 4.80 +/- 4.66 |
-| camera alone in the lateral loop | 2.55 +/- 0.59 | 2.65 +/- 0.65 | 2.55 +/- 0.67 |
-| shared: pilot and camera blended by their errors | 0.20 +/- 0.40 | 0.25 +/- 0.43 | 0.50 +/- 0.87 |
+| manual | 0.50 +/- 0.59 | 0.65 +/- 0.85 | 9.10 +/- 5.32 |
+| assist (depth, heading, attitude hold) | 0.15 +/- 0.36 | 0.50 +/- 0.67 | 6.20 +/- 5.09 |
+| camera alone in the lateral loop | 2.40 +/- 0.58 | 2.80 +/- 0.81 | 3.00 +/- 1.00 |
+| shared: pilot and camera blended by their errors | 0.15 +/- 0.36 | 0.40 +/- 0.66 | 0.55 +/- 0.86 |
 
 On forty random layouts per cell, shared is level with the assist in turbid
-water (+0.10 +/- 0.14 contacts a run, paired by layout) and 3.20 +/- 0.57
+water (-0.07 +/- 0.15 contacts a run, paired by layout) and 3.35 +/- 0.53
 below it in murky water. Fly shared throughout; the weighting decides how much
 to trust the camera from the water clarity (`docs/isonavi_rov_report.tex`).
 
 | Vehicle | |
 | --- | --- |
-| Mass, envelope | 10.49 kg, 66 x 44 x 33 cm |
-| Net buoyancy, BG, trim | +2.00 N, 45 mm, level |
+| Mass, envelope | 10.48 kg, 66 x 44 x 33 cm |
+| Net buoyancy, BG, trim | +5.00 N, 45 mm, level |
 | Surge force, all units / one lost | 84.9 N / 42.4 N |
 | Speed, all units / one lost | 0.73 m/s / 0.50 m/s |
 | Margin at 0.35 m/s with 8 m of tether trailing, one unit lost | 1.4 |
 | Tether loop resistance | 0.344 ohm |
-| Governed input, peak current, voltage aboard | 800 W, 19.4 A, 41.3 V |
-| Surface supply, main fuse | 48 V 1000 W, 25 A |
-| Link loss to zero thrust, rise in hold | 0.52 s, 0.42 m |
+| Governed input, peak current, voltage aboard | 800 W, 16.6 A, 48.3 V |
+| Surface supply, main fuse | 54 V 1000 W, 25 A |
+| Link loss to zero thrust, rise in hold | 0.52 s, 0.87 m |
 | Target colour identified, lamps as built | all to 2.0 m at b = 0.05, 78 % at 1.5 m at b = 0.4, all to 1.0 m at b = 1.0 |
-| Cost, vehicle / with tether and surface station / total | Rs 73,872 / Rs 1,14,229 / Rs 1,37,092 |
+| Cost, vehicle / with tether and surface station / total | Rs 74,722 / Rs 1,15,079 / Rs 1,38,027 |
 
 ## What the simulation decided
 
 **In murky water the pilot's read fails; in clear water the camera's does.**
 Depth and heading hold cut contacts in clear and turbid water, but at
 b = 1.0 /m the pilot's read of the corridor degrades with the two way
-attenuation of the vehicle's own light, and contacts rise to 8.60 +/- 5.94,
-most of them with the maze walls. The camera alone holds about two and a half
+attenuation of the vehicle's own light, and contacts rise to 9.10 +/- 5.32,
+most of them with the maze walls. The camera alone holds two to three
 contacts at every clarity, because its error comes from the estimator, not the
 water; they are at the first two slalom posts, where the gap leaves
 142 mm a side and the wall estimate, disturbed by the posts, errs by
@@ -139,8 +139,9 @@ command against them.
 
 The eight thrusters (printed duct and propeller on a potted outrunner), the
 end caps, the frame, the buoyancy, the lamp housings, the kill switch, the
-tether floats and the thrust rig: 12 of 34 lines. The bench thrust target is
-30 N per unit, checked on the rig before a thruster is fitted.
+thermal bridge, the tether floats and the thrust rig: 13 of 35 lines. The
+bench thrust target is 30 N per unit, checked on the rig before a thruster is
+fitted.
 
 The motor is matched to the propeller rather than picked by habit
 (`cad/thruster.py`). A 76 mm ducted propeller makes 30 N at about 2850 rpm,

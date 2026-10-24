@@ -15,6 +15,10 @@ section's, since the node does not know which section it is in; the pilot's
 is the operator model's read error at the set range and clarity. The default
 range, 1.5 m, is the middle of the 3 m the operator model looks ahead along a
 corridor leg.
+
+The offset is differenced at the control rate, as the simulation does, so its
+rate acts in the tick a new estimate arrives, and an estimate older than
+0.45 s is not used.
 """
 
 import numpy as np
@@ -53,8 +57,8 @@ class PilotNode(Node):
         self.yaw_ref = None
         self.axes = [0.0] * 8
         self.offset = float("nan")
-        self.offset_rate = 0.0
         self.offset_t = None
+        self.offset_prev = None
         self.centring = False
         self.button_prev = 0
         self.lat = PilotConfig()
@@ -84,13 +88,11 @@ class PilotNode(Node):
         self.gyro = np.array([m.angular_velocity.x, m.angular_velocity.y,
                               m.angular_velocity.z])
 
+    def now(self):
+        return self.get_clock().now().nanoseconds * 1e-9
+
     def on_offset(self, m):
-        # Differentiate at the camera rate, where the signal changes, not at
-        # the control rate, where it would be a train of steps.
-        t = self.get_clock().now().nanoseconds * 1e-9
-        if self.offset_t is not None and np.isfinite(self.offset) and t > self.offset_t:
-            self.offset_rate = (m.data - self.offset) / (t - self.offset_t)
-        self.offset, self.offset_t = m.data, t
+        self.offset, self.offset_t = m.data, self.now()
 
     def on_depth(self, m):
         self.z = -abs(m.data)
@@ -113,8 +115,14 @@ class PilotNode(Node):
             hdg_err = wrap(self.yaw_ref - self.att[2])
             tau[2:] = self.assist.wrench(self.z_ref, self.z, self.att, self.gyro,
                                          hdg_err, dt)[2:]
-            if self.mode in ("auto", "shared") and self.centring and np.isfinite(self.offset):
-                lat = self.offset + self.lat.k_lat_d * self.offset_rate
+            fresh = (self.offset_t is not None and np.isfinite(self.offset)
+                     and self.now() - self.offset_t <= 0.45)
+            if not (self.mode in ("auto", "shared") and self.centring and fresh):
+                self.offset_prev = None
+            else:
+                rate = 0.0 if self.offset_prev is None else (self.offset - self.offset_prev) / dt
+                self.offset_prev = self.offset
+                lat = self.offset + self.lat.k_lat_d * rate
                 cam = float(np.clip(-self.lat.k_lat * lat, -40, 40))
                 if self.mode == "auto":
                     tau[1] += cam

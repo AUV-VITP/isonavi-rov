@@ -72,6 +72,10 @@ check("camera share grows with turbidity", 0.0 < w[0] < w[1] < 1.0,
       f"{w[0]:.2f} at b 0.05, {w[1]:.2f} at b 1.0, 1.5 m")
 check("equal errors split the command", abs(blend_weight(0.05, 0.05) - 0.5) < 1e-12)
 
+# Tether: it pulls at the CG height, so its drag does not pitch the vehicle.
+tow = np.asarray(isonavi_rov.tow_point)
+check("tether pulls within 1 cm of the CG height", abs(tow[2]) < 0.01, f"{tow[2] * 1000:+.1f} mm")
+
 # Pilot run, assisted, completes the course.
 r = CourseRun(a, mode="assist", seed=2).run()
 check("assisted run finishes and touches the target",

@@ -233,7 +233,7 @@ class CourseRun:
         f = -0.5 * RHO * self.tc.cd * self.tc.diameter * trail * speed * v
         f[2] = 0.0
         fb = R.T @ f
-        r = np.array([-0.29, 0.0, 0.05])        # termination point on the frame
+        r = np.asarray(self.p.tow_point)        # the termination, from the solved budget
         return np.concatenate([fb, np.cross(r, fb)])
 
     def _measure(self, t, eta, yaw_meas):
