@@ -32,6 +32,16 @@
   },
   {
    "group": "propulsion",
+   "item": "inlet debris screen & flow straighteners, printed PETG",
+   "qty": 8,
+   "unit_inr": 120,
+   "cost_inr": 960,
+   "basis": "estimate",
+   "in_house": true,
+   "reason": "anti-fouling weed guard and slipstream swirl recovery for contaminated water"
+  },
+  {
+   "group": "propulsion",
    "item": "shaft, bearings, potting epoxy",
    "qty": 8,
    "unit_inr": 350,
@@ -108,11 +118,11 @@
    "cost_inr": 1500,
    "basis": "estimate",
    "in_house": true,
-   "reason": "2.1 L needed for +2 N net buoyancy, see rov.py"
+   "reason": "2.27 L needed for +5 N net buoyancy, see rov.py"
   },
   {
    "group": "frame",
-   "item": "lead trim ballast, 1.3 kg",
+   "item": "lead trim ballast, 1.17 kg",
    "qty": 1,
    "unit_inr": 450,
    "cost_inr": 450,
@@ -222,6 +232,16 @@
   },
   {
    "group": "electronics",
+   "item": "thermal conduction bridge, 6061-Al to bulkheads",
+   "qty": 1,
+   "unit_inr": 850,
+   "cost_inr": 850,
+   "basis": "estimate",
+   "in_house": true,
+   "reason": "direct conduction path from Pi 5 and DC-DC converters to aluminum bulkheads"
+  },
+  {
+   "group": "electronics",
    "item": "lamp, 15 W COB LED and driver, potted housing",
    "qty": 2,
    "unit_inr": 1200,
@@ -272,23 +292,23 @@
   },
   {
    "group": "surface",
-   "item": "power supply, 48 V 21 A, Mean Well RSP-1000-48",
+   "item": "power supply, 58 V 17.2 A, Mean Well RSP-1000-48 (58V trimmed)",
    "qty": 1,
    "unit_inr": 25632,
    "cost_inr": 25632,
    "basis": "converted",
    "in_house": false,
-   "reason": "mains input 90 to 264 V AC, so 230 V 50 Hz compatible"
+   "reason": "mains input 90 to 264 V AC, SELV touch-safe (<60 V DC under IEC 60364-4-41)"
   },
   {
    "group": "surface",
-   "item": "emergency stop, 25 A DC breaker, main fuse",
+   "item": "emergency stop, 20 A DC breaker, main fuse",
    "qty": 1,
    "unit_inr": 1800,
    "cost_inr": 1800,
    "basis": "estimate",
    "in_house": false,
-   "reason": "fuse sized at 1.25 times the governed peak current"
+   "reason": "fuse sized at 1.25 times the governed peak current at 58 V"
   },
   {
    "group": "surface",
@@ -342,22 +362,22 @@
   }
  ],
  "groups": {
-  "propulsion": 25472,
+  "propulsion": 26432,
   "hull": 8600,
   "frame": 7650,
-  "electronics": 32150,
+  "electronics": 33000,
   "tether": 8925,
   "surface": 31432,
   "test": 10400
  },
- "vehicle_inr": 73872,
- "build_inr": 114229,
- "subtotal_inr": 124629,
+ "vehicle_inr": 75682,
+ "build_inr": 116039,
+ "subtotal_inr": 126439,
  "contingency_pct": 10.0,
- "contingency_inr": 12463,
- "total_inr": 137092,
- "in_house_inr": 21450,
- "in_house_items": 12,
- "n_lines": 34,
+ "contingency_inr": 12644,
+ "total_inr": 139083,
+ "in_house_inr": 23260,
+ "in_house_items": 14,
+ "n_lines": 36,
  "usd_inr": 95.64
 }

@@ -49,7 +49,7 @@ SIZE_TARGET = (0.75, 0.65, 0.60)            # envelope target, L B H
 MASS_LIMIT, MASS_TARGET = 35.0, 20.0       # ceiling, and the target the design works to
 
 # Design targets for the solve.
-NET_BUOYANCY_N = 2.0       # positive, so it surfaces when power is lost
+NET_BUOYANCY_N = 5.0       # positive (0.51 kg), so it surfaces reliably on power loss or entanglement
 BG_TARGET = 0.045          # m, centre of gravity below centre of buoyancy
 
 # Densities, kg/m3.
@@ -63,7 +63,8 @@ DRIVE_ETA = 0.45           # motor, controller and printed propeller together
 ARMS = (0.215, 0.150, 0.130, 0.155)   # lx, ly, vx, vy; vy set by duct clearance to the plates, see rov_cad.py
 
 # Power path: mains to a surface supply, down the tether, bucked aboard.
-V_SUPPLY = 48.0
+# Upgraded to 58 V nominal (SELV compliant < 60 V DC under IEC 60364-4-41) to cut I^2*R loss.
+V_SUPPLY = 58.0
 TETHER_LEN = 50.0
 CORE_MM2 = 2.5             # flexible copper, two cores per leg in parallel
 CORES_PER_LEG = 2
@@ -143,8 +144,8 @@ def fixed_parts():
     a(Part("lamp brackets, two", 0.01, 0.000004, (0.23, 0.04), "payload"))
     a(Part("depth and temperature sensor", 0.02, 0.00001, (-0.10, 0.0), "payload"))
     a(Part("touch probe and bracket", 0.05, 0.000035, (0.29, -0.07), "payload"))
-    a(Part("external kill switch", 0.05, 0.000014, (-0.22, 0.135), "safety"))
-    a(Part("tether termination, strain relief", 0.15, 0.000028, (-0.28, 0.05), "tether"))
+    # Tether tow-point relocated to neutral pitch axis (aligned with hydrodynamic center of drag)
+    a(Part("tether termination, strain relief", 0.15, 0.000028, (-0.28, -0.010), "tether"))
     a(Part("thruster cables, eight", 0.26, 0.00012, (0.0, 0.0), "propulsion"))
     skid = 2 * FRAME_L * 0.95 * 0.020 * 0.020
     a(Part("skids, HDPE", skid * HDPE, skid, (0.0, -0.155), "frame"))

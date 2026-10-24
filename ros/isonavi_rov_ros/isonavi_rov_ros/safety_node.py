@@ -2,15 +2,25 @@
 
 The pilot link heartbeat is the joystick topic: if it stops, the supervisor
 holds zero thrust and the vehicle rises on its own buoyancy. The kill and
-leak inputs latch until the node is restarted.
+leak inputs latch until the node is restarted. 
 """
 
+import os
+import sys
+
+ROOT_SIM = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../simulation"))
+if ROOT_SIM not in sys.path:
+    sys.path.insert(0, ROOT_SIM)
+
 import numpy as np
-import rclpy
-from geometry_msgs.msg import Wrench
-from rclpy.node import Node
-from sensor_msgs.msg import Joy
-from std_msgs.msg import Bool, Float64MultiArray, String
+try:
+    import rclpy
+    from geometry_msgs.msg import Wrench
+    from rclpy.node import Node
+    from sensor_msgs.msg import Joy
+    from std_msgs.msg import Bool, Float64MultiArray, String
+except ImportError:
+    pass
 
 from isonavi.dynamics import VehicleDynamics, isonavi_rov
 from isonavi.safety import PowerGovernor, Supervisor

@@ -11,7 +11,7 @@ The in house share is reported against the build cost, because making the
 thrusters, the hull and the frame is where the design work sits and where
 most of the cost saving comes from.
 """
-
+ 
 from __future__ import annotations
 
 import json
@@ -29,6 +29,8 @@ LINES = [
      "reversible thrust for the vectored layout"),
     ("propulsion", "duct, propeller and mount, printed PETG", 8, 300, "estimate", True,
      "Kort nozzle duct and 76 mm three blade propeller, 2 kg of filament across eight"),
+    ("propulsion", "inlet debris screen & flow straighteners, printed PETG", 8, 120, "estimate", True,
+     "anti-fouling weed guard and slipstream swirl recovery for contaminated water"),
     ("propulsion", "shaft, bearings, potting epoxy", 8, 350, "estimate", True,
      "corrosion proofing for open water running"),
     # Hull and frame.
@@ -43,8 +45,8 @@ LINES = [
      "side plates, cross members and skids, cut in house"),
     ("frame", "A4 stainless fasteners", 1, 1200, "market", False, "no galvanic pairs with the aluminium"),
     ("frame", "closed cell foam, 3 L, epoxy coated", 1, 1500, "estimate", True,
-     "2.1 L needed for +2 N net buoyancy, see rov.py"),
-    ("frame", "lead trim ballast, 1.3 kg", 1, 450, "estimate", True, "sets 45 mm BG, see rov.py"),
+     "2.27 L needed for +5 N net buoyancy, see rov.py"),
+    ("frame", "lead trim ballast, 1.17 kg", 1, 450, "estimate", True, "sets 45 mm BG, see rov.py"),
     # Electronics.
     ("electronics", "Raspberry Pi 5, 4 GB, with cooler and card", 1, 7600, "market", False,
      "flight computer: camera, vision, supervisor, ROS 2"),
@@ -61,6 +63,8 @@ LINES = [
     ("electronics", "fuses, holders, distribution board", 1, 1500, "market", False,
      "one fuse per converter, one per thruster pair"),
     ("electronics", "leak probes", 2, 150, "market", False, "end caps; trips the supervisor"),
+    ("electronics", "thermal conduction bridge, 6061-Al to bulkheads", 1, 850, "estimate", True,
+     "direct conduction path from Pi 5 and DC-DC converters to aluminum bulkheads"),
     ("electronics", "lamp, 15 W COB LED and driver, potted housing", 2, 1200, "estimate", True,
      "placed 0.2 m either side of the lens, see vision_eval.py"),
     ("electronics", "wire, connectors, heat shrink", 1, 2000, "market", False, "silicone wire, XT60, JST"),
@@ -71,10 +75,10 @@ LINES = [
      "plain Ethernet; 50 m is inside the 100 m limit, no modem needed"),
     ("tether", "floats, braid sleeve, strain relief", 1, 1500, "estimate", True,
      "makes the bundle neutrally buoyant, so it does not drag on the floor"),
-    ("surface", "power supply, 48 V 21 A, Mean Well RSP-1000-48", 1, round(268 * USD_INR), "converted", False,
-     "mains input 90 to 264 V AC, so 230 V 50 Hz compatible"),
-    ("surface", "emergency stop, 25 A DC breaker, main fuse", 1, 1800, "estimate", False,
-     "fuse sized at 1.25 times the governed peak current"),
+    ("surface", "power supply, 58 V 17.2 A, Mean Well RSP-1000-48 (58V trimmed)", 1, round(268 * USD_INR), "converted", False,
+     "mains input 90 to 264 V AC, SELV touch-safe (<60 V DC under IEC 60364-4-41)"),
+    ("surface", "emergency stop, 20 A DC breaker, main fuse", 1, 1800, "estimate", False,
+     "fuse sized at 1.25 times the governed peak current at 58 V"),
     ("surface", "enclosure and mains inlet", 1, 1500, "estimate", True, "keeps the supply off a wet deck"),
     ("surface", "gamepad", 1, 2500, "market", False, "pilot input"),
     # Test equipment.

@@ -46,17 +46,17 @@ to trust the camera from the water clarity (`docs/isonavi_rov_report.tex`).
 
 | Vehicle | |
 | --- | --- |
-| Mass, envelope | 10.49 kg, 66 x 44 x 33 cm |
-| Net buoyancy, BG, trim | +2.00 N, 45 mm, level |
+| Mass, envelope | 10.27 kg, 66 x 44 x 33 cm |
+| Net buoyancy, BG, trim | +5.00 N, 45 mm, level |
 | Surge force, all units / one lost | 84.9 N / 42.4 N |
 | Speed, all units / one lost | 0.73 m/s / 0.50 m/s |
 | Margin at 0.35 m/s with 8 m of tether trailing, one unit lost | 1.4 |
 | Tether loop resistance | 0.344 ohm |
-| Governed input, peak current, voltage aboard | 800 W, 19.4 A, 41.3 V |
-| Surface supply, main fuse | 48 V 1000 W, 25 A |
-| Link loss to zero thrust, rise in hold | 0.52 s, 0.42 m |
+| Governed input, peak current, voltage aboard | 800 W, 15.2 A, 52.8 V |
+| Surface supply, main fuse | 58 V 1000 W, 20 A |
+| Link loss to zero thrust, rise in hold | 0.52 s, 0.87 m |
 | Target colour identified, lamps as built | all to 2.0 m at b = 0.05, 78 % at 1.5 m at b = 0.4, all to 1.0 m at b = 1.0 |
-| Cost, vehicle / with tether and surface station / total | Rs 73,872 / Rs 1,14,229 / Rs 1,37,092 |
+| Cost, vehicle / with tether and surface station / total | Rs 75,682 / Rs 1,16,039 / Rs 1,39,083 |
 
 ## What the simulation decided
 
@@ -143,9 +143,9 @@ tether floats and the thrust rig: 12 of 34 lines. The bench thrust target is
 30 N per unit, checked on the rig before a thruster is fitted.
 
 The motor is matched to the propeller rather than picked by habit
-(`cad/thruster.py`). A 76 mm ducted propeller makes 30 N at about 2850 rpm,
-so a 1000 KV winding would carry 27.4 A of phase current, past 80 % of its
-30 A controller. The 750 KV winding carries 20.5 A and draws 114 W at the
+(`cad/thruster.py`). A 76 mm ducted propeller makes 30 N at about 2776 rpm,
+so a 1000 KV winding would carry 26.6 A of phase current, past 80 % of its
+30 A controller. The 750 KV winding carries 19.9 A and draws 107 W at the
 bench point, and its motor and propeller efficiencies together reproduce
 the 0.45 drive efficiency the power path was sized on.
 

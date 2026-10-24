@@ -6,7 +6,7 @@ In auto mode, with centring engaged by the first button on entering a
 corridor, the vehicle also centres itself from the camera's wall estimate,
 with the lateral law the simulation flies; the pilot's sway stick still adds
 to it. The same button releases it.
-
+ 
 In shared mode the same button engages a blend instead: the sway command is
 the pilot's stick and the camera's centring law, weighted by the inverse of
 the error each has, as the simulation's shared mode does. The camera's error
@@ -17,12 +17,22 @@ range, 1.5 m, is the middle of the 3 m the operator model looks ahead along a
 corridor leg.
 """
 
+import os
+import sys
+
+ROOT_SIM = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../simulation"))
+if ROOT_SIM not in sys.path:
+    sys.path.insert(0, ROOT_SIM)
+
 import numpy as np
-import rclpy
-from geometry_msgs.msg import Wrench
-from rclpy.node import Node
-from sensor_msgs.msg import Imu, Joy
-from std_msgs.msg import Float64
+try:
+    import rclpy
+    from geometry_msgs.msg import Wrench
+    from rclpy.node import Node
+    from sensor_msgs.msg import Imu, Joy
+    from std_msgs.msg import Float64
+except ImportError:
+    pass
 
 from isonavi.control import wrap
 from isonavi.dynamics import isonavi_rov
@@ -55,6 +65,8 @@ class PilotNode(Node):
         self.offset = float("nan")
         self.offset_rate = 0.0
         self.offset_t = None
+        self.alpha_pos = 0.50
+        self.beta_vel = 0.15
         self.centring = False
         self.button_prev = 0
         self.lat = PilotConfig()
@@ -85,12 +97,25 @@ class PilotNode(Node):
                               m.angular_velocity.z])
 
     def on_offset(self, m):
-        # Differentiate at the camera rate, where the signal changes, not at
-        # the control rate, where it would be a train of steps.
+        # Alpha-beta state tracking filter on lateral offset to attenuate discrete
+        # camera measurement noise without injecting derivative noise into thrusters.
         t = self.get_clock().now().nanoseconds * 1e-9
-        if self.offset_t is not None and np.isfinite(self.offset) and t > self.offset_t:
-            self.offset_rate = (m.data - self.offset) / (t - self.offset_t)
-        self.offset, self.offset_t = m.data, t
+        z = float(m.data)
+        if not np.isfinite(z):
+            return
+        if self.offset_t is None or not np.isfinite(self.offset):
+            self.offset = z
+            self.offset_rate = 0.0
+            self.offset_t = t
+            return
+
+        dt = t - self.offset_t
+        if dt > 0.001:
+            pred_pos = self.offset + self.offset_rate * dt
+            res = z - pred_pos
+            self.offset = pred_pos + self.alpha_pos * res
+            self.offset_rate = self.offset_rate + (self.beta_vel / dt) * res
+            self.offset_t = t
 
     def on_depth(self, m):
         self.z = -abs(m.data)
