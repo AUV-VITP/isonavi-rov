@@ -6,7 +6,7 @@ In auto mode, with centring engaged by the first button on entering a
 corridor, the vehicle also centres itself from the camera's wall estimate,
 with the lateral law the simulation flies; the pilot's sway stick still adds
 to it. The same button releases it.
- 
+
 In shared mode the same button engages a blend instead: the sway command is
 the pilot's stick and the camera's centring law, weighted by the inverse of
 the error each has, as the simulation's shared mode does. The camera's error
@@ -15,24 +15,18 @@ section's, since the node does not know which section it is in; the pilot's
 is the operator model's read error at the set range and clarity. The default
 range, 1.5 m, is the middle of the 3 m the operator model looks ahead along a
 corridor leg.
+
+The offset is differenced at the control rate, as the simulation does, so its
+rate acts in the tick a new estimate arrives, and an estimate older than
+0.45 s is not used.
 """
 
-import os
-import sys
-
-ROOT_SIM = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../simulation"))
-if ROOT_SIM not in sys.path:
-    sys.path.insert(0, ROOT_SIM)
-
 import numpy as np
-try:
-    import rclpy
-    from geometry_msgs.msg import Wrench
-    from rclpy.node import Node
-    from sensor_msgs.msg import Imu, Joy
-    from std_msgs.msg import Float64
-except ImportError:
-    pass
+import rclpy
+from geometry_msgs.msg import Wrench
+from rclpy.node import Node
+from sensor_msgs.msg import Imu, Joy
+from std_msgs.msg import Float64
 
 from isonavi.control import wrap
 from isonavi.dynamics import isonavi_rov
@@ -63,10 +57,8 @@ class PilotNode(Node):
         self.yaw_ref = None
         self.axes = [0.0] * 8
         self.offset = float("nan")
-        self.offset_rate = 0.0
         self.offset_t = None
-        self.alpha_pos = 0.50
-        self.beta_vel = 0.15
+        self.offset_prev = None
         self.centring = False
         self.button_prev = 0
         self.lat = PilotConfig()
@@ -96,26 +88,11 @@ class PilotNode(Node):
         self.gyro = np.array([m.angular_velocity.x, m.angular_velocity.y,
                               m.angular_velocity.z])
 
-    def on_offset(self, m):
-        # Alpha-beta state tracking filter on lateral offset to attenuate discrete
-        # camera measurement noise without injecting derivative noise into thrusters.
-        t = self.get_clock().now().nanoseconds * 1e-9
-        z = float(m.data)
-        if not np.isfinite(z):
-            return
-        if self.offset_t is None or not np.isfinite(self.offset):
-            self.offset = z
-            self.offset_rate = 0.0
-            self.offset_t = t
-            return
+    def now(self):
+        return self.get_clock().now().nanoseconds * 1e-9
 
-        dt = t - self.offset_t
-        if dt > 0.001:
-            pred_pos = self.offset + self.offset_rate * dt
-            res = z - pred_pos
-            self.offset = pred_pos + self.alpha_pos * res
-            self.offset_rate = self.offset_rate + (self.beta_vel / dt) * res
-            self.offset_t = t
+    def on_offset(self, m):
+        self.offset, self.offset_t = m.data, self.now()
 
     def on_depth(self, m):
         self.z = -abs(m.data)
@@ -138,8 +115,14 @@ class PilotNode(Node):
             hdg_err = wrap(self.yaw_ref - self.att[2])
             tau[2:] = self.assist.wrench(self.z_ref, self.z, self.att, self.gyro,
                                          hdg_err, dt)[2:]
-            if self.mode in ("auto", "shared") and self.centring and np.isfinite(self.offset):
-                lat = self.offset + self.lat.k_lat_d * self.offset_rate
+            fresh = (self.offset_t is not None and np.isfinite(self.offset)
+                     and self.now() - self.offset_t <= 0.45)
+            if not (self.mode in ("auto", "shared") and self.centring and fresh):
+                self.offset_prev = None
+            else:
+                rate = 0.0 if self.offset_prev is None else (self.offset - self.offset_prev) / dt
+                self.offset_prev = self.offset
+                lat = self.offset + self.lat.k_lat_d * rate
                 cam = float(np.clip(-self.lat.k_lat * lat, -40, 40))
                 if self.mode == "auto":
                     tau[1] += cam

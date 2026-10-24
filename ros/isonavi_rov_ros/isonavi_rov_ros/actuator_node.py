@@ -1,5 +1,5 @@
 """Per-thruster force to ESC pulse widths on the ESP32, over the framed protocol.
- 
+
 The ESP32 firmware is the one validated in the loop; it drops every channel
 to neutral if this node goes quiet. Without a port the node only publishes
 the widths it would send, which is how it is exercised on the bench.
@@ -8,17 +8,10 @@ the widths it would send, which is how it is exercised on the bench.
 import os
 import sys
 
-ROOT_SIM = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../simulation"))
-if ROOT_SIM not in sys.path:
-    sys.path.insert(0, ROOT_SIM)
-
 import numpy as np
-try:
-    import rclpy
-    from rclpy.node import Node
-    from std_msgs.msg import Float64MultiArray, Int32MultiArray
-except ImportError:
-    pass
+import rclpy
+from rclpy.node import Node
+from std_msgs.msg import Float64MultiArray, Int32MultiArray
 
 from isonavi.dynamics import isonavi_rov
 

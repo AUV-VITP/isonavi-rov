@@ -82,6 +82,14 @@ def collect():
     frame = lin * v + quad * v * v
     m["framedrag"] = f"{frame:.1f}"
     m["tetherdrag"] = f"{b['ops_force_n'] - frame:.1f}"
+    # The tether pulls at the termination; its height from the CG sets the
+    # pitch the drag holds against the righting moment of the BG.
+    arm = abs(b["dynamics"]["tow_point"][2])
+    pitch = (b["ops_force_n"] - frame) * arm / (b["mass_kg"] * 9.81 * b["bg_m"])
+    m["towarm"] = f"{arm * 1000:.0f}"
+    m["towpitch"] = f"{np.degrees(pitch):.1f}"
+    m["supplyv"] = f"{t['supply_v']:.0f}"
+    m["convloss"] = f"{t['peak_input_w'] * (1 - t['buck_eta']):.0f}"
 
     # Slalom: the gap beside each post, and what the beam leaves of it a side.
     ac = ArenaConfig()

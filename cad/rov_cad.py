@@ -156,7 +156,10 @@ def build():
     add("probe bracket", box(0.020, 0.020, 0.059, (0.25, 0, -0.0945)), C_FRAME, "payload")
     add("kill switch", cq.Workplane("XY").circle(mm(0.015)).extrude(mm(0.020))
         .translate((mm(-0.22), mm(0.15), mm(0.125))), C_RED, "safety")   # rear cross member, outboard of the foam
-    add("tether termination", cyl_x(0.030, 0.040, (R.TETHER_END_X + 0.020, 0, 0.05)), C_POD, "tether")
+    add("tether termination", cyl_x(0.030, 0.040, (R.TETHER_END_X + 0.020, 0, R.TETHER_END_Z)), C_POD, "tether")
+    # Tow post between the rear cross members, and the bracket out to the termination.
+    add("tow post", box(0.030, 0.010, 0.240, (-0.220, 0, -0.005)), C_FRAME, "frame")
+    add("tow bracket", box(0.025, 0.020, 0.020, (-0.2475, 0, R.TETHER_END_Z)), C_FRAME, "frame")
     return assy, named, b
 
 

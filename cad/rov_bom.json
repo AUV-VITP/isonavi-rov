@@ -32,16 +32,6 @@
   },
   {
    "group": "propulsion",
-   "item": "inlet debris screen & flow straighteners, printed PETG",
-   "qty": 8,
-   "unit_inr": 120,
-   "cost_inr": 960,
-   "basis": "estimate",
-   "in_house": true,
-   "reason": "anti-fouling weed guard and slipstream swirl recovery for contaminated water"
-  },
-  {
-   "group": "propulsion",
    "item": "shaft, bearings, potting epoxy",
    "qty": 8,
    "unit_inr": 350,
@@ -98,7 +88,7 @@
    "cost_inr": 4500,
    "basis": "estimate",
    "in_house": true,
-   "reason": "side plates, cross members and skids, cut in house"
+   "reason": "side plates, cross members, skids and the tow post, cut in house"
   },
   {
    "group": "frame",
@@ -118,11 +108,11 @@
    "cost_inr": 1500,
    "basis": "estimate",
    "in_house": true,
-   "reason": "2.27 L needed for +5 N net buoyancy, see rov.py"
+   "reason": "2.38 L needed for +5 N net buoyancy, see rov.py"
   },
   {
    "group": "frame",
-   "item": "lead trim ballast, 1.17 kg",
+   "item": "lead trim ballast, 1.19 kg",
    "qty": 1,
    "unit_inr": 450,
    "cost_inr": 450,
@@ -182,17 +172,17 @@
   },
   {
    "group": "electronics",
-   "item": "DC-DC converter, 48 to 16 V, 400 W",
+   "item": "DC-DC converter, 36 to 75 V in, 16 V out, 400 W",
    "qty": 2,
    "unit_inr": 3500,
    "cost_inr": 7000,
    "basis": "estimate",
    "in_house": false,
-   "reason": "thruster rail; two share the 800 W governor cap"
+   "reason": "thruster rail; two share the 800 W governor cap; the input range covers the supply with margin"
   },
   {
    "group": "electronics",
-   "item": "DC-DC converter, 48 to 5 V, 5 A",
+   "item": "DC-DC converter, 36 to 75 V in, 5 V out, 5 A",
    "qty": 1,
    "unit_inr": 600,
    "cost_inr": 600,
@@ -232,13 +222,13 @@
   },
   {
    "group": "electronics",
-   "item": "thermal conduction bridge, 6061-Al to bulkheads",
+   "item": "thermal bridge, 6061 plate and pads to the rear end cap",
    "qty": 1,
    "unit_inr": 850,
    "cost_inr": 850,
    "basis": "estimate",
    "in_house": true,
-   "reason": "direct conduction path from Pi 5 and DC-DC converters to aluminum bulkheads"
+   "reason": "conducts the converter losses to the water-cooled cap instead of the still air in the tube"
   },
   {
    "group": "electronics",
@@ -292,23 +282,23 @@
   },
   {
    "group": "surface",
-   "item": "power supply, 58 V 17.2 A, Mean Well RSP-1000-48 (58V trimmed)",
+   "item": "power supply, Mean Well RSP-1000-48, set to 54 V",
    "qty": 1,
    "unit_inr": 25632,
    "cost_inr": 25632,
    "basis": "converted",
    "in_house": false,
-   "reason": "mains input 90 to 264 V AC, SELV touch-safe (<60 V DC under IEC 60364-4-41)"
+   "reason": "mains input 90 to 264 V AC, so 230 V 50 Hz compatible; output adjusts 43 to 55 V"
   },
   {
    "group": "surface",
-   "item": "emergency stop, 20 A DC breaker, main fuse",
+   "item": "emergency stop, 25 A DC breaker, main fuse",
    "qty": 1,
    "unit_inr": 1800,
    "cost_inr": 1800,
    "basis": "estimate",
    "in_house": false,
-   "reason": "fuse sized at 1.25 times the governed peak current at 58 V"
+   "reason": "fuse sized at 1.25 times the governed peak current"
   },
   {
    "group": "surface",
@@ -362,7 +352,7 @@
   }
  ],
  "groups": {
-  "propulsion": 26432,
+  "propulsion": 25472,
   "hull": 8600,
   "frame": 7650,
   "electronics": 33000,
@@ -370,14 +360,14 @@
   "surface": 31432,
   "test": 10400
  },
- "vehicle_inr": 75682,
- "build_inr": 116039,
- "subtotal_inr": 126439,
+ "vehicle_inr": 74722,
+ "build_inr": 115079,
+ "subtotal_inr": 125479,
  "contingency_pct": 10.0,
- "contingency_inr": 12644,
- "total_inr": 139083,
- "in_house_inr": 23260,
- "in_house_items": 14,
- "n_lines": 36,
+ "contingency_inr": 12548,
+ "total_inr": 138027,
+ "in_house_inr": 22300,
+ "in_house_items": 13,
+ "n_lines": 35,
  "usd_inr": 95.64
 }

@@ -40,6 +40,8 @@ expected = [
     f"{m['speedfull']} m/s", f"{m['speedlost']} m/s", f"{m['opsmargin']}",
     f"{m['loopohm']} ohm", f"{m['capw']} W", f"{m['peakamps']} A", f"{m['vinpeak']} V",
     f"{m['supplyw']} W", f"{m['fuse']} A", f"{m['uncapped']} W", f"{m['capthrust']} N",
+    f"{m['supplyv']} V {m['supplyw']} W, {m['fuse']} A", f"{m['supplyv']} V down the tether",
+    f"{m['inhouselines']} of {m['bomlines']} lines",
     f"{m['tetherdrag']} N", f"{m['framedrag']} N",
     f"{m['kvthousandphase']} A", f"{m['kvphase']} A",
     f"Rs {m['costvehicle']}", f"Rs {m['costbuild']}", f"Rs {m['costtotal']}",

@@ -70,6 +70,7 @@ class VehicleParams:
     volume: float = 0.0136          # gives slight positive buoyancy
     r_g: tuple = (0.0, 0.0, 0.0)    # centre of gravity in body frame
     r_b: tuple = (0.0, 0.0, 0.02)   # centre of buoyancy, above CG for stability
+    tow_point: tuple = (0.0, 0.0, 0.0)   # where a tether pulls, in body frame about the CG
     inertia: tuple = (0.26, 0.23, 0.37)
 
     # Added mass, diagonal approximation.
@@ -151,7 +152,7 @@ def _rov_params():
     k = d["dynamics"]
     return VehicleParams(
         name="isonavi-rov (open frame, pool)",
-        mass=k["mass"], volume=k["volume"], r_b=tuple(k["r_b"]),
+        mass=k["mass"], volume=k["volume"], r_b=tuple(k["r_b"]), tow_point=tuple(k["tow_point"]),
         inertia=tuple(k["inertia"]), added_mass=tuple(k["added_mass"]),
         lin_damp=tuple(k["lin_damp"]), quad_damp=tuple(k["quad_damp"]),
         max_thrust_n=d["thrust_max_n"], thruster_tau=0.10,

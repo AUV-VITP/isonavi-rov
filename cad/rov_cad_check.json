@@ -1,16 +1,16 @@
 {
  "volume": {
   "buoyancy": {
-   "built_l": 2.272018453514177,
-   "budget_l": 2.2720184535141774
+   "built_l": 2.4855911170419147,
+   "budget_l": 2.4855911170419156
   },
   "electronics": {
    "built_l": 0,
    "budget_l": 0.0
   },
   "frame": {
-   "built_l": 3.5832,
-   "budget_l": 3.6269500000000003
+   "built_l": 3.6652000000000005,
+   "budget_l": 3.70895
   },
   "hull": {
    "built_l": 3.448551388586745,
@@ -69,17 +69,17 @@
   "thruster v3 duct": {
    "plate_mm": 10.0,
    "hull_mm": 53.43396380615195,
-   "outflow_blocked_l": 0.004185751387787351
+   "outflow_blocked_l": 0.004185751387787326
   },
   "thruster v4 duct": {
    "plate_mm": 10.0,
    "hull_mm": 53.43396380615195,
-   "outflow_blocked_l": 0.004185751387787343
+   "outflow_blocked_l": 0.004185751387787328
   }
  },
  "min_plate_mm": 10.0,
  "min_hull_mm": 53.43396380615195,
- "max_outflow_blocked_l": 0.004185751387787351,
+ "max_outflow_blocked_l": 0.004185751387787328,
  "interference": [],
- "n_parts": 37
+ "n_parts": 39
 }

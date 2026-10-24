@@ -135,7 +135,7 @@ Requirement & Value & How it is met \\
 \midrule
 Mass in air & below \SI{35}{\kilo\gram}, target below \SI{20}{\kilo\gram} & \SI{\mmass}{\kilo\gram}, Section~\ref{sec:budget} \\
 Envelope & target below 75 x 65 x 60 cm & \mlenoverall{} x \mbeam{} x \mheight{} cm over the probe \\
-Power & 230 V 50 Hz mains, fused & 48 V supply, \SI{\mfuse}{\ampere} fuse, Section~\ref{sec:power} \\
+Power & 230 V 50 Hz mains, fused & \msupplyv{} V supply, \SI{\mfuse}{\ampere} fuse, Section~\ref{sec:power} \\
 Emergency stop & external kill switch & four layer chain, Section~\ref{sec:safety} \\
 Tether & about \SI{50}{\metre} & power pair and Cat5e, neutrally buoyant \\
 Pool & 20 x 10 m, 0.6 to 1.8 m deep & arena model, Section~\ref{sec:arena} \\
@@ -164,7 +164,7 @@ Autonomous survey & Piloted, with assist and vision modes & A person flies it; t
 Faired 1074 mm hull with fins & Open frame, \mlenframe{} cm & No current; a holonomic box clears a \SI{1}{\metre} corridor \\
 \SI{50}{\metre} rating, ring frames & One acrylic housing & Under two metres of water \\
 Forward-looking sonar and DVL & Camera, two lamps, IMU, depth & Targets are told apart by colour, in the dark \\
-\SI{1.5}{\kilo\watt\hour} battery aboard & 48 V down the tether & No battery and no battery leak aboard \\
+\SI{1.5}{\kilo\watt\hour} battery aboard & \msupplyv{} V down the tether & No battery and no battery leak aboard \\
 Mission state machine & Pilot assist, governor, supervisor, ROS 2 & It must stop safely on a kill, a leak or a lost link \\
 \bottomrule
 \end{tabular}
@@ -235,6 +235,12 @@ one thruster lost, a linear program over the surviving seven still makes
 \SI{\msurgelost}{\newton} with zero net moment, a margin of \mopsmargin{} over
 that load. That margin is what set the thrust target at \mthrustmax{}~N.
 
+The tether drag acts where the tether is terminated, so the termination sits
+at the height of the centre of gravity, on a post between the two rear cross
+members: \SI{\mtowarm}{\milli\metre} from the CG height, the drag at operating
+speed holds \mtowpitch$^\circ$ of pitch against the righting moment of the
+BG, which the attitude hold barely has to answer.
+
 \subsection{Thrusters, made in house}
 
 Each thruster is a hobby outrunner run flooded, with a potted stator, in a
@@ -252,10 +258,13 @@ was sized on.
 % ======================================================================
 \section{Power and tether}\label{sec:power}
 
-A mains supply at the poolside makes \SI{48}{\volt}, which runs down two
-paralleled \SI{2.5}{\milli\metre\squared} cores per leg (loop resistance
-\SI{\mloopohm}{\ohm}) to two converters aboard that feed the thruster rail.
-There is no battery on the vehicle.
+A 48 V mains supply at the poolside is set to \SI{\msupplyv}{\volt}, inside
+its 43 to 55 V adjustment and below its over-voltage threshold, and that runs
+down two paralleled \SI{2.5}{\milli\metre\squared} cores per leg (loop
+resistance \SI{\mloopohm}{\ohm}) to two converters aboard that feed the
+thruster rail. The higher voltage carries the same power on less current, and
+tether loss goes with the square of the current. There is no battery on the
+vehicle.
 
 All eight thrusters at full draw \SI{\muncapped}{\watt}, which would need a
 \SI{40}{\ampere} fuse and a supply to match. That is not a design point, so a
@@ -269,6 +278,11 @@ tether dissipates \SI{\mtetherloss}{\watt}. The surface supply is
 \SI{\msupplyw}{\watt} and the main fuse \SI{\mfuse}{\ampere}, at 1.25 times
 the governed peak current. Fifty metres is inside the \SI{100}{\metre} reach
 of plain Ethernet, so the data pair is Cat5e with no modem.
+
+At the governed peak the converters lose \SI{\mconvloss}{\watt} as heat inside
+the sealed acrylic tube, where still air and the acrylic wall both conduct
+poorly. An aluminium plate carries it from the converters to the rear end
+cap, which is machined aluminium and in the water.
 
 % ======================================================================
 \section{Safety chain}\label{sec:safety}
@@ -436,6 +450,11 @@ small; in murky water at range, the reverse. The camera's share is formed
 aboard and does not wait for the video delay, and a frame with no measurement
 leaves the pilot's command alone.
 \end{description}
+The camera's estimate is differenced at the control rate, so its rate acts
+in the tick a frame arrives. Smoothing it first with an alpha-beta tracker was
+tried and added contacts in both camera modes: the estimate does carry frame
+to frame noise, but the lag the tracker adds cost more than the noise it took
+out. The ROS~2 pilot node differences the same way.
 Runs are scored on what an observer records: contacts as events, the gate
 passed clean or not, the right target touched with the probe or not, and time.
 
@@ -528,9 +547,8 @@ vary.}\label{tab:lay}
 
 Forty random layouts give the same picture, paired layout by layout. In
 turbid water the shared mode is level with the assist
-($\mlaymiddiffassist \pm \mlaymiddiffassistse$ contacts a run) and
-slightly behind the manual pilot
-($\mlaymiddiffmanual \pm \mlaymiddiffmanualse$); in murky water it makes
+($\mlaymiddiffassist \pm \mlaymiddiffassistse$ contacts a run) and with the
+manual pilot ($\mlaymiddiffmanual \pm \mlaymiddiffmanualse$); in murky water it makes
 $\mlaymurkydiffassist \pm \mlaymurkydiffassistse$ against the assist and
 $\mlaymurkydiffmanual \pm \mlaymurkydiffmanualse$ against the manual pilot,
 and the assist's
@@ -616,7 +634,7 @@ Contingency & \mcostcont \\
 \end{tabular}
 \caption{Cost by group. \minhouselines{} of \mbomlines{} lines are made in
 house: the thrusters, end caps, frame, buoyancy, lamp housings, kill switch,
-tether floats and the thrust rig.}\label{tab:cost}
+thermal bridge, tether floats and the thrust rig.}\label{tab:cost}
 \end{table}
 
 % ======================================================================

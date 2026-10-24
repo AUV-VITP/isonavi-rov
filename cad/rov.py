@@ -44,12 +44,16 @@ RHO, G = 1000.0, 9.81
 # Envelope, metres. Frame plates set L and H, the thruster ducts set B.
 FRAME_L, FRAME_B, FRAME_H = 0.600, 0.440, 0.330
 PROBE_TIP_X, TETHER_END_X = 0.360, -0.300   # the probe and the tether gland stand proud of the frame
+# The tether is terminated at the height of the centre of gravity, so its drag
+# pulls through the CG and does not pitch the vehicle; at 0.05 m above it, the
+# drag at operating speed would hold several degrees of pitch against the BG.
+TETHER_END_Z = -0.010
 OVERALL_L = PROBE_TIP_X - TETHER_END_X
 SIZE_TARGET = (0.75, 0.65, 0.60)            # envelope target, L B H
 MASS_LIMIT, MASS_TARGET = 35.0, 20.0       # ceiling, and the target the design works to
 
 # Design targets for the solve.
-NET_BUOYANCY_N = 5.0       # positive (0.51 kg), so it surfaces reliably on power loss or entanglement
+NET_BUOYANCY_N = 5.0       # positive, so it surfaces when power or the link is lost
 BG_TARGET = 0.045          # m, centre of gravity below centre of buoyancy
 
 # Densities, kg/m3.
@@ -63,8 +67,9 @@ DRIVE_ETA = 0.45           # motor, controller and printed propeller together
 ARMS = (0.215, 0.150, 0.130, 0.155)   # lx, ly, vx, vy; vy set by duct clearance to the plates, see rov_cad.py
 
 # Power path: mains to a surface supply, down the tether, bucked aboard.
-# Upgraded to 58 V nominal (SELV compliant < 60 V DC under IEC 60364-4-41) to cut I^2*R loss.
-V_SUPPLY = 58.0
+# The 48 V supply trimmed to 54 V, inside its 43 to 55 V adjustment and below
+# its 56.6 V over-voltage floor; the higher voltage cuts tether current and loss.
+V_SUPPLY = 54.0
 TETHER_LEN = 50.0
 CORE_MM2 = 2.5             # flexible copper, two cores per leg in parallel
 CORES_PER_LEG = 2
@@ -124,7 +129,8 @@ def fixed_parts():
                         ("actuator interface, ESP32", 0.02, -0.02),
                         ("IMU", 0.01, 0.0),
                         ("camera module and lens", 0.03, 0.13),
-                        ("48 to 16 V converters, two", 0.52, -0.08),
+                        ("16 V converters, two", 0.52, -0.08),
+                        ("thermal bridge, 6061 plate to the rear cap", 0.06, -0.11),
                         ("ESCs, eight", 0.24, -0.04),
                         ("power distribution, fuses, relay", 0.20, -0.10),
                         ("ethernet interface and wiring", 0.25, 0.0),
@@ -144,8 +150,13 @@ def fixed_parts():
     a(Part("lamp brackets, two", 0.01, 0.000004, (0.23, 0.04), "payload"))
     a(Part("depth and temperature sensor", 0.02, 0.00001, (-0.10, 0.0), "payload"))
     a(Part("touch probe and bracket", 0.05, 0.000035, (0.29, -0.07), "payload"))
-    # Tether tow-point relocated to neutral pitch axis (aligned with hydrodynamic center of drag)
-    a(Part("tether termination, strain relief", 0.15, 0.000028, (-0.28, -0.010), "tether"))
+    a(Part("external kill switch", 0.05, 0.000014, (-0.22, 0.135), "safety"))
+    a(Part("tether termination, strain relief", 0.15, 0.000028, (-0.28, TETHER_END_Z), "tether"))
+    # The termination is carried by a post between the two rear cross members.
+    post, bracket = 0.030 * 0.010 * 0.240, 0.025 * 0.020 * 0.020
+    a(Part("tow post and bracket, HDPE", (post + bracket) * HDPE, post + bracket,
+           ((-0.220 * post - 0.2475 * bracket) / (post + bracket),
+            (-0.005 * post + TETHER_END_Z * bracket) / (post + bracket)), "frame"))
     a(Part("thruster cables, eight", 0.26, 0.00012, (0.0, 0.0), "propulsion"))
     skid = 2 * FRAME_L * 0.95 * 0.020 * 0.020
     a(Part("skids, HDPE", skid * HDPE, skid, (0.0, -0.155), "frame"))
@@ -249,6 +260,8 @@ def tether():
         "peak_current_a": i_peak,
         "peak_vin_v": V_SUPPLY - i_peak * r_loop,
         "peak_tether_loss_w": i_peak ** 2 * r_loop,
+        "supply_v": V_SUPPLY,
+        "buck_eta": BUCK_ETA,
         "fuse_a": int(math.ceil(i_peak * 1.25 / 5.0) * 5),
         "supply_a": V_SUPPLY and int(math.ceil(i_peak * 1.15)),
         "supply_w": int(math.ceil(V_SUPPLY * i_peak * 1.05 / 100) * 100),   # output at the governed peak, 5 % headroom
@@ -281,6 +294,7 @@ def main(write=True):
     heave_v = speed_for(env["heave"]["full"], lin[2], quad[2])
 
     tt = tether()
+    tow = next(p for p in parts if p.name.startswith("tether termination"))
     size_ok = OVERALL_L < SIZE_TARGET[0] and FRAME_B < SIZE_TARGET[1] and FRAME_H < SIZE_TARGET[2]
 
     out = {
@@ -300,6 +314,7 @@ def main(write=True):
         "ops_margin_one_lost": env["surge"]["one_lost"] / need,
         "tether": tt,
         "dynamics": {"mass": M, "volume": V, "r_b": [0.0, 0.0, float(cb[1] - cg[1])],
+                     "tow_point": [tow.pos[0] - float(cg[0]), 0.0, tow.pos[1] - float(cg[1])],
                      "inertia": list(inertia), "added_mass": added.tolist(),
                      "lin_damp": lin.tolist(), "quad_damp": quad.tolist()},
         "groups": {},

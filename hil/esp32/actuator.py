@@ -4,7 +4,7 @@ Speaks the same framed, CRC checked protocol as the rest of the bench, so the
 pulse widths this generates are the ones the flight computer's allocation
 actually produced, carried over the same wire format rather than a second,
 friendlier one written for the demo.
- 
+
 Eight LEDC channels at the standard 50 Hz ESC frame. On each command the duty
 registers are read back and converted to microseconds, so the echo reports what
 the hardware is really emitting rather than what it was told to emit. That
@@ -27,34 +27,12 @@ import struct
 import sys
 import time
 
-try:
-    from machine import Pin, PWM
-    import micropython
-except ImportError:
-    # Stubs for host-side IDE linting and PC evaluation
-    class _MockPWM:
-        def __init__(self, pin, freq=400):
-            self._duty = 0
-        def duty_u16(self, val=None):
-            if val is not None:
-                self._duty = val
-            return self._duty
-
-    class _MockPin:
-        def __init__(self, p):
-            pass
-
-    class _MockMicroPython:
-        @staticmethod
-        def kbd_intr(n):
-            pass
-
-    Pin, PWM, micropython = _MockPin, _MockPWM, _MockMicroPython
+from machine import Pin, PWM
 
 # Eight ESC outputs. Chosen to avoid the strapping pins (0, 2, 12, 15) and the
 # input-only pins (34 to 39), so nothing here disturbs boot.
 ESC_PINS = (13, 14, 16, 17, 18, 19, 21, 22)
-FREQ = 400                      # 400 Hz high-rate ESC frame (2.5 ms period, cuts latency by 87.5%)
+FREQ = 50                       # standard ESC frame, 20 ms
 PERIOD_US = 1000000 // FREQ
 DUTY_BITS = 16
 DUTY_MAX = (1 << DUTY_BITS) - 1
@@ -216,16 +194,10 @@ def run(idle_safe_ms=2000):
     # proof that run() actually started, which a silent loop cannot give.
     sout.write(encode(MSG_PWM_ECHO, struct.pack("<8H", *act.readback())))
 
-    import gc
-    gc.collect()
-    gc.threshold(gc.mem_free() // 4 + gc.mem_alloc())
-
     frames = 0
     last = time.ticks_ms()
     try:
         while True:
-            if frames % 100 == 0:
-                gc.collect()
             # One byte per poll. Batching reads behind a second poll(0) looked
             # tidier and silently read nothing on this port, which cost an
             # afternoon; this is the pattern that measurably works.
