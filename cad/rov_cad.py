@@ -130,13 +130,13 @@ def build():
             sgn = 1 if (x > 0) == (y > 0) else -1
             axis = (math.cos(math.radians(45)), sgn * math.sin(math.radians(45)), 0.0)
             k += 1
-            for j, (wp, col) in enumerate(thruster((x, y, -0.06), axis)):
+            for j, (wp, col) in enumerate(thruster((x, y, R.H_THR_Z), axis)):
                 add(f"thruster h{k} {'duct' if j == 0 else 'pod'}", wp, col, "propulsion")
     k = 0
     for x in (+vx, -vx):
         for y in (+vy, -vy):
             k += 1
-            for j, (wp, col) in enumerate(thruster((x, y, 0.10), (0, 0, 1))):
+            for j, (wp, col) in enumerate(thruster((x, y, R.V_THR_Z), (0, 0, 1))):
                 add(f"thruster v{k} {'duct' if j == 0 else 'pod'}", wp, col, "propulsion")
 
     v_foam = foam["vol"]

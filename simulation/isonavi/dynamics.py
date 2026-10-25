@@ -71,6 +71,8 @@ class VehicleParams:
     r_g: tuple = (0.0, 0.0, 0.0)    # centre of gravity in body frame
     r_b: tuple = (0.0, 0.0, 0.02)   # centre of buoyancy, above CG for stability
     tow_point: tuple = (0.0, 0.0, 0.0)   # where a tether pulls, in body frame about the CG
+    thruster_hz: float = 0.0        # height of the horizontal thrusters above the CG
+    thruster_ox: float = 0.0        # CG ahead of the point the arms are measured from
     inertia: tuple = (0.26, 0.23, 0.37)
 
     # Added mass, diagonal approximation.
@@ -156,7 +158,8 @@ def _rov_params():
         inertia=tuple(k["inertia"]), added_mass=tuple(k["added_mass"]),
         lin_damp=tuple(k["lin_damp"]), quad_damp=tuple(k["quad_damp"]),
         max_thrust_n=d["thrust_max_n"], thruster_tau=0.10,
-        arms=tuple(d["arms"]),
+        arms=tuple(d["arms"]), thruster_hz=k.get("thruster_hz", 0.0),
+        thruster_ox=k.get("thruster_ox", 0.0),
     )
 
 
@@ -179,19 +182,24 @@ def max_holdable_current(p: VehicleParams) -> float:
     Solves Xuu v^2 + Xu v = F_max for v, where F_max is the largest pure surge
     wrench the allocation can produce before any single thruster saturates.
     """
-    B = vectored_allocation(p.arms)
+    B = vectored_allocation(p.arms, p.thruster_hz, p.thruster_ox)
     f_unit = np.linalg.pinv(B) @ np.array([1.0, 0, 0, 0, 0, 0])
     F_max = p.max_thrust_n / np.max(np.abs(f_unit))
     Xu, Xuu = p.lin_damp[0], p.quad_damp[0]
     return float((-Xu + np.sqrt(Xu ** 2 + 4 * Xuu * F_max)) / (2 * Xuu))
 
 
-def vectored_allocation(arms=(0.156, 0.111, 0.120, 0.218)) -> np.ndarray:
+def vectored_allocation(arms=(0.156, 0.111, 0.120, 0.218), hz=0.0, ox=0.0) -> np.ndarray:
     """Thrust allocation for an eight thruster vectored configuration.
 
     Four horizontal thrusters at 45 degrees give surge, sway and yaw; four
     vertical thrusters give heave, roll and pitch. Returns the 6x8 matrix B
-    such that tau = B f.
+    such that tau = B f, with moments about the centre of gravity.
+
+    hz is the height of the horizontal thrusters above the CG and ox the CG's
+    distance ahead of the point the arms are measured from. A horizontal
+    thruster below the CG pitches the vehicle when it pushes, and the
+    allocation then answers that with the verticals.
     """
     a = np.radians(45.0)
     lx, ly, vx, vy = arms
@@ -199,11 +207,13 @@ def vectored_allocation(arms=(0.156, 0.111, 0.120, 0.218)) -> np.ndarray:
     # Horizontal: (x, y, direction sign) laid out fore-port, fore-stbd, aft-port, aft-stbd.
     horiz = [(+lx, +ly, +1), (+lx, -ly, -1), (-lx, +ly, -1), (-lx, -ly, +1)]
     for (px, py, s) in horiz:
+        px -= ox
         fx, fy = np.cos(a), s * np.sin(a)
-        cols.append([fx, fy, 0.0, 0.0, 0.0, px * fy - py * fx])
+        cols.append([fx, fy, 0.0, -hz * fy, hz * fx, px * fy - py * fx])
     # Vertical thrusters, all thrusting along +z.
     vert = [(+vx, +vy), (+vx, -vy), (-vx, +vy), (-vx, -vy)]
     for (px, py) in vert:
+        px -= ox
         cols.append([0.0, 0.0, 1.0, py * 1.0, -px * 1.0, 0.0])
     return np.array(cols).T
 
@@ -218,7 +228,7 @@ class VehicleDynamics:
     def __init__(self, params: VehicleParams | None = None, current_fn=None):
         self.p = params or VehicleParams()
         self.current_fn = current_fn or (lambda pos: np.zeros(3))
-        self.B = vectored_allocation(self.p.arms)
+        self.B = vectored_allocation(self.p.arms, self.p.thruster_hz, self.p.thruster_ox)
         self.B_pinv = np.linalg.pinv(self.B)
         self._build_matrices()
         self.reset()

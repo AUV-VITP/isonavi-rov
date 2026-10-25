@@ -241,6 +241,16 @@ members: \SI{\mtowarm}{\milli\metre} from the CG height, the drag at operating
 speed holds \mtowpitch$^\circ$ of pitch against the righting moment of the
 BG, which the attitude hold barely has to answer.
 
+The horizontal thrusters sit \SI{\mthrhz}{\milli\metre} below the CG, so
+surge thrust pitches the vehicle: at the full surge envelope that is
+\SI{\msurgepitchmoment}{\newton\metre} against a righting moment that peaks at
+$m g\,BG$, and uncorrected it would hold the vehicle about \msurgepitchdeg{}
+degrees nose up. The allocation therefore takes every moment about the CG with
+the thrusters at their real heights, and answers surge with the verticals; the
+envelope above already pays for it. The python dynamics had left the heights
+out until the Gazebo model (Section~\ref{sec:gazebo}), which places the
+thrusters where the CAD has them, made the coupling visible.
+
 \subsection{Thrusters, made in house}
 
 Each thruster is a hobby outrunner run flooded, with a potted stator, in a
@@ -253,7 +263,9 @@ works at low speed and high torque. A 1000~KV winding would carry
 \SI{30}{\ampere} controller. The \mkvchosen{}~KV winding carries
 \SI{\mkvphase}{\ampere} and draws \SI{\mkvinput}{\watt}, and its motor and
 propeller efficiencies together reproduce the drive efficiency the power path
-was sized on.
+was sized on. The propellers are printed in left and right hand pairs so their
+reaction torques cancel; the dynamics leave propeller torque out, which holds
+only with them paired.
 
 % ======================================================================
 \section{Power and tether}\label{sec:power}
@@ -586,6 +598,69 @@ hardware; this bench ran over localhost, and the next step is the same run on
 the boards.
 
 % ======================================================================
+\section{Gazebo model}\label{sec:gazebo}
+
+The vehicle also runs in Gazebo Harmonic under ROS~2 Jazzy, with the same
+nodes it flies on, against the pool world. Neither the model nor the world is
+written by hand: \texttt{make\_model.py} builds the vehicle from the solved
+budget and the CAD, and \texttt{make\_world.py} builds the pool from the arena
+the course runs use, for the reference or any random layout.
+
+\begin{itemize}
+\item \textbf{mass and inertia}: from the budget, about the CG, which is the
+link origin as it is the origin of the python dynamics; the eight propeller
+links the thruster plugin needs are taken out of the hull's share, so the
+totals are the budget's;
+\item \textbf{added mass}: integrated implicitly by the physics engine. The
+hydrodynamics plugin's own added mass is explicit, and diverges when the
+heave added mass exceeds the dry mass, as it does here;
+\item \textbf{buoyancy}: Gazebo integrates the volume of the collision shapes,
+which are also what a post or a wall meets. The contact shapes are the parts
+that can be met, at their real sizes, the side plates at the thickness that
+leaves their pocketed volume; one shape that touches nothing carries the rest
+of the budgeted volume, placed so the total and its centre are the budget's
+displaced volume and centre of buoyancy;
+\item \textbf{thrusters}: the stations and axes are checked against the
+allocation matrix when the model is written. The plugin spins each propeller
+by setting its joint speed; driving it through joint torque, the plugin's
+default, twists the hull with the reaction;
+\item \textbf{tether}: the course runs' tether drag, applied at the tow point
+every physics step from inside Gazebo;
+\item \textbf{depth}: from the pose with the depth cell's noise and rate.
+Gazebo has no water pressure sensor; its air pressure sensor reads the
+atmosphere.
+\end{itemize}
+
+\begin{table}[htbp]\centering\small
+\begin{tabular}{@{}llc@{}}
+\toprule
+Case, open loop & Quantity & RMS difference \\
+\midrule
+Rise, zero thrust & depth & \SI{\mtwinrisez}{\milli\metre} \\
+Heave, verticals pushing down & depth & \SI{\mtwinheavez}{\milli\metre} \\
+Surge & position, speed & \SI{\mtwinsurgex}{\milli\metre}, \SI{\mtwinsurgeu}{\milli\metre\per\second} \\
+Surge & pitch & \mtwinsurgepitch$^\circ$ \\
+Roll, released at \ang{20} & roll & \mtwinrollroll$^\circ$ \\
+Surge with the tether & position, speed & \SI{\mtwintetherx}{\milli\metre}, \SI{\mtwintetheru}{\milli\metre\per\second} \\
+\bottomrule
+\end{tabular}
+\caption{The Gazebo model against the python dynamics, same thruster forces
+from the same start, compared every \SI{20}{\milli\second}. The python
+thrusters apply their command at once here, as Gazebo's do.}\label{tab:twin}
+\end{table}
+
+\keyfig{../simulation/results/figures/r4_gazebo_twin.png}{The Gazebo model
+(dashed) against the python dynamics, open loop.}{fig:twin}
+
+The two agree to well inside a millimetre in translation; roll differs most,
+by a fraction of a degree over a swing of \mtwinrollspan$^\circ$. With the model
+checked, \texttt{test\_sim.sh} flies the nodes on it: an assisted surge stick
+moves the vehicle forward at its held depth, and silence on the pilot link
+holds every thruster at zero. Gazebo renders the camera without water, with
+no absorption or backscatter, so the vision results stay with the camera
+model of Section~\ref{sec:arena}; the Gazebo camera is for the plumbing.
+
+% ======================================================================
 \section{Software}
 
 \begin{itemize}
@@ -601,6 +676,9 @@ operator model's look-ahead along a corridor leg: the camera's share is
 murky water. Built under Jazzy and run end to end: with
 the gamepad live the actuator node emits the expected pulse widths, and when
 it stops the supervisor reports HOLD and every channel goes to neutral;
+\item \texttt{ros/isonavi\_rov\_description}, \texttt{ros/isonavi\_rov\_gazebo}:
+the Gazebo model and pool world, their generators, the tether and depth
+adapters and the check of Section~\ref{sec:gazebo};
 \item \texttt{hil}: the bench in Section~\ref{sec:hil};
 \item \texttt{cad}: budget, CAD and its checks, thruster match, bill of materials.
 \end{itemize}
@@ -645,7 +723,9 @@ the thrust envelope with a unit lost; the power path at the governed peak;
 target identification and the course estimators on rendered frames; the
 course in four modes across water clarities and random layouts. Verified on
 the bench: the vehicle-side software reproducing the simulation over the
-link, and the safety chain under link loss and kill.
+link, and the safety chain under link loss and kill. Verified in Gazebo: the
+vehicle model against the python dynamics, and the nodes flying it closed
+loop.
 
 What needs water, in order:
 \begin{enumerate}

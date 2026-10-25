@@ -1,47 +1,39 @@
-"""Converts Gazebo pressure or odometry to standard `/depth` (std_msgs/Float64).
+"""Depth for the pilot node, as the vehicle's pressure cell would give it.
 
-Listens to:
-  - `fluid_pressure` (sensor_msgs/FluidPressure)
-  - `model/isonavi_rov/odometry` (nav_msgs/Odometry)
+Gazebo Harmonic has no water pressure sensor: its air pressure sensor models
+the atmosphere and reads about 12 Pa per metre of depth, where water gives
+about 9.8 kPa. So depth is taken from the vehicle's pose, at the CG as the
+python depth cell takes it, with that cell's noise and rate.
 
-Publishes:
-  - `depth` (std_msgs/Float64, positive magnitude or negative z)
+Subscribes model/isonavi_rov/odometry; publishes depth (std_msgs/Float64,
+metres below the surface, positive).
 """
 
+import numpy as np
 import rclpy
-from rclpy.node import Node
-from sensor_msgs.msg import FluidPressure
 from nav_msgs.msg import Odometry
+from rclpy.node import Node
 from std_msgs.msg import Float64
 
-RHO = 1000.0
-G = 9.80665
-P_ATM = 101325.0
+from isonavi.sensors import DepthConfig
 
 
 class DepthAdapterNode(Node):
     def __init__(self):
         super().__init__("depth_adapter")
+        self.cfg = DepthConfig()
+        self.rng = np.random.default_rng(self.declare_parameter("seed", 2).value)
+        self.next_t = 0.0
         self.pub = self.create_publisher(Float64, "depth", 10)
-        self.create_subscription(FluidPressure, "fluid_pressure", self.on_pressure, 10)
         self.create_subscription(Odometry, "model/isonavi_rov/odometry", self.on_odom, 10)
-        self.last_z = 0.0
-        self.get_logger().info("Depth adapter active.")
-
-    def on_pressure(self, msg):
-        # Hydrostatic depth h = (P - Patm) / (rho * g)
-        p = msg.fluid_pressure
-        h = max(0.0, (p - P_ATM) / (RHO * G))
-        out = Float64()
-        out.data = float(h)
-        self.pub.publish(out)
 
     def on_odom(self, msg):
-        # In ROS/Gazebo coordinates, z is negative when submerged below water surface at z=0
-        z = msg.pose.pose.position.z
-        h = abs(z)
+        t = msg.header.stamp.sec + msg.header.stamp.nanosec * 1e-9
+        if t < self.next_t:
+            return
+        self.next_t = t + 1.0 / self.cfg.rate_hz
         out = Float64()
-        out.data = float(h)
+        out.data = float(-msg.pose.pose.position.z + self.rng.normal(0.0, self.cfg.sigma))
         self.pub.publish(out)
 
 

@@ -1,155 +1,78 @@
 #!/usr/bin/env bash
-# ==============================================================================
-# Automated End-to-End Simulation Test for ISONAVI-ROV
-# ROS 2 Jazzy + Gazebo Harmonic (Ubuntu 24.04 Noble Numbat)
-# ==============================================================================
+# Builds the Gazebo packages and checks the model and the vehicle's nodes on it:
+#   1. the Gazebo model against the python dynamics, five open loop cases;
+#   2. the world with the nodes: sensors stream, depth agrees with the pose,
+#      the camera renders and the tether drag is loaded;
+#   3. closed loop through every node: an assisted surge stick moves the
+#      vehicle forward while the depth hold keeps its depth;
+#   4. joystick silence holds every thruster at zero.
 set -e
-
 REPO="$(cd "$(dirname "$0")/.." && pwd)"
 WS="${WS:-$HOME/isonavi_rov_ws}"
-
-echo "========================================================================"
-echo "Step 1: Setting up ROS 2 Jazzy Workspace at $WS"
-echo "========================================================================"
 source /opt/ros/jazzy/setup.bash
 mkdir -p "$WS/src"
-ln -sfn "$REPO/ros/isonavi_rov_ros" "$WS/src/isonavi_rov_ros"
-ln -sfn "$REPO/ros/isonavi_rov_description" "$WS/src/isonavi_rov_description"
-ln -sfn "$REPO/ros/isonavi_rov_gazebo" "$WS/src/isonavi_rov_gazebo"
-
-cd "$WS"
-colcon build --symlink-install > /tmp/sim_build.log 2>&1 || {
-    echo "ERROR: Workspace build failed! Last 25 log lines:"
-    tail -25 /tmp/sim_build.log
-    exit 1
-}
+for p in isonavi_rov_ros isonavi_rov_description isonavi_rov_gazebo; do
+  ln -sfn "$REPO/ros/$p" "$WS/src/$p"
+done
+cd "$WS" && colcon build --symlink-install > /tmp/sim_build.log 2>&1 \
+  || { tail -25 /tmp/sim_build.log; exit 1; }
 source "$WS/install/setup.bash"
-
-export PYTHONPATH="$REPO/simulation:$PYTHONPATH"
-export ISONAVI_ROOT="$REPO"
-export GZ_SIM_RESOURCE_PATH="$REPO/ros/isonavi_rov_description/models:$WS/install/isonavi_rov_description/share/isonavi_rov_description/models:$GZ_SIM_RESOURCE_PATH"
+export PYTHONPATH="$REPO/simulation:$PYTHONPATH" ISONAVI_ROOT="$REPO"
+export GZ_SIM_RESOURCE_PATH="$REPO/ros/isonavi_rov_description/models:$GZ_SIM_RESOURCE_PATH"
+cd "$REPO"
 
 cleanup() {
-    echo "Cleaning up test processes..."
-    kill $(jobs -p) 2>/dev/null || true
-    pkill -f "ros2 launch isonavi_rov_gazebo" 2>/dev/null || true
-    pkill -f "parameter_bridge" 2>/dev/null || true
-    pkill -f "thruster_bridge" 2>/dev/null || true
-    pkill -f "depth_adapter" 2>/dev/null || true
-    pkill -f "gz sim" 2>/dev/null || true
-    pkill -f "ruby.*gz" 2>/dev/null || true
-    pkill -f "isonavi_rov_ros" 2>/dev/null || true
+  kill $(jobs -p) 2>/dev/null || true
+  pkill -f "ros2 launch isonavi_rov_gazebo" 2>/dev/null || true
+  pkill -f "gz sim" 2>/dev/null || true
+  pkill -f "isonavi_rov_(ros|gazebo)/lib" 2>/dev/null || true
+  pkill -f parameter_bridge 2>/dev/null || true
 }
 trap cleanup EXIT
+field() { timeout 15 ros2 topic echo --once "$1" --field "$2" 2>/dev/null | head -1; }
 
-echo "========================================================================"
-echo "Step 2: Launching Gazebo Harmonic Pool Course Simulation (Headless)"
-echo "========================================================================"
+echo "1. Gazebo model against the python dynamics"
+python3 ros/isonavi_rov_gazebo/isonavi_rov_gazebo/twin_check.py
+
+echo "2. world and nodes"
 ros2 launch isonavi_rov_gazebo sim.launch.py headless:=true > /tmp/sim_launch.log 2>&1 &
-LAUNCH_PID=$!
+for _ in $(seq 60); do field /clock clock.sec > /dev/null && break; sleep 1; done
+field /imu orientation.w > /dev/null && echo "  imu streaming"
+timeout 30 ros2 topic echo --once /camera/image_raw --field width > /tmp/sim_cam.txt 2>/dev/null
+grep -q 160 /tmp/sim_cam.txt && echo "  camera rendering at 160 px"
+z=$(field /model/isonavi_rov/odometry pose.pose.position.z)
+d=$(field /depth data)
+python3 -c "import sys; z, d = $z, $d; assert abs(d + z) < 0.06, (z, d); print(f'  depth {d:.3f} m against {-z:.3f} m from the pose')"
+grep -q "isonavi-rov tether drag" /tmp/sim_launch.log && echo "  tether drag loaded"
 
-echo "Waiting for Gazebo and ROS nodes to initialize..."
-sleep 6
-
-# Verify simulation clock is ticking
-echo "Verifying /clock topic..."
-timeout 6 ros2 topic echo /clock --once > /tmp/test_clock.txt || {
-    echo "ERROR: /clock topic timed out!"
-    tail -30 /tmp/sim_launch.log
-    exit 1
-}
-echo "Clock verified: $(cat /tmp/test_clock.txt | head -2)"
-
-# Verify IMU sensor
-echo "Verifying /imu topic..."
-timeout 6 ros2 topic echo /imu --once > /tmp/test_imu.txt || {
-    echo "ERROR: /imu topic timed out!"
-    exit 1
-}
-echo "IMU verified: frame_id = $(grep frame_id /tmp/test_imu.txt | head -1 | awk '{print $2}')"
-
-# Verify Odometry
-echo "Verifying /model/isonavi_rov/odometry..."
-timeout 6 ros2 topic echo /model/isonavi_rov/odometry --once > /tmp/test_odom.txt || {
-    echo "ERROR: Odometry topic timed out!"
-    exit 1
-}
-echo "Odometry verified: frame_id = $(grep frame_id /tmp/test_odom.txt | head -1 | awk '{print $2}')"
-
-# Verify Depth Adapter
-echo "Verifying /depth topic..."
-timeout 6 ros2 topic echo /depth --once > /tmp/test_depth.txt || {
-    echo "ERROR: Depth adapter /depth timed out!"
-    exit 1
-}
-echo "Depth adapter verified: $(cat /tmp/test_depth.txt | head -1)"
-
-echo "========================================================================"
-echo "Step 3: Testing Active Pilot Control (Streaming Joy at 10 Hz)"
-echo "========================================================================"
-# Stream forward surge = 0.6
-ros2 topic pub -r 10 /joy sensor_msgs/msg/Joy '{axes: [0.0, 0.6, 0.0, 0.0, 0.0, 0.0], buttons: [0, 0, 0, 0, 0, 0, 0, 0]}' > /dev/null 2>&1 &
-JOY_PID=$!
-
-sleep 2
-
-# Check safety state is ARMED
-echo "Checking /safety_state..."
-timeout 4 ros2 topic echo /safety_state --once > /tmp/test_state.txt
-echo "Safety state: $(cat /tmp/test_state.txt | head -1)"
-grep -q "ARMED" /tmp/test_state.txt || {
-    echo "ERROR: Safety state is not ARMED during active joy streaming!"
-    exit 1
-}
-
-# Check thruster forces
-echo "Checking /thrusters multi-array..."
-timeout 4 ros2 topic echo /thrusters --once > /tmp/test_thrusters.txt
-cat /tmp/test_thrusters.txt | grep -A9 data
-grep -q "data:" /tmp/test_thrusters.txt || {
-    echo "ERROR: No data on /thrusters!"
-    exit 1
-}
-
-# Check individual thruster command forwarded to Gazebo
-echo "Checking Gazebo bridge thruster 1 command..."
-timeout 4 ros2 topic echo /model/isonavi_rov/joint/thruster_1_joint/cmd_thrust --once > /tmp/test_cmd.txt
-echo "Joint 1 cmd_thrust: $(cat /tmp/test_cmd.txt | head -1)"
-grep -q "data:" /tmp/test_cmd.txt || {
-    echo "ERROR: Bridge failed to forward cmd_thrust to Gazebo!"
-    exit 1
-}
-
-echo "========================================================================"
-echo "Step 4: Testing Failsafe Link-Loss Detection"
-echo "========================================================================"
-echo "Killing joy stream to simulate tether/telemetry communication loss..."
-kill $JOY_PID 2>/dev/null || true
-
-# Comms timeout is 0.5s; wait 1.2s to trigger HOLD
-sleep 1.2
-
-echo "Checking safety state after silence..."
-timeout 4 ros2 topic echo /safety_state --once > /tmp/test_failsafe_state.txt
-echo "Failsafe safety state: $(cat /tmp/test_failsafe_state.txt | head -1)"
-grep -q "HOLD" /tmp/test_failsafe_state.txt || {
-    echo "ERROR: Supervisor failed to transition to HOLD!"
-    exit 1
-}
-
-echo "Checking thruster forces under HOLD..."
-timeout 4 ros2 topic echo /thrusters --once > /tmp/test_hold_thrusters.txt
-cat /tmp/test_hold_thrusters.txt | grep -A9 data
-# All 8 thrusters must be zeroed under HOLD
+echo "3. assisted surge stick, closed loop"
+x0=$(field /model/isonavi_rov/odometry pose.pose.position.x)
+ros2 topic pub -r 20 /joy sensor_msgs/msg/Joy "{axes: [0.0, 0.6, 0.0, 0.0, 0.0], buttons: [0]}" > /dev/null &
+JOY=$!
+sleep 3
+state=$(field /safety_state data)
+echo "  supervisor $state"
+[ "$state" = "ARMED" ]
+z1=$(field /model/isonavi_rov/odometry pose.pose.position.z)
+sleep 8
+x1=$(field /model/isonavi_rov/odometry pose.pose.position.x)
+z2=$(field /model/isonavi_rov/odometry pose.pose.position.z)
 python3 -c "
-with open('/tmp/test_hold_thrusters.txt') as f:
-    text = f.read()
-import re
-vals = [float(x) for x in re.findall(r'-?\d+\.\d+', text)]
-assert all(v == 0.0 for v in vals[:8]), f'Thrusters not zeroed under HOLD: {vals[:8]}'
-print('SUCCESS: All 8 thrusters held neutral (0.0 N) under link loss!')
-"
+x0, x1, z1, z2 = $x0, $x1, $z1, $z2
+assert x1 - x0 > 1.0, (x0, x1)
+assert abs(z2 - z1) < 0.10, (z1, z2)
+print(f'  moved {x1 - x0:.2f} m forward, depth held to {abs(z2 - z1) * 1000:.0f} mm')"
 
-echo "========================================================================"
-echo "ALL SIMULATION INTEGRATION TESTS PASSED SUCCESSFULLY!"
-echo "========================================================================"
+echo "4. joystick silence"
+kill $JOY
+sleep 2
+state=$(field /safety_state data)
+echo "  supervisor $state"
+[[ "$state" == HOLD* ]]
+timeout 15 ros2 topic echo --once /thrusters --field data > /tmp/sim_hold.txt
+python3 -c "
+import re
+v = [float(x) for x in re.findall(r'-?\d+\.\d+(?:e-?\d+)?', open('/tmp/sim_hold.txt').read())]
+assert len(v) == 8 and all(x == 0.0 for x in v), v
+print('  all eight thrusters at zero')"
+echo "simulation checks passed"

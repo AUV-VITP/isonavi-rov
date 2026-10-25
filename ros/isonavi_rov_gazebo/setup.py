@@ -20,7 +20,6 @@ setup(
         "console_scripts": [
             f"thruster_bridge = {PKG}.thruster_bridge:main",
             f"depth_adapter = {PKG}.depth_adapter:main",
-            f"tether_drag = {PKG}.tether_drag:main",
         ]
     },
 )

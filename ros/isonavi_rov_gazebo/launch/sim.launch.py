@@ -1,9 +1,16 @@
+"""Gazebo pool world, the ROS-Gazebo bridge and the vehicle's nodes.
+
+The world and the model are generated (make_world.py, make_model.py). The
+tether drag runs inside Gazebo from simulation/isonavi, so that package must
+be importable: set ISONAVI_ROOT to the repository, as test_sim.sh does.
+"""
+
 import os
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, ExecuteProcess, SetEnvironmentVariable
 from launch.conditions import IfCondition, UnlessCondition
-from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
+from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 
 
@@ -24,6 +31,10 @@ def generate_launch_description():
     new_resource_path = f"{models_path}:{current_resource_path}" if current_resource_path else models_path
 
     set_env = SetEnvironmentVariable("GZ_SIM_RESOURCE_PATH", new_resource_path)
+    root = os.environ.get("ISONAVI_ROOT", "")
+    py_path = os.pathsep.join(p for p in (os.path.join(root, "simulation") if root else "",
+                                          os.environ.get("PYTHONPATH", "")) if p)
+    set_py = SetEnvironmentVariable("PYTHONPATH", py_path)
 
     # Gazebo Harmonic headless vs GUI process
     gz_headless = ExecuteProcess(
@@ -85,6 +96,7 @@ def generate_launch_description():
         DeclareLaunchArgument("mode", default_value="assist", description="Pilot mode: manual, assist, auto, shared"),
         DeclareLaunchArgument("scattering", default_value="0.4", description="Water scattering turbidity b (1/m)"),
         set_env,
+        set_py,
         gz_headless,
         gz_gui,
         bridge_node,

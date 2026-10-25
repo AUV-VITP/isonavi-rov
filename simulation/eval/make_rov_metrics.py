@@ -89,6 +89,13 @@ def collect():
     m["towarm"] = f"{arm * 1000:.0f}"
     m["towpitch"] = f"{np.degrees(pitch):.1f}"
     m["supplyv"] = f"{t['supply_v']:.0f}"
+    # The horizontal thrusters sit below the CG: the pitch a pure surge at the
+    # full envelope would hold if the verticals did not answer it.
+    hz = b["dynamics"]["thruster_hz"]
+    m["thrhz"] = f"{abs(hz) * 1000:.0f}"
+    m["surgepitchmoment"] = f"{abs(hz) * env['surge']['full']:.1f}"
+    ratio = abs(hz) * env["surge"]["full"] / (b["mass_kg"] * 9.81 * b["bg_m"])
+    m["surgepitchdeg"] = f"{np.degrees(np.arcsin(min(ratio, 1.0))):.0f}"
     m["convloss"] = f"{t['peak_input_w'] * (1 - t['buck_eta']):.0f}"
 
     # Slalom: the gap beside each post, and what the beam leaves of it a side.
@@ -207,6 +214,16 @@ def collect():
     for bb, w in cw.items():
         e = load_errors(float(bb))
         m[f"rosweight{w}"] = f"{blend_weight(read_error(PilotConfig(), 1.5, float(bb)), max(e.walls.values())):.2f}"
+
+    # Gazebo model against the python dynamics, RMS difference by case.
+    tw = load(LOGS, "gazebo_twin.json")
+    for case, q, unit in (("rise", "z", 1000), ("heave", "z", 1000), ("surge", "x", 1000), ("surge", "u", 1000),
+                          ("surge", "pitch", 1), ("roll", "roll", 1), ("tether", "x", 1000), ("tether", "u", 1000)):
+        m[f"twin{case}{q}"] = f"{tw[case][q]['rms'] * unit:.2f}"
+    m["twinrollspan"] = f"{tw['roll']['roll']['span']:.0f}"
+    m["twintetherend"] = f"{tw['tether']['u']['end_gazebo']:.3f}"
+    m["twinsurgeend"] = f"{tw['surge']['u']['end_gazebo']:.3f}"
+    m["twinpassed"] = "pass" if tw["passed"] else "fail"
 
     # Bench.
     e, ll = hl["equivalence"], hl["link_loss"]

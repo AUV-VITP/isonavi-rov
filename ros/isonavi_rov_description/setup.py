@@ -1,5 +1,4 @@
 from glob import glob
-import os
 from setuptools import setup
 
 PKG = "isonavi_rov_description"
@@ -11,8 +10,8 @@ setup(
     data_files=[
         ("share/ament_index/resource_index/packages", [f"resource/{PKG}"]),
         (f"share/{PKG}", ["package.xml"]),
-        (f"share/{PKG}/urdf", glob("urdf/*")),
-        (f"share/{PKG}/models/isonavi_rov", glob("models/isonavi_rov/*")),
+        (f"share/{PKG}/models/isonavi_rov", glob("models/isonavi_rov/*.*")),
+        (f"share/{PKG}/models/isonavi_rov/meshes", glob("models/isonavi_rov/meshes/*")),
     ],
     install_requires=["setuptools"],
     zip_safe=True,
