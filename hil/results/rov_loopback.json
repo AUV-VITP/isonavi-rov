@@ -4,15 +4,15 @@
   "time_sim": 97.6799999999977,
   "contacts_hil": 1,
   "contacts_sim": 1,
-  "max_dev_m": 2.592861033596688e-08,
+  "max_dev_m": 2.8224040143736668e-08,
   "ticks": 4884,
-  "compute_ms_mean": 0.2856270122914202,
-  "wall_s": 9.35454449899953
+  "compute_ms_mean": 0.281066021502094,
+  "wall_s": 9.168777281000075
  },
  "link_loss": {
   "t_to_hold_s": 0.5199999999999889,
   "timeout_s": 0.5,
-  "rise_m": 0.8701878759885917,
+  "rise_m": 0.870187875988592,
   "hold_s": 9.460000000001212,
   "rearmed": true
  },
