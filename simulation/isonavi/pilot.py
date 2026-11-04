@@ -94,6 +94,25 @@ class TetherConfig:
     slack_fraction: float = 0.35  # trailing length as a fraction of the range from the entry
 
 
+def tether_wrench(eta, nu, tc, tow_point):
+    """Body wrench of the trailing tether: broadside drag on the length that trails.
+
+    The trailing length grows with the horizontal range from where the tether
+    enters the water, and the drag acts at the termination, tow_point, about
+    the CG. The Gazebo model applies this same function every physics step.
+    """
+    R = rot_body_to_world(*eta[3:6])
+    v = R @ nu[:3]
+    speed = np.linalg.norm(v[:2])
+    if speed < 1e-6:
+        return np.zeros(6)
+    trail = tc.slack_fraction * np.hypot(eta[0] - tc.entry[0], eta[1] - tc.entry[1])
+    f = -0.5 * RHO * tc.cd * tc.diameter * trail * speed * v
+    f[2] = 0.0
+    fb = R.T @ f
+    return np.concatenate([fb, np.cross(np.asarray(tow_point), fb)])
+
+
 @dataclass
 class CourseResult:
     mode: str
@@ -224,17 +243,7 @@ class CourseRun:
 
     # ----------------------------------------------------------------- helpers
     def _tether_wrench(self, eta, nu):
-        R = rot_body_to_world(*eta[3:6])
-        v = R @ nu[:3]
-        speed = np.linalg.norm(v[:2])
-        if speed < 1e-6:
-            return np.zeros(6)
-        trail = self.tc.slack_fraction * np.hypot(eta[0] - self.tc.entry[0], eta[1] - self.tc.entry[1])
-        f = -0.5 * RHO * self.tc.cd * self.tc.diameter * trail * speed * v
-        f[2] = 0.0
-        fb = R.T @ f
-        r = np.asarray(self.p.tow_point)        # the termination, from the solved budget
-        return np.concatenate([fb, np.cross(r, fb)])
+        return tether_wrench(eta, nu, self.tc, self.p.tow_point)
 
     def _measure(self, t, eta, yaw_meas):
         """One camera frame, reduced to the vehicle's y against the current reference."""

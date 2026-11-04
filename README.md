@@ -34,13 +34,13 @@ the gate clean and touched the right target. Contacts per run:
 
 | Mode | b = 0.05 /m | b = 0.4 /m | b = 1.0 /m |
 | --- | --- | --- | --- |
-| manual | 0.50 +/- 0.59 | 0.65 +/- 0.85 | 9.10 +/- 5.32 |
-| assist (depth, heading, attitude hold) | 0.15 +/- 0.36 | 0.50 +/- 0.67 | 6.20 +/- 5.09 |
-| camera alone in the lateral loop | 2.40 +/- 0.58 | 2.80 +/- 0.81 | 3.00 +/- 1.00 |
-| shared: pilot and camera blended by their errors | 0.15 +/- 0.36 | 0.40 +/- 0.66 | 0.55 +/- 0.86 |
+| manual | 0.50 +/- 0.59 | 0.65 +/- 0.85 | 8.55 +/- 5.28 |
+| assist (depth, heading, attitude hold) | 0.15 +/- 0.36 | 0.45 +/- 0.59 | 5.85 +/- 5.53 |
+| camera alone in the lateral loop | 2.50 +/- 0.67 | 2.80 +/- 0.81 | 2.90 +/- 0.83 |
+| shared: pilot and camera blended by their errors | 0.20 +/- 0.40 | 0.40 +/- 0.58 | 0.45 +/- 0.86 |
 
 On forty random layouts per cell, shared is level with the assist in turbid
-water (-0.07 +/- 0.15 contacts a run, paired by layout) and 3.35 +/- 0.53
+water (+0.03 +/- 0.14 contacts a run, paired by layout) and 3.33 +/- 0.56
 below it in murky water. Fly shared throughout; the weighting decides how much
 to trust the camera from the water clarity (`docs/isonavi_rov_report.tex`).
 
@@ -63,7 +63,7 @@ to trust the camera from the water clarity (`docs/isonavi_rov_report.tex`).
 **In murky water the pilot's read fails; in clear water the camera's does.**
 Depth and heading hold cut contacts in clear and turbid water, but at
 b = 1.0 /m the pilot's read of the corridor degrades with the two way
-attenuation of the vehicle's own light, and contacts rise to 9.10 +/- 5.32,
+attenuation of the vehicle's own light, and contacts rise to 8.55 +/- 5.28,
 most of them with the maze walls. The camera alone holds two to three
 contacts at every clarity, because its error comes from the estimator, not the
 water; they are at the first two slalom posts, where the gap leaves
@@ -98,6 +98,13 @@ adds 9.4 N to the frame's 21.9 N. Sized against that with one unit lost, a
 25 N thruster leaves almost no margin, which is what set the bench target at
 30 N per unit.
 
+**The horizontal thrusters sit 53 mm below the CG.** At the full
+surge envelope that is 4.5 N m of pitch against a righting moment that peaks at
+m g BG; uncorrected it would hold the vehicle about 76 degrees nose up. The
+allocation takes its moments about the CG with the thrusters at their real
+heights, so surge brings the verticals in to hold pitch. The Gazebo model,
+which places the thrusters where the CAD has them, is what showed it.
+
 **All eight thrusters at once is not a design point.** Uncapped they draw
 1079 W, which would need a 40 A fuse. A governor in the allocator caps input
 at 800 W and is exact in one step, because propeller power is homogeneous of
@@ -118,6 +125,8 @@ degree 3/2 in thrust; all eight together still make 24.3 N each.
 | `cad/thruster.py` | Motor KV matched to the propeller at the bench thrust point |
 | `cad/rov_bom.py` | Bill of materials in rupees with the basis of every price and what is made in house |
 | `ros/isonavi_rov_ros/` | ROS 2 nodes: pilot (assist and shared), safety, actuator, vision, and a launch file |
+| `ros/isonavi_rov_description/` | Gazebo model of the vehicle, written by `make_model.py` from the budget and the CAD |
+| `ros/isonavi_rov_gazebo/` | Pool world from `make_world.py`, bridge, launch, tether and depth adapters, `twin_check.py` |
 | `hil/` | Flight computer and ESP32 actuator interface, validated on hardware for isonavi; ROV bench over the same link |
 | `docs/isonavi_rov_report.tex` | Technical report; every number from `simulation/eval/make_rov_metrics.py` |
 
@@ -134,6 +143,20 @@ pulse widths, and when the joystick stops it reports `HOLD: pilot link lost`
 and all eight channels go to 1500 us. The pilot node runs the shared blend
 with the simulation's own functions, and the chain test checks its sway
 command against them.
+
+## Gazebo
+
+The vehicle also flies in Gazebo Harmonic under ROS 2 Jazzy, on the same
+nodes, in a pool world built from the course arena (any random layout with
+`make_world.py --layout k`). Neither is typed by hand: the model's mass,
+inertia, added mass, damping, thruster stations and displaced volume come
+from the solved budget, its meshes from the CAD, and the tether drag is the
+course runs' own, applied every physics step. Flown open loop with the same
+thruster forces, it agrees with the python dynamics to 0.08 mm in a free rise,
+0.07 mm and 0.34 mm/s in surge, 0.09 mm with the tether, and 0.18 degrees of
+roll over a 25 degree swing. Gazebo renders the camera without water, so
+the vision results stay with the camera model; the Gazebo camera is for the
+plumbing.
 
 ## Made in house
 
@@ -170,15 +193,23 @@ cd ..
 python hil/test_rov_loopback.py                 # vehicle software over the link, link loss, kill
 bash docs/build.sh                              # reports, and the check that README numbers match
 bash ros/test_chain.sh                          # ROS 2 build and chain test, under Jazzy
+bash ros/test_sim.sh                            # Gazebo model check and the nodes flying it, closed loop
+ros2 launch isonavi_rov_gazebo sim.launch.py headless:=false   # the pool, with the GUI
 ```
+
+`make_model.py` needs CadQuery for the meshes; the generated model and world
+are committed, so only a change to the budget, the CAD or the arena calls for
+running them again.
 
 ## Status
 
 Vehicle budget, CAD, power path, pilot model, vision and safety chain are
 complete and verified in simulation; the vehicle software reproduces the
 simulation over the link on the bench, and the ROS 2 layer runs end to end.
-The actuator interface and the flight computer pattern carry over from
-isonavi, where they were validated on hardware. The course geometry is parametric and set to
-representative values; element sizes and spacing go in `ArenaConfig`. Next is
+The Gazebo model agrees with the python dynamics and the nodes fly it closed
+loop. The actuator interface and the flight computer pattern carry over from
+isonavi, where they were validated on hardware. The course geometry is
+parametric and set to representative values; element sizes and spacing go in
+`ArenaConfig`. Next is
 water: thruster bench curves, a hull vacuum and dunk test, trim in a tank, and
 pilot hours on a mock course.

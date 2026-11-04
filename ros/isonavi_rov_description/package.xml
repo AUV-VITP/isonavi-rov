@@ -2,13 +2,11 @@
 <package format="3">
   <name>isonavi_rov_description</name>
   <version>0.1.0</version>
-  <description>Robot description, URDF and SDF models for isonavi-rov.</description>
+  <description>Gazebo model of isonavi-rov, generated from the solved budget and the CAD.</description>
   <maintainer email="toaadijoshi@gmail.com">Aadi</maintainer>
   <license>MIT</license>
 
   <buildtool_depend>ament_python</buildtool_depend>
-  <exec_depend>robot_state_publisher</exec_depend>
-  <exec_depend>xacro</exec_depend>
 
   <export>
     <build_type>ament_python</build_type>

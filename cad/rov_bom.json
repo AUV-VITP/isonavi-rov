@@ -28,7 +28,7 @@
    "cost_inr": 2400,
    "basis": "estimate",
    "in_house": true,
-   "reason": "Kort nozzle duct and 76 mm three blade propeller, 2 kg of filament across eight"
+   "reason": "Kort nozzle duct and 76 mm three blade propeller, 2 kg of filament across eight; printed in left and right hand pairs so the propeller torques cancel"
   },
   {
    "group": "propulsion",

@@ -26,13 +26,6 @@
   gz_type_name: "gz.msgs.IMU"
   direction: GZ_TO_ROS
 
-# Fluid Pressure (Hydrostatic Depth)
-- ros_topic_name: "fluid_pressure"
-  gz_topic_name: "/model/isonavi_rov/fluid_pressure"
-  ros_type_name: "sensor_msgs/msg/FluidPressure"
-  gz_type_name: "gz.msgs.FluidPressure"
-  direction: GZ_TO_ROS
-
 # Odometry
 - ros_topic_name: "model/isonavi_rov/odometry"
   gz_topic_name: "/model/isonavi_rov/odometry"

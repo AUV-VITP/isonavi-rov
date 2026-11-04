@@ -33,7 +33,8 @@ LINES = [
     ("propulsion", "bidirectional ESC, 30 A, 2 to 4S", 8, 844, "market", False,
      "reversible thrust for the vectored layout"),
     ("propulsion", "duct, propeller and mount, printed PETG", 8, 300, "estimate", True,
-     "Kort nozzle duct and 76 mm three blade propeller, 2 kg of filament across eight"),
+     "Kort nozzle duct and 76 mm three blade propeller, 2 kg of filament across eight; "
+     "printed in left and right hand pairs so the propeller torques cancel"),
     ("propulsion", "shaft, bearings, potting epoxy", 8, 350, "estimate", True,
      "corrosion proofing for open water running"),
     # Hull and frame.

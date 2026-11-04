@@ -65,6 +65,7 @@ THRUST_MAX_N = 30.0        # forward, at 16 V, the bench test acceptance figure;
 PROP_D = 0.076
 DRIVE_ETA = 0.45           # motor, controller and printed propeller together
 ARMS = (0.215, 0.150, 0.130, 0.155)   # lx, ly, vx, vy; vy set by duct clearance to the plates, see rov_cad.py
+H_THR_Z, V_THR_Z = -0.060, 0.100      # heights of the horizontal and the vertical thrusters
 
 # Power path: mains to a surface supply, down the tether, bucked aboard.
 # The 48 V supply trimmed to 54 V, inside its 43 to 55 V adjustment and below
@@ -141,10 +142,10 @@ def fixed_parts():
     lx, ly, vx, vy = ARMS
     for x in (+lx, -lx):
         for _ in (0, 1):
-            a(Part("thruster, horizontal", 0.17, 0.000127, (x, -0.06), "propulsion"))
+            a(Part("thruster, horizontal", 0.17, 0.000127, (x, H_THR_Z), "propulsion"))
     for x in (+vx, -vx):
         for _ in (0, 1):
-            a(Part("thruster, vertical", 0.17, 0.000127, (x, 0.10), "propulsion"))
+            a(Part("thruster, vertical", 0.17, 0.000127, (x, V_THR_Z), "propulsion"))
 
     a(Part("lamp, 15 W LED, two", 0.24, 0.000122, (0.23, 0.04), "payload"))
     a(Part("lamp brackets, two", 0.01, 0.000004, (0.23, 0.04), "payload"))
@@ -277,7 +278,10 @@ def tether_drag(trail_m, v, d=0.016, cd=1.2):
 def main(write=True):
     parts, M, V, cg, cb = solve()
     lin, quad, added, inertia = coefficients(M, V)
-    B = vectored_allocation(ARMS)
+    # Moments about the CG: the horizontal thrusters sit below it, so surge
+    # needs the verticals to hold pitch, and the envelope counts that.
+    hz, ox = H_THR_Z - float(cg[1]), float(cg[0])
+    B = vectored_allocation(ARMS, hz, ox)
 
     env = {}
     for ax, name in ((0, "surge"), (1, "sway"), (2, "heave"), (5, "yaw")):
@@ -315,6 +319,7 @@ def main(write=True):
         "tether": tt,
         "dynamics": {"mass": M, "volume": V, "r_b": [0.0, 0.0, float(cb[1] - cg[1])],
                      "tow_point": [tow.pos[0] - float(cg[0]), 0.0, tow.pos[1] - float(cg[1])],
+                     "thruster_hz": hz, "thruster_ox": ox,
                      "inertia": list(inertia), "added_mass": added.tolist(),
                      "lin_damp": lin.tolist(), "quad_damp": quad.tolist()},
         "groups": {},
