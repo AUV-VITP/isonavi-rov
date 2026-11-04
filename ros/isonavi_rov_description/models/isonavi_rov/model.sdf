@@ -358,8 +358,8 @@
         <camera>
           <horizontal_fov>1.3962634</horizontal_fov> <!-- 80 deg in water -->
           <image>
-            <width>160</width>
-            <height>120</height>
+            <width>640</width>
+            <height>480</height>
             <format>R8G8B8</format>
           </image>
           <clip>
@@ -568,6 +568,7 @@
       <thrust_coefficient>0.02</thrust_coefficient>
       <fluid_density>1000.0</fluid_density>
       <propeller_diameter>0.076</propeller_diameter>
+      <velocity_control>true</velocity_control>
       <max_thrust_cmd>30.0</max_thrust_cmd>
       <min_thrust_cmd>-30.0</min_thrust_cmd>
     </plugin>
@@ -577,6 +578,7 @@
       <thrust_coefficient>0.02</thrust_coefficient>
       <fluid_density>1000.0</fluid_density>
       <propeller_diameter>0.076</propeller_diameter>
+      <velocity_control>true</velocity_control>
       <max_thrust_cmd>30.0</max_thrust_cmd>
       <min_thrust_cmd>-30.0</min_thrust_cmd>
     </plugin>
@@ -586,6 +588,7 @@
       <thrust_coefficient>0.02</thrust_coefficient>
       <fluid_density>1000.0</fluid_density>
       <propeller_diameter>0.076</propeller_diameter>
+      <velocity_control>true</velocity_control>
       <max_thrust_cmd>30.0</max_thrust_cmd>
       <min_thrust_cmd>-30.0</min_thrust_cmd>
     </plugin>
@@ -595,6 +598,7 @@
       <thrust_coefficient>0.02</thrust_coefficient>
       <fluid_density>1000.0</fluid_density>
       <propeller_diameter>0.076</propeller_diameter>
+      <velocity_control>true</velocity_control>
       <max_thrust_cmd>30.0</max_thrust_cmd>
       <min_thrust_cmd>-30.0</min_thrust_cmd>
     </plugin>
@@ -604,6 +608,7 @@
       <thrust_coefficient>0.02</thrust_coefficient>
       <fluid_density>1000.0</fluid_density>
       <propeller_diameter>0.076</propeller_diameter>
+      <velocity_control>true</velocity_control>
       <max_thrust_cmd>30.0</max_thrust_cmd>
       <min_thrust_cmd>-30.0</min_thrust_cmd>
     </plugin>
@@ -613,6 +618,7 @@
       <thrust_coefficient>0.02</thrust_coefficient>
       <fluid_density>1000.0</fluid_density>
       <propeller_diameter>0.076</propeller_diameter>
+      <velocity_control>true</velocity_control>
       <max_thrust_cmd>30.0</max_thrust_cmd>
       <min_thrust_cmd>-30.0</min_thrust_cmd>
     </plugin>
@@ -622,6 +628,7 @@
       <thrust_coefficient>0.02</thrust_coefficient>
       <fluid_density>1000.0</fluid_density>
       <propeller_diameter>0.076</propeller_diameter>
+      <velocity_control>true</velocity_control>
       <max_thrust_cmd>30.0</max_thrust_cmd>
       <min_thrust_cmd>-30.0</min_thrust_cmd>
     </plugin>
@@ -631,6 +638,7 @@
       <thrust_coefficient>0.02</thrust_coefficient>
       <fluid_density>1000.0</fluid_density>
       <propeller_diameter>0.076</propeller_diameter>
+      <velocity_control>true</velocity_control>
       <max_thrust_cmd>30.0</max_thrust_cmd>
       <min_thrust_cmd>-30.0</min_thrust_cmd>
     </plugin>

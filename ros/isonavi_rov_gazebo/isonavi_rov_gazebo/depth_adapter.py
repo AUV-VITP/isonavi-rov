@@ -23,23 +23,19 @@ class DepthAdapterNode(Node):
     def __init__(self):
         super().__init__("depth_adapter")
         self.pub = self.create_publisher(Float64, "depth", 10)
-        self.create_subscription(FluidPressure, "fluid_pressure", self.on_pressure, 10)
         self.create_subscription(Odometry, "model/isonavi_rov/odometry", self.on_odom, 10)
+        self.create_subscription(Float64, "flood_water_rise", self.on_water_rise, 10)
+        self.water_surface_z = 0.0
         self.last_z = 0.0
-        self.get_logger().info("Depth adapter active.")
+        self.get_logger().info("Depth adapter active (odometry hydrostatic tracking).")
 
-    def on_pressure(self, msg):
-        # Hydrostatic depth h = (P - Patm) / (rho * g)
-        p = msg.fluid_pressure
-        h = max(0.0, (p - P_ATM) / (RHO * G))
-        out = Float64()
-        out.data = float(h)
-        self.pub.publish(out)
+    def on_water_rise(self, msg: Float64):
+        self.water_surface_z = float(msg.data)
 
     def on_odom(self, msg):
-        # In ROS/Gazebo coordinates, z is negative when submerged below water surface at z=0
+        # In ROS/Gazebo coordinates, z is negative when submerged below water surface
         z = msg.pose.pose.position.z
-        h = abs(z)
+        h = max(0.0, self.water_surface_z - z)
         out = Float64()
         out.data = float(h)
         self.pub.publish(out)

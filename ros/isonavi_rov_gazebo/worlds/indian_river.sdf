@@ -1,0 +1,450 @@
+<?xml version="1.0" ?>
+<sdf version="1.8">
+  <world name="indian_river">
+
+    <!-- =================================================================== -->
+    <!-- PHYSICS ENGINE CONFIGURATION                                        -->
+    <!-- =================================================================== -->
+    <physics name="1ms" type="ode">
+      <max_step_size>0.001</max_step_size>
+      <real_time_factor>1.0</real_time_factor>
+    </physics>
+
+    <!-- Core Gazebo Harmonic Simulation Plugins -->
+    <plugin filename="gz-sim-physics-system" name="gz::sim::systems::Physics"/>
+    <plugin filename="gz-sim-user-commands-system" name="gz::sim::systems::UserCommands"/>
+    <plugin filename="gz-sim-scene-broadcaster-system" name="gz::sim::systems::SceneBroadcaster"/>
+    <plugin filename="gz-sim-sensors-system" name="gz::sim::systems::Sensors">
+      <render_engine>ogre2</render_engine>
+    </plugin>
+    <plugin filename="gz-sim-imu-system" name="gz::sim::systems::Imu"/>
+    <plugin filename="gz-sim-air-pressure-system" name="gz::sim::systems::AirPressure"/>
+
+    <!-- =================================================================== -->
+    <!-- HIGH-TURBIDITY MONSOON SILT FOG & OPTICAL OBSCURITY                 -->
+    <!-- Simulates heavy suspended sediment (3.2 g/L) and low visibility     -->
+    <!-- =================================================================== -->
+    <scene>
+      <ambient>0.26 0.22 0.14 1.0</ambient>
+      <background>0.24 0.20 0.12 1.0</background>
+      <grid>false</grid>
+      <shadows>false</shadows>
+      <!-- Dense linear silt fog: visibility degrades rapidly between 0.3m and 2.8m -->
+      <fog>
+        <type>linear</type>
+        <color>0.28 0.23 0.14 1.0</color>
+        <density>0.60</density>
+        <start>0.3</start>
+        <end>2.8</end>
+      </fog>
+    </scene>
+
+    <!-- Buoyancy: Indian River silty water density (1004 kg/m^3 with suspended sediment) -->
+    <plugin filename="gz-sim-buoyancy-system" name="gz::sim::systems::Buoyancy">
+      <graded_buoyancy>
+        <default_density>1004.0</default_density>
+        <density_change>
+          <above_depth>0.0</above_depth>
+          <density>1.2</density>
+        </density_change>
+      </graded_buoyancy>
+      <enable>isonavi_rov::base_link</enable>
+    </plugin>
+
+    <!-- =================================================================== -->
+    <!-- ATMOSPHERE & RIVER LIGHTING                                         -->
+    <!-- =================================================================== -->
+    <!-- Heavy overcast monsoon sun severely attenuated by turbid water -->
+    <light type="directional" name="sun">
+      <cast_shadows>false</cast_shadows>
+      <pose>15 0 25 0 0 0</pose>
+      <diffuse>0.32 0.27 0.16 1.0</diffuse>
+      <specular>0.05 0.05 0.02 1.0</specular>
+      <direction>-0.3 0.15 -0.9</direction>
+    </light>
+
+    <!-- Muddy river backscatter fill light -->
+    <light type="directional" name="underwater_murky_fill">
+      <cast_shadows>false</cast_shadows>
+      <pose>10 0 5 0 0 0</pose>
+      <diffuse>0.24 0.20 0.12 1.0</diffuse>
+      <specular>0.02 0.02 0.01 1.0</specular>
+      <direction>0.1 -0.1 -1.0</direction>
+    </light>
+
+    <!-- =================================================================== -->
+    <!-- WATER SURFACE (z = 0.0 m)                                           -->
+    <!-- =================================================================== -->
+    <model name="river_water_surface">
+      <static>true</static>
+      <pose>15.0 0.0 0.0 0 0 0</pose>
+      <link name="surface_link">
+        <visual name="surface_visual">
+          <geometry><box><size>35.0 18.0 0.005</size></box></geometry>
+          <material>
+            <ambient>0.28 0.25 0.14 0.65</ambient>
+            <diffuse>0.32 0.28 0.16 0.65</diffuse>
+            <specular>0.7 0.7 0.5 0.4</specular>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- =================================================================== -->
+    <!-- ALLUVIAL RIVERBED & EMBANKMENTS                                     -->
+    <!-- =================================================================== -->
+    <!-- Main Natural Riverbed (Sloping silt & alluvium, 35m x 14m) -->
+    <model name="riverbed">
+      <static>true</static>
+      <pose>15.0 0.0 -2.40 0 0.035 0</pose>
+      <link name="bed_link">
+        <visual name="bed_visual">
+          <geometry><box><size>35.2 14.0 0.20</size></box></geometry>
+          <material>
+            <ambient>0.42 0.36 0.25 1.0</ambient>
+            <diffuse>0.46 0.40 0.28 1.0</diffuse>
+            <specular>0.05 0.05 0.05 1.0</specular>
+          </material>
+        </visual>
+        <collision name="bed_col">
+          <geometry><box><size>35.2 14.0 0.20</size></box></geometry>
+        </collision>
+      </link>
+    </model>
+
+    <!-- Port River Bank / Ghat Embankment (y = +7.5 m) -->
+    <model name="river_bank_port">
+      <static>true</static>
+      <pose>15.0 7.8 -1.2 0.523 0 0</pose>
+      <link name="bank_link">
+        <visual name="v">
+          <geometry><box><size>35.0 3.5 0.3</size></box></geometry>
+          <material>
+            <ambient>0.38 0.34 0.28 1.0</ambient>
+            <diffuse>0.42 0.37 0.30 1.0</diffuse>
+          </material>
+        </visual>
+        <collision name="c">
+          <geometry><box><size>35.0 3.5 0.3</size></box></geometry>
+        </collision>
+      </link>
+    </model>
+
+    <!-- Starboard River Bank / Silt Pitching (y = -7.5 m) -->
+    <model name="river_bank_stbd">
+      <static>true</static>
+      <pose>15.0 -7.8 -1.2 -0.523 0 0</pose>
+      <link name="bank_link">
+        <visual name="v">
+          <geometry><box><size>35.0 3.5 0.3</size></box></geometry>
+          <material>
+            <ambient>0.38 0.34 0.28 1.0</ambient>
+            <diffuse>0.42 0.37 0.30 1.0</diffuse>
+          </material>
+        </visual>
+        <collision name="c">
+          <geometry><box><size>35.0 3.5 0.3</size></box></geometry>
+        </collision>
+      </link>
+    </model>
+
+    <!-- Upstream Boundary (x = -1.5 m) -->
+    <model name="river_upstream_boundary">
+      <static>true</static>
+      <pose>-1.5 0.0 -1.0 0 0 0</pose>
+      <link name="link">
+        <visual name="v"><geometry><box><size>0.2 18.0 4.0</size></box></geometry>
+        <material><ambient>0.3 0.28 0.22 1</ambient><diffuse>0.3 0.28 0.22 1</diffuse></material></visual>
+        <collision name="c"><geometry><box><size>0.2 18.0 4.0</size></box></geometry></collision>
+      </link>
+    </model>
+
+    <!-- Downstream Boundary (x = 32.5 m) -->
+    <model name="river_downstream_boundary">
+      <static>true</static>
+      <pose>32.5 0.0 -1.5 0 0 0</pose>
+      <link name="link">
+        <visual name="v"><geometry><box><size>0.2 18.0 5.0</size></box></geometry>
+        <material><ambient>0.3 0.28 0.22 1</ambient><diffuse>0.3 0.28 0.22 1</diffuse></material></visual>
+        <collision name="c"><geometry><box><size>0.2 18.0 5.0</size></box></geometry></collision>
+      </link>
+    </model>
+
+    <!-- =================================================================== -->
+    <!-- SUBMERGED STRUCTURE 1: REINFORCED CONCRETE BRIDGE PIER (IRC:SP:35)  -->
+    <!-- Position: x = 8.0 m, y = 0.0 m (Major inspection target)           -->
+    <!-- =================================================================== -->
+    <model name="bridge_pier">
+      <static>true</static>
+      <pose>8.0 0.0 0.5 0 0 0</pose>
+      <link name="pier_link">
+        <!-- Main Concrete Pier Column (radius 0.9m, height 6.0m) -->
+        <visual name="column_visual">
+          <pose>0 0 0 0 0 0</pose>
+          <geometry><cylinder><radius>0.90</radius><length>6.0</length></cylinder></geometry>
+          <material>
+            <ambient>0.52 0.50 0.46 1.0</ambient>
+            <diffuse>0.55 0.53 0.48 1.0</diffuse>
+            <specular>0.1 0.1 0.1 1.0</specular>
+          </material>
+        </visual>
+        <collision name="column_col">
+          <pose>0 0 0 0 0 0</pose>
+          <geometry><cylinder><radius>0.90</radius><length>6.0</length></cylinder></geometry>
+        </collision>
+
+        <!-- Pier Scour Collar / Well Foundation Base at Riverbed (z = -2.2m) -->
+        <visual name="footing_visual">
+          <pose>0 0 -2.4 0 0 0</pose>
+          <geometry><cylinder><radius>1.45</radius><length>0.50</length></cylinder></geometry>
+          <material>
+            <ambient>0.45 0.43 0.40 1.0</ambient>
+            <diffuse>0.48 0.46 0.42 1.0</diffuse>
+          </material>
+        </visual>
+        <collision name="footing_col">
+          <pose>0 0 -2.4 0 0 0</pose>
+          <geometry><cylinder><radius>1.45</radius><length>0.50</length></cylinder></geometry>
+        </collision>
+
+        <!-- Pier Waterline Biofouling / Silt Ring (z = -0.3 m) -->
+        <visual name="waterline_ring">
+          <pose>0 0 -0.3 0 0 0</pose>
+          <geometry><cylinder><radius>0.92</radius><length>0.35</length></cylinder></geometry>
+          <material>
+            <ambient>0.28 0.32 0.22 1.0</ambient>
+            <diffuse>0.30 0.35 0.24 1.0</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- =================================================================== -->
+    <!-- SUBMERGED STRUCTURE 2: SCOURED RIVERBED CROSSING PIPELINE            -->
+    <!-- Position: x = 16.0 m, spans across y from -5m to +5m                -->
+    <!-- =================================================================== -->
+    <model name="riverbed_pipeline">
+      <static>true</static>
+      <pose>16.0 0.0 -2.45 1.5707963 0 0</pose>
+      <link name="pipe_link">
+        <!-- Main Steel Crossing Pipeline (diameter 0.44m, length 11.0m) -->
+        <visual name="pipe_visual">
+          <geometry><cylinder><radius>0.22</radius><length>11.0</length></cylinder></geometry>
+          <material>
+            <ambient>0.28 0.32 0.34 1.0</ambient>
+            <diffuse>0.32 0.36 0.38 1.0</diffuse>
+            <specular>0.3 0.3 0.35 1.0</specular>
+          </material>
+        </visual>
+        <collision name="pipe_col">
+          <geometry><cylinder><radius>0.22</radius><length>11.0</length></cylinder></geometry>
+        </collision>
+      </link>
+    </model>
+
+    <!-- Pipeline Saddle Support Port (x = 16.0m, y = 3.0m) -->
+    <model name="pipe_saddle_port">
+      <static>true</static>
+      <pose>16.0 3.0 -2.60 0 0 0</pose>
+      <link name="link">
+        <visual name="v"><geometry><box><size>0.6 0.6 0.4</size></box></geometry>
+        <material><ambient>0.48 0.46 0.42 1</ambient><diffuse>0.48 0.46 0.42 1</diffuse></material></visual>
+        <collision name="c"><geometry><box><size>0.6 0.6 0.4</size></box></geometry></collision>
+      </link>
+    </model>
+
+    <!-- Pipeline Saddle Support Stbd (x = 16.0m, y = -3.0m) -->
+    <model name="pipe_saddle_stbd">
+      <static>true</static>
+      <pose>16.0 -3.0 -2.60 0 0 0</pose>
+      <link name="link">
+        <visual name="v"><geometry><box><size>0.6 0.6 0.4</size></box></geometry>
+        <material><ambient>0.48 0.46 0.42 1</ambient><diffuse>0.48 0.46 0.42 1</diffuse></material></visual>
+        <collision name="c"><geometry><box><size>0.6 0.6 0.4</size></box></geometry></collision>
+      </link>
+    </model>
+
+    <!-- =================================================================== -->
+    <!-- SUBMERGED STRUCTURE 3: BARRAGE INTAKE TRASH RACK (x = 24.0 m)       -->
+    <!-- =================================================================== -->
+    <model name="intake_trash_rack">
+      <static>true</static>
+      <pose>24.0 0.0 -1.6 0 0 0</pose>
+      <link name="rack_link">
+        <!-- Top Beam -->
+        <visual name="top_beam">
+          <pose>0 0 1.2 0 1.5707963 0</pose>
+          <geometry><box><size>0.15 4.0 0.15</size></box></geometry>
+          <material><ambient>0.25 0.27 0.28 1</ambient><diffuse>0.28 0.30 0.32 1</diffuse></material>
+        </visual>
+        <!-- Bottom Beam -->
+        <visual name="bot_beam">
+          <pose>0 0 -1.2 0 1.5707963 0</pose>
+          <geometry><box><size>0.15 4.0 0.15</size></box></geometry>
+          <material><ambient>0.25 0.27 0.28 1</ambient><diffuse>0.28 0.30 0.32 1</diffuse></material>
+        </visual>
+        <!-- Left Post -->
+        <visual name="left_post">
+          <pose>0 1.95 0 0 0 0</pose>
+          <geometry><cylinder><radius>0.08</radius><length>2.5</length></cylinder></geometry>
+          <material><ambient>0.25 0.27 0.28 1</ambient><diffuse>0.28 0.30 0.32 1</diffuse></material>
+        </visual>
+        <!-- Right Post -->
+        <visual name="right_post">
+          <pose>0 -1.95 0 0 0 0</pose>
+          <geometry><cylinder><radius>0.08</radius><length>2.5</length></cylinder></geometry>
+          <material><ambient>0.25 0.27 0.28 1</ambient><diffuse>0.28 0.30 0.32 1</diffuse></material>
+        </visual>
+
+        <!-- Vertical Trash Rack Bars -->
+        <visual name="bar_1"><pose>0 -1.2 0 0 0 0</pose><geometry><cylinder><radius>0.025</radius><length>2.4</length></cylinder></geometry><material><ambient>0.3 0.32 0.34 1</ambient></material></visual>
+        <visual name="bar_2"><pose>0 -0.6 0 0 0 0</pose><geometry><cylinder><radius>0.025</radius><length>2.4</length></cylinder></geometry><material><ambient>0.3 0.32 0.34 1</ambient></material></visual>
+        <visual name="bar_3"><pose>0  0.0 0 0 0 0</pose><geometry><cylinder><radius>0.025</radius><length>2.4</length></cylinder></geometry><material><ambient>0.3 0.32 0.34 1</ambient></material></visual>
+        <visual name="bar_4"><pose>0  0.6 0 0 0 0</pose><geometry><cylinder><radius>0.025</radius><length>2.4</length></cylinder></geometry><material><ambient>0.3 0.32 0.34 1</ambient></material></visual>
+        <visual name="bar_5"><pose>0  1.2 0 0 0 0</pose><geometry><cylinder><radius>0.025</radius><length>2.4</length></cylinder></geometry><material><ambient>0.3 0.32 0.34 1</ambient></material></visual>
+
+        <collision name="rack_col">
+          <geometry><box><size>0.25 4.0 2.5</size></box></geometry>
+        </collision>
+      </link>
+    </model>
+
+    <!-- =================================================================== -->
+    <!-- RIVERBED DEBRIS & NATURAL FEATURES                                  -->
+    <!-- =================================================================== -->
+    <!-- Fallen Driftwood Log (x = 5.0 m, y = 2.0 m) -->
+    <model name="driftwood_log">
+      <static>true</static>
+      <pose>5.0 2.0 -2.0 0.1 0.2 0.65</pose>
+      <link name="log_link">
+        <visual name="v">
+          <geometry><cylinder><radius>0.16</radius><length>3.8</length></cylinder></geometry>
+          <material>
+            <ambient>0.28 0.20 0.14 1.0</ambient>
+            <diffuse>0.32 0.22 0.16 1.0</diffuse>
+          </material>
+        </visual>
+        <collision name="c">
+          <geometry><cylinder><radius>0.16</radius><length>3.8</length></cylinder></geometry>
+        </collision>
+      </link>
+    </model>
+
+    <!-- Submerged Scour Boulder 1 (x = 10.5 m, y = -1.6 m) -->
+    <model name="river_boulder_1">
+      <static>true</static>
+      <pose>10.5 -1.6 -2.3 0.2 0.4 0.8</pose>
+      <link name="link">
+        <visual name="v">
+          <geometry><box><size>0.9 0.8 0.6</size></box></geometry>
+          <material><ambient>0.35 0.34 0.32 1</ambient><diffuse>0.38 0.37 0.34 1</diffuse></material>
+        </visual>
+        <collision name="c"><geometry><box><size>0.9 0.8 0.6</size></box></geometry></collision>
+      </link>
+    </model>
+
+    <!-- Submerged Scour Boulder 2 (x = 11.2 m, y = 1.4 m) -->
+    <model name="river_boulder_2">
+      <static>true</static>
+      <pose>11.2 1.4 -2.35 -0.3 0.1 1.2</pose>
+      <link name="link">
+        <visual name="v">
+          <geometry><box><size>0.7 0.6 0.5</size></box></geometry>
+          <material><ambient>0.35 0.34 0.32 1</ambient><diffuse>0.38 0.37 0.34 1</diffuse></material>
+        </visual>
+        <collision name="c"><geometry><box><size>0.7 0.6 0.5</size></box></geometry></collision>
+      </link>
+    </model>
+
+    <!-- =================================================================== -->
+    <!-- SUSPENDED SILT PLUMES & HIGH TURBIDITY VEIL (Monsoon River Water)   -->
+    <!-- Obscures optical visibility between ROV and bridge structures       -->
+    <!-- =================================================================== -->
+    <model name="turbidity_silt_layer_1">
+      <static>true</static>
+      <pose>4.2 0.0 -0.85 0 0 0</pose>
+      <link name="link">
+        <visual name="v">
+          <geometry><box><size>3.2 8.0 1.8</size></box></geometry>
+          <material>
+            <ambient>0.32 0.26 0.15 0.45</ambient>
+            <diffuse>0.32 0.26 0.15 0.45</diffuse>
+            <specular>0.0 0.0 0.0 0.0</specular>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="turbidity_silt_layer_2">
+      <static>true</static>
+      <pose>7.2 0.0 -1.2 0 0 0</pose>
+      <link name="link">
+        <visual name="v">
+          <geometry><box><size>3.5 9.0 2.2</size></box></geometry>
+          <material>
+            <ambient>0.34 0.28 0.16 0.52</ambient>
+            <diffuse>0.34 0.28 0.16 0.52</diffuse>
+            <specular>0.0 0.0 0.0 0.0</specular>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- =================================================================== -->
+    <!-- TETHERED INSPECTION MARKER BUOYS                                    -->
+    <!-- =================================================================== -->
+    <!-- Pier Upstream Warning Buoy (Yellow, x = 5.5 m, y = -1.5 m) -->
+    <model name="inspection_buoy_yellow">
+      <static>true</static>
+      <pose>5.5 -1.5 -0.65 0 0 0</pose>
+      <link name="link">
+        <visual name="sphere">
+          <geometry><sphere><radius>0.15</radius></sphere></geometry>
+          <material><ambient>0.92 0.82 0.08 1</ambient><diffuse>0.92 0.82 0.08 1</diffuse></material>
+        </visual>
+        <visual name="tether">
+          <pose>0 0 -0.6 0 0 0</pose>
+          <geometry><cylinder><radius>0.005</radius><length>1.2</length></cylinder></geometry>
+          <material><ambient>0.2 0.2 0.2 1</ambient></material>
+        </visual>
+        <collision name="c"><geometry><sphere><radius>0.15</radius></sphere></geometry></collision>
+      </link>
+    </model>
+
+    <!-- Pipeline Hazard Marker Buoy (Red, x = 14.5 m, y = 1.8 m) -->
+    <model name="hazard_buoy_red">
+      <static>true</static>
+      <pose>14.5 1.8 -0.75 0 0 0</pose>
+      <link name="link">
+        <visual name="sphere">
+          <geometry><sphere><radius>0.15</radius></sphere></geometry>
+          <material><ambient>0.90 0.10 0.08 1</ambient><diffuse>0.90 0.10 0.08 1</diffuse></material>
+        </visual>
+        <visual name="tether">
+          <pose>0 0 -0.7 0 0 0</pose>
+          <geometry><cylinder><radius>0.005</radius><length>1.4</length></cylinder></geometry>
+          <material><ambient>0.2 0.2 0.2 1</ambient></material>
+        </visual>
+        <collision name="c"><geometry><sphere><radius>0.15</radius></sphere></geometry></collision>
+      </link>
+    </model>
+
+    <!-- =================================================================== -->
+    <!-- ROBOT MODEL: isonavi_rov SPAWNED IN INDIAN RIVER                    -->
+    <!-- Spawn pose: x = 1.5 m, y = 0.0 m, z = -0.80 m (Facing Downstream)  -->
+    <!-- =================================================================== -->
+    <include>
+      <uri>model://isonavi_rov</uri>
+      <name>isonavi_rov</name>
+      <pose>1.5 0.0 -0.80 0 0 0</pose>
+      <!-- Odometry Publisher Plugin -->
+      <plugin filename="gz-sim-odometry-publisher-system" name="gz::sim::systems::OdometryPublisher">
+        <odom_publish_frequency>50</odom_publish_frequency>
+        <odom_topic>/model/isonavi_rov/odometry</odom_topic>
+        <robot_base_frame>isonavi_rov::base_link</robot_base_frame>
+        <dimensions>3</dimensions>
+      </plugin>
+    </include>
+
+  </world>
+</sdf>

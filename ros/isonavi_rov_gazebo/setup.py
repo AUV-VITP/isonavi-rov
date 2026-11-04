@@ -21,6 +21,8 @@ setup(
             f"thruster_bridge = {PKG}.thruster_bridge:main",
             f"depth_adapter = {PKG}.depth_adapter:main",
             f"tether_drag = {PKG}.tether_drag:main",
+            f"flood_controller = {PKG}.flood_controller:main",
+            f"flood_ctl = {PKG}.flood_ctl:main",
         ]
     },
 )
