@@ -221,6 +221,14 @@ ros2 run isonavi_rov_gazebo flood_ctl --preset extreme
 ros2 run isonavi_rov_gazebo flood_ctl --flow 1.5 --turbidity 2.2 --debris 12
 ```
 
+### 6.3 Uneven Riverbed Bathymetry, Rock Formations & Debris Collision Physics
+* **Expanded & Uneven Riverbed:** Extended the river world [`large_river.sdf`](file:///home/prjwaal/isonavi/isonavi-rov/ros/isonavi_rov_gazebo/worlds/large_river.sdf) to $130\,\text{m} \times 48\,\text{m}$ with non-uniform bathymetry, including upstream sand shoals, central scour dunes, side bank terraces, and deep scour pits ($1.6\,\text{m}$ to $5.8\,\text{m}$ depth).
+* **Rock & Boulder Formations:** Added jagged rock outcrops, granite boulder deflector fields around bridge piers, submerged rock shelves, and bedrock spires with full ODE `<collision>` physics.
+* **Plastic & Unused Plastic Debris:** Added 200L polyethylene chemical drums (floating and submerged), 20L oil jerrycans, rigid industrial plastic crates, discarded plastic utility buckets, wash basins, PVC sewer pipe segments, traffic cones, and automotive bumper panels—all configured with rigid collision hulls.
+* **Plastic Bags & Wrappers:** Added crumpled polythene bags, floating garbage bags, and submerged tarpaulin sheets with collision envelopes.
+* **Rotten Wooden Items:** Added decaying driftwood tree trunks with branch stubs, rotting logs wedged against bridge piers, gnarled tree root stumps, broken wooden shipping pallets, railway sleepers, and rotting heavy timber beams.
+* **Suspended Spherical Dust (Strictly Inside Water):** Removed all dust elements above the water. Placed small spherical dust particle clusters ($r \in [15, 35]\,\text{mm}$) and an underwater-bounded box particle emitter strictly below the surface ($z \in [-3.6, -0.25]\,\text{m}$) simulating realistic marine snow and silt without surface smoke or dust.
+
 ---
 
 ## 7. Operations Manual: Complete Step-by-Step Execution Guide

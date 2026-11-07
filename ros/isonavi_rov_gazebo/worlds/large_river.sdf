@@ -20,6 +20,9 @@
     <plugin filename="gz-sim-imu-system" name="gz::sim::systems::Imu"/>
     <plugin filename="gz-sim-air-pressure-system" name="gz::sim::systems::AirPressure"/>
 
+    <!-- Dynamic Particle Emitter System (Suspended Spherical Dust strictly INSIDE water) -->
+    <plugin filename="gz-sim-particle-emitter-system" name="gz::sim::systems::ParticleEmitter"/>
+
     <!-- Buoyancy: High-density silty flood water (1005 kg/m^3 with suspended sediment) -->
     <plugin filename="gz-sim-buoyancy-system" name="gz::sim::systems::Buoyancy">
       <graded_buoyancy>
@@ -33,7 +36,7 @@
     </plugin>
 
     <!-- =================================================================== -->
-    <!-- TURBID MONSOON RIVER ATMOSPHERE & FOG                               -->
+    <!-- TURBID MONSOON RIVER ATMOSPHERE & UNDERWATER FOG                    -->
     <!-- Simulates heavy flood sediment (up to 3.2 g/L) and low visibility   -->
     <!-- =================================================================== -->
     <scene>
@@ -41,13 +44,13 @@
       <background>0.22 0.18 0.10 1.0</background>
       <grid>false</grid>
       <shadows>false</shadows>
-      <!-- Muddy flood silt fog: optical visibility degrades between 0.4m and 3.5m -->
+      <!-- Muddy flood silt fog: optical visibility degrades between 0.4m and 3.8m -->
       <fog>
         <type>linear</type>
         <color>0.26 0.21 0.12 1.0</color>
         <density>0.55</density>
         <start>0.4</start>
-        <end>3.5</end>
+        <end>3.8</end>
       </fog>
     </scene>
 
@@ -70,14 +73,15 @@
     </light>
 
     <!-- =================================================================== -->
-    <!-- LARGE RIVER WATER SURFACE (120 m x 46 m at z = 0.0 m)               -->
+    <!-- LARGE RIVER WATER SURFACE (130 m x 50 m at z = 0.0 m)               -->
+    <!-- Note: Strictly NO dust, scum or smoke placed above water surface    -->
     <!-- =================================================================== -->
     <model name="river_water_surface">
       <static>true</static>
-      <pose>50.0 0.0 0.0 0 0 0</pose>
+      <pose>55.0 0.0 0.0 0 0 0</pose>
       <link name="surface_link">
         <visual name="surface_visual">
-          <geometry><box><size>120.0 46.0 0.01</size></box></geometry>
+          <geometry><box><size>130.0 50.0 0.01</size></box></geometry>
           <material>
             <ambient>0.26 0.22 0.12 0.70</ambient>
             <diffuse>0.30 0.25 0.14 0.70</diffuse>
@@ -88,71 +92,743 @@
     </model>
 
     <!-- =================================================================== -->
-    <!-- EXPANDED RIVERBED (120 m x 44 m, depth sloping 1.8 m to 5.5 m)      -->
+    <!-- EXPANDED & UNEVEN ALLUVIAL RIVERBED (130 m x 48 m, depth 1.6m-5.8m) -->
     <!-- =================================================================== -->
-    <model name="large_riverbed">
+    <!-- Main Sloping Riverbed Base -->
+    <model name="large_riverbed_base">
       <static>true</static>
-      <pose>50.0 0.0 -3.40 0 0.028 0</pose>
+      <pose>55.0 0.0 -3.60 0 0.026 0</pose>
       <link name="bed_link">
         <visual name="bed_visual">
-          <geometry><box><size>120.2 44.0 0.30</size></box></geometry>
+          <geometry><box><size>130.2 48.0 0.40</size></box></geometry>
           <material>
-            <ambient>0.38 0.32 0.22 1.0</ambient>
-            <diffuse>0.42 0.36 0.25 1.0</diffuse>
-            <specular>0.04 0.04 0.04 1.0</specular>
+            <ambient>0.36 0.30 0.20 1.0</ambient>
+            <diffuse>0.42 0.35 0.24 1.0</diffuse>
+            <specular>0.03 0.03 0.03 1.0</specular>
           </material>
         </visual>
         <collision name="bed_col">
-          <geometry><box><size>120.2 44.0 0.30</size></box></geometry>
+          <geometry><box><size>130.2 48.0 0.40</size></box></geometry>
         </collision>
       </link>
     </model>
 
-    <!-- Port River Embankment (Ghat / Rip-rap stone revetment, y = +22 m) -->
+    <!-- Uneven Bathymetry Sandbar 1: Upstream Sand Shoal (x = 10.0 m) -->
+    <model name="riverbed_sandbar_upstream">
+      <static>true</static>
+      <pose>10.0 -2.5 -2.10 0.05 0.03 0.2</pose>
+      <link name="link">
+        <visual name="v">
+          <geometry><box><size>14.0 16.0 0.85</size></box></geometry>
+          <material><ambient>0.40 0.34 0.22 1</ambient><diffuse>0.46 0.38 0.26 1</diffuse></material>
+        </visual>
+        <collision name="c"><geometry><box><size>14.0 16.0 0.85</size></box></geometry></collision>
+      </link>
+    </model>
+
+    <!-- Uneven Bathymetry Sandbar 2: Midstream Sediment Ridge (x = 34.0 m) -->
+    <model name="riverbed_sandbar_midstream">
+      <static>true</static>
+      <pose>34.0 3.2 -2.85 -0.04 0.02 -0.3</pose>
+      <link name="link">
+        <visual name="v">
+          <geometry><box><size>18.0 18.0 0.95</size></box></geometry>
+          <material><ambient>0.38 0.32 0.21 1</ambient><diffuse>0.44 0.36 0.25 1</diffuse></material>
+        </visual>
+        <collision name="c"><geometry><box><size>18.0 18.0 0.95</size></box></geometry></collision>
+      </link>
+    </model>
+
+    <!-- Uneven Bathymetry Sandbar 3: Downstream Scour Dune (x = 75.0 m) -->
+    <model name="riverbed_sandbar_downstream">
+      <static>true</static>
+      <pose>75.0 -4.0 -3.80 0.03 0.04 0.4</pose>
+      <link name="link">
+        <visual name="v">
+          <geometry><box><size>22.0 16.0 1.10</size></box></geometry>
+          <material><ambient>0.35 0.29 0.19 1</ambient><diffuse>0.40 0.33 0.22 1</diffuse></material>
+        </visual>
+        <collision name="c"><geometry><box><size>22.0 16.0 1.10</size></box></geometry></collision>
+      </link>
+    </model>
+
+    <!-- Riverbed Uneven Terrace: Port Side Shoal (y = +15.0 m) -->
+    <model name="riverbed_shoal_port">
+      <static>true</static>
+      <pose>50.0 16.0 -2.40 0.12 0.02 0.0</pose>
+      <link name="link">
+        <visual name="v">
+          <geometry><box><size>90.0 12.0 0.70</size></box></geometry>
+          <material><ambient>0.38 0.32 0.22 1</ambient><diffuse>0.44 0.37 0.26 1</diffuse></material>
+        </visual>
+        <collision name="c"><geometry><box><size>90.0 12.0 0.70</size></box></geometry></collision>
+      </link>
+    </model>
+
+    <!-- Riverbed Uneven Terrace: Starboard Side Shoal (y = -15.0 m) -->
+    <model name="riverbed_shoal_stbd">
+      <static>true</static>
+      <pose>52.0 -16.0 -2.50 -0.12 0.02 0.0</pose>
+      <link name="link">
+        <visual name="v">
+          <geometry><box><size>95.0 12.0 0.70</size></box></geometry>
+          <material><ambient>0.38 0.32 0.22 1</ambient><diffuse>0.44 0.37 0.26 1</diffuse></material>
+        </visual>
+        <collision name="c"><geometry><box><size>95.0 12.0 0.70</size></box></geometry></collision>
+      </link>
+    </model>
+
+    <!-- Port River Embankment (Ghat / Rip-rap stone revetment, y = +25 m) -->
     <model name="bank_port_revetment">
       <static>true</static>
-      <pose>50.0 23.5 -1.5 0.65 0 0</pose>
+      <pose>55.0 25.5 -1.5 0.65 0 0</pose>
       <link name="link">
         <visual name="v">
-          <geometry><box><size>120.0 6.0 0.4</size></box></geometry>
+          <geometry><box><size>130.0 6.0 0.4</size></box></geometry>
           <material><ambient>0.35 0.32 0.26 1</ambient><diffuse>0.38 0.35 0.28 1</diffuse></material>
         </visual>
-        <collision name="c"><geometry><box><size>120.0 6.0 0.4</size></box></geometry></collision>
+        <collision name="c"><geometry><box><size>130.0 6.0 0.4</size></box></geometry></collision>
       </link>
     </model>
 
-    <!-- Starboard River Bank (Alluvial earthen embankment, y = -22 m) -->
+    <!-- Starboard River Bank (Alluvial earthen embankment, y = -25 m) -->
     <model name="bank_stbd_earthen">
       <static>true</static>
-      <pose>50.0 -23.5 -1.5 -0.65 0 0</pose>
+      <pose>55.0 -25.5 -1.5 -0.65 0 0</pose>
       <link name="link">
         <visual name="v">
-          <geometry><box><size>120.0 6.0 0.4</size></box></geometry>
+          <geometry><box><size>130.0 6.0 0.4</size></box></geometry>
           <material><ambient>0.36 0.30 0.22 1</ambient><diffuse>0.40 0.34 0.25 1</diffuse></material>
         </visual>
-        <collision name="c"><geometry><box><size>120.0 6.0 0.4</size></box></geometry></collision>
+        <collision name="c"><geometry><box><size>130.0 6.0 0.4</size></box></geometry></collision>
       </link>
     </model>
 
-    <!-- Upstream River Boundary (x = -10.0 m) -->
+    <!-- Upstream River Boundary (x = -12.0 m) -->
     <model name="upstream_wall">
       <static>true</static>
-      <pose>-10.0 0.0 -2.0 0 0 0</pose>
+      <pose>-12.0 0.0 -2.0 0 0 0</pose>
       <link name="link">
-        <visual name="v"><geometry><box><size>0.3 46.0 8.0</size></box></geometry>
+        <visual name="v"><geometry><box><size>0.4 50.0 8.0</size></box></geometry>
         <material><ambient>0.28 0.24 0.16 1</ambient></material></visual>
-        <collision name="c"><geometry><box><size>0.3 46.0 8.0</size></box></geometry></collision>
+        <collision name="c"><geometry><box><size>0.4 50.0 8.0</size></box></geometry></collision>
       </link>
     </model>
 
-    <!-- Downstream River Boundary (x = 110.0 m) -->
+    <!-- Downstream River Boundary (x = 120.0 m) -->
     <model name="downstream_wall">
       <static>true</static>
-      <pose>110.0 0.0 -3.0 0 0 0</pose>
+      <pose>120.0 0.0 -3.0 0 0 0</pose>
       <link name="link">
-        <visual name="v"><geometry><box><size>0.3 46.0 10.0</size></box></geometry>
+        <visual name="v"><geometry><box><size>0.4 50.0 10.0</size></box></geometry>
         <material><ambient>0.28 0.24 0.16 1</ambient></material></visual>
-        <collision name="c"><geometry><box><size>0.3 46.0 10.0</size></box></geometry></collision>
+        <collision name="c"><geometry><box><size>0.4 50.0 10.0</size></box></geometry></collision>
+      </link>
+    </model>
+
+    <!-- =================================================================== -->
+    <!-- SUSPENDED SPHERICAL DUST PARTICLES (FLOATING STRICTLY INSIDE WATER) -->
+    <!-- Small spherical dust particles drifting at various water depths     -->
+    <!-- =================================================================== -->
+    <!-- Dynamic Box Emitter generating tiny suspended spherical dust inside water (z = -1.6m) -->
+    <model name="underwater_spherical_dust_emitter">
+      <static>true</static>
+      <pose>50.0 0.0 -1.65 0 0 0</pose>
+      <link name="emitter_link">
+        <particle_emitter name="water_dust_emitter" type="box">
+          <emitting>true</emitting>
+          <!-- Spans 100m length x 36m width x 2.2m height, strictly underwater -->
+          <size>100.0 36.0 2.2</size>
+          <particle_size>0.022 0.022 0.022</particle_size>
+          <lifetime>18.0</lifetime>
+          <min_velocity>0.01</min_velocity>
+          <max_velocity>0.06</max_velocity>
+          <scale_rate>0.15</scale_rate>
+          <rate>110</rate>
+          <material>
+            <ambient>0.62 0.56 0.42 0.70</ambient>
+            <diffuse>0.62 0.56 0.42 0.70</diffuse>
+            <specular>0.1 0.1 0.1 0.4</specular>
+          </material>
+        </particle_emitter>
+      </link>
+    </model>
+
+    <!-- Floating Spherical Dust Cluster 1: Upstream (x = 5.5 m, z = -0.75 m) -->
+    <model name="dust_sphere_cluster_1">
+      <static>true</static>
+      <pose>5.5 -0.8 -0.75 0 0 0</pose>
+      <link name="link">
+        <visual name="s1"><geometry><sphere><radius>0.025</radius></sphere></geometry><material><ambient>0.65 0.58 0.44 0.8</ambient><diffuse>0.65 0.58 0.44 0.8</diffuse></material></visual>
+        <visual name="s2"><pose>0.12 0.08 -0.05 0 0 0</pose><geometry><sphere><radius>0.018</radius></sphere></geometry><material><ambient>0.60 0.54 0.40 0.75</ambient></material></visual>
+        <visual name="s3"><pose>-0.09 -0.14 0.06 0 0 0</pose><geometry><sphere><radius>0.022</radius></sphere></geometry><material><ambient>0.62 0.56 0.42 0.8</ambient></material></visual>
+        <visual name="s4"><pose>0.18 -0.06 0.08 0 0 0</pose><geometry><sphere><radius>0.015</radius></sphere></geometry><material><ambient>0.60 0.52 0.38 0.7</ambient></material></visual>
+        <visual name="s5"><pose>-0.15 0.12 -0.08 0 0 0</pose><geometry><sphere><radius>0.028</radius></sphere></geometry><material><ambient>0.64 0.58 0.44 0.85</ambient></material></visual>
+      </link>
+    </model>
+
+    <!-- Floating Spherical Dust Cluster 2: Near Bridge Pier 1 (x = 18.5 m, z = -1.20 m) -->
+    <model name="dust_sphere_cluster_2">
+      <static>true</static>
+      <pose>18.5 1.2 -1.20 0 0 0</pose>
+      <link name="link">
+        <visual name="s1"><geometry><sphere><radius>0.030</radius></sphere></geometry><material><ambient>0.62 0.55 0.40 0.8</ambient></material></visual>
+        <visual name="s2"><pose>0.15 -0.10 0.05 0 0 0</pose><geometry><sphere><radius>0.020</radius></sphere></geometry><material><ambient>0.60 0.52 0.38 0.75</ambient></material></visual>
+        <visual name="s3"><pose>-0.12 0.16 -0.07 0 0 0</pose><geometry><sphere><radius>0.025</radius></sphere></geometry><material><ambient>0.64 0.56 0.42 0.8</ambient></material></visual>
+        <visual name="s4"><pose>0.08 0.14 0.10 0 0 0</pose><geometry><sphere><radius>0.016</radius></sphere></geometry><material><ambient>0.58 0.50 0.36 0.7</ambient></material></visual>
+        <visual name="s5"><pose>-0.18 -0.08 0.03 0 0 0</pose><geometry><sphere><radius>0.026</radius></sphere></geometry><material><ambient>0.65 0.58 0.44 0.85</ambient></material></visual>
+      </link>
+    </model>
+
+    <!-- Floating Spherical Dust Cluster 3: Near Submerged Pipeline (x = 38.0 m, z = -1.85 m) -->
+    <model name="dust_sphere_cluster_3">
+      <static>true</static>
+      <pose>38.0 -1.5 -1.85 0 0 0</pose>
+      <link name="link">
+        <visual name="s1"><geometry><sphere><radius>0.032</radius></sphere></geometry><material><ambient>0.60 0.52 0.38 0.8</ambient></material></visual>
+        <visual name="s2"><pose>-0.14 0.12 0.08 0 0 0</pose><geometry><sphere><radius>0.024</radius></sphere></geometry><material><ambient>0.62 0.54 0.40 0.75</ambient></material></visual>
+        <visual name="s3"><pose>0.16 -0.15 -0.06 0 0 0</pose><geometry><sphere><radius>0.020</radius></sphere></geometry><material><ambient>0.58 0.50 0.36 0.7</ambient></material></visual>
+        <visual name="s4"><pose>-0.08 -0.16 0.12 0 0 0</pose><geometry><sphere><radius>0.028</radius></sphere></geometry><material><ambient>0.64 0.56 0.42 0.85</ambient></material></visual>
+      </link>
+    </model>
+
+    <!-- Floating Spherical Dust Cluster 4: Deep Sluice Approach (x = 82.0 m, z = -2.40 m) -->
+    <model name="dust_sphere_cluster_4">
+      <static>true</static>
+      <pose>82.0 0.8 -2.40 0 0 0</pose>
+      <link name="link">
+        <visual name="s1"><geometry><sphere><radius>0.035</radius></sphere></geometry><material><ambient>0.58 0.50 0.36 0.8</ambient></material></visual>
+        <visual name="s2"><pose>0.18 0.14 -0.09 0 0 0</pose><geometry><sphere><radius>0.022</radius></sphere></geometry><material><ambient>0.60 0.52 0.38 0.75</ambient></material></visual>
+        <visual name="s3"><pose>-0.15 -0.12 0.08 0 0 0</pose><geometry><sphere><radius>0.028</radius></sphere></geometry><material><ambient>0.62 0.54 0.40 0.8</ambient></material></visual>
+      </link>
+    </model>
+
+    <!-- =================================================================== -->
+    <!-- ROCKS & BOULDERS (WITH FULL COLLISION PHYSICS)                       -->
+    <!-- Massive riverbed boulders, jagged scour rocks, and rocky outcrops   -->
+    <!-- =================================================================== -->
+    <!-- Upstream Jagged Rock Outcrop (x = 7.5 m, y = -3.2 m) -->
+    <model name="rock_outcrop_upstream">
+      <static>true</static>
+      <pose>7.5 -3.2 -1.65 0.15 0.25 0.6</pose>
+      <link name="l">
+        <visual name="v">
+          <geometry><box><size>1.85 1.45 1.10</size></box></geometry>
+          <material><ambient>0.30 0.28 0.24 1</ambient><diffuse>0.36 0.33 0.28 1</diffuse></material>
+        </visual>
+        <collision name="c"><geometry><box><size>1.85 1.45 1.10</size></box></geometry></collision>
+      </link>
+    </model>
+
+    <!-- Granite Rock Field Near Start (x = 11.2 m, y = 2.8 m) -->
+    <model name="granite_rock_1">
+      <static>true</static>
+      <pose>11.2 2.8 -1.80 -0.2 0.15 1.2</pose>
+      <link name="l">
+        <visual name="v">
+          <geometry><box><size>1.60 1.25 0.95</size></box></geometry>
+          <material><ambient>0.32 0.30 0.26 1</ambient><diffuse>0.38 0.35 0.30 1</diffuse></material>
+        </visual>
+        <collision name="c"><geometry><box><size>1.60 1.25 0.95</size></box></geometry></collision>
+      </link>
+    </model>
+
+    <!-- Scour Boulder Deflector at Bridge Pier 1 (x = 20.0 m, y = -1.8 m) -->
+    <model name="boulder_pier_1_deflector">
+      <static>true</static>
+      <pose>20.0 -1.8 -2.40 0.1 0.3 0.4</pose>
+      <link name="l">
+        <visual name="v">
+          <geometry><box><size>2.20 1.70 1.35</size></box></geometry>
+          <material><ambient>0.26 0.25 0.22 1</ambient><diffuse>0.32 0.30 0.26 1</diffuse></material>
+        </visual>
+        <collision name="c"><geometry><box><size>2.20 1.70 1.35</size></box></geometry></collision>
+      </link>
+    </model>
+
+    <!-- Boulder Field 1 (x = 28.0 m to 32.0 m) -->
+    <model name="boulder_field_1">
+      <static>true</static>
+      <pose>28.0 -2.5 -2.85 0.2 0.3 0.5</pose>
+      <link name="l">
+        <visual name="v"><geometry><box><size>1.90 1.50 1.20</size></box></geometry><material><ambient>0.32 0.30 0.26 1</ambient><diffuse>0.38 0.35 0.30 1</diffuse></material></visual>
+        <collision name="c"><geometry><box><size>1.90 1.50 1.20</size></box></geometry></collision>
+      </link>
+    </model>
+
+    <model name="boulder_field_2">
+      <static>true</static>
+      <pose>30.5 1.8 -2.95 -0.1 0.4 1.1</pose>
+      <link name="l">
+        <visual name="v"><geometry><box><size>1.60 1.40 1.05</size></box></geometry><material><ambient>0.30 0.28 0.25 1</ambient><diffuse>0.36 0.34 0.29 1</diffuse></material></visual>
+        <collision name="c"><geometry><box><size>1.60 1.40 1.05</size></box></geometry></collision>
+      </link>
+    </model>
+
+    <!-- Submerged Rocky Shelf (x = 36.5 m, y = -3.8 m) -->
+    <model name="submerged_rock_shelf">
+      <static>true</static>
+      <pose>36.5 -3.8 -2.90 0.2 0.1 0.8</pose>
+      <link name="l">
+        <visual name="v">
+          <geometry><box><size>2.80 2.10 0.90</size></box></geometry>
+          <material><ambient>0.28 0.27 0.23 1</ambient><diffuse>0.34 0.32 0.27 1</diffuse></material>
+        </visual>
+        <collision name="c"><geometry><box><size>2.80 2.10 0.90</size></box></geometry></collision>
+      </link>
+    </model>
+
+    <!-- Jagged Bedrock Spire Hazard (x = 48.0 m, y = 2.2 m) -->
+    <model name="sharp_bedrock_spire">
+      <static>true</static>
+      <pose>48.0 2.2 -2.60 0.3 0.2 1.4</pose>
+      <link name="l">
+        <visual name="v">
+          <geometry><box><size>1.70 1.30 1.40</size></box></geometry>
+          <material><ambient>0.26 0.25 0.22 1</ambient><diffuse>0.32 0.30 0.26 1</diffuse></material>
+        </visual>
+        <collision name="c"><geometry><box><size>1.70 1.30 1.40</size></box></geometry></collision>
+      </link>
+    </model>
+
+    <!-- Railway Bridge Pier 2 Boulder Anchor (x = 63.0 m, y = -1.2 m) -->
+    <model name="boulder_pier_2_anchor">
+      <static>true</static>
+      <pose>63.0 -1.2 -3.10 -0.15 0.25 0.5</pose>
+      <link name="l">
+        <visual name="v">
+          <geometry><box><size>2.50 1.80 1.40</size></box></geometry>
+          <material><ambient>0.28 0.27 0.24 1</ambient><diffuse>0.34 0.32 0.28 1</diffuse></material>
+        </visual>
+        <collision name="c"><geometry><box><size>2.50 1.80 1.40</size></box></geometry></collision>
+      </link>
+    </model>
+
+    <!-- Downstream Deep Rock Mound (x = 78.0 m, y = 3.5 m) -->
+    <model name="downstream_rock_mound">
+      <static>true</static>
+      <pose>78.0 3.5 -3.40 0.25 0.1 0.9</pose>
+      <link name="l">
+        <visual name="v">
+          <geometry><box><size>2.40 1.90 1.30</size></box></geometry>
+          <material><ambient>0.30 0.29 0.25 1</ambient><diffuse>0.36 0.34 0.29 1</diffuse></material>
+        </visual>
+        <collision name="c"><geometry><box><size>2.40 1.90 1.30</size></box></geometry></collision>
+      </link>
+    </model>
+
+    <!-- Weir Approach Scour Dissipator Boulders (x = 88.0 m) -->
+    <model name="weir_dissipator_rock_1">
+      <static>true</static>
+      <pose>88.0 -2.5 -3.20 0.1 0.2 0.3</pose>
+      <link name="l">
+        <visual name="v"><geometry><box><size>1.80 1.50 1.20</size></box></geometry><material><ambient>0.28 0.26 0.22 1</ambient></material></visual>
+        <collision name="c"><geometry><box><size>1.80 1.50 1.20</size></box></geometry></collision>
+      </link>
+    </model>
+    <model name="weir_dissipator_rock_2">
+      <static>true</static>
+      <pose>88.0 2.5 -3.20 -0.1 0.2 -0.3</pose>
+      <link name="l">
+        <visual name="v"><geometry><box><size>1.80 1.50 1.20</size></box></geometry><material><ambient>0.28 0.26 0.22 1</ambient></material></visual>
+        <collision name="c"><geometry><box><size>1.80 1.50 1.20</size></box></geometry></collision>
+      </link>
+    </model>
+
+    <!-- =================================================================== -->
+    <!-- ROTTEN WOODEN ITEMS (WITH FULL COLLISION PHYSICS)                   -->
+    <!-- Rotting driftwood trunks, logs, broken wooden pallets, tree roots   -->
+    <!-- =================================================================== -->
+    <!-- Rotten Driftwood Tree Trunk 1 (x = 14.0 m, y = 2.5 m) -->
+    <model name="rotten_driftwood_trunk_1">
+      <static>true</static>
+      <pose>14.0 2.5 -1.95 0.1 0.25 0.8</pose>
+      <link name="l">
+        <visual name="trunk">
+          <geometry><cylinder><radius>0.32</radius><length>7.5</length></cylinder></geometry>
+          <material>
+            <!-- Decaying dark rotten bark -->
+            <ambient>0.24 0.16 0.10 1.0</ambient>
+            <diffuse>0.28 0.19 0.12 1.0</diffuse>
+            <specular>0.02 0.02 0.02 1.0</specular>
+          </material>
+        </visual>
+        <collision name="trunk_c"><geometry><cylinder><radius>0.32</radius><length>7.5</length></cylinder></geometry></collision>
+        <!-- Rotten Branch Stub 1 -->
+        <visual name="branch_1">
+          <pose>0.8 0.2 0.6 0.8 0.5 0.2</pose>
+          <geometry><cylinder><radius>0.14</radius><length>1.8</length></cylinder></geometry>
+          <material><ambient>0.22 0.15 0.09 1</ambient></material>
+        </visual>
+        <collision name="branch_1_c"><pose>0.8 0.2 0.6 0.8 0.5 0.2</pose><geometry><cylinder><radius>0.14</radius><length>1.8</length></cylinder></geometry></collision>
+      </link>
+    </model>
+
+    <!-- Rotten Driftwood Log Wedged at Pier 1 (x = 21.0 m, y = -1.2 m) -->
+    <model name="rotten_driftwood_log_2">
+      <static>true</static>
+      <pose>21.0 -1.2 -2.10 0.2 0.4 -0.6</pose>
+      <link name="l">
+        <visual name="v">
+          <geometry><cylinder><radius>0.28</radius><length>5.2</length></cylinder></geometry>
+          <material><ambient>0.20 0.14 0.08 1</ambient><diffuse>0.25 0.17 0.10 1</diffuse></material>
+        </visual>
+        <collision name="c"><geometry><cylinder><radius>0.28</radius><length>5.2</length></cylinder></geometry></collision>
+      </link>
+    </model>
+
+    <!-- Rotten Gnarled Tree Root Stump on Riverbed (x = 32.0 m, y = 3.5 m) -->
+    <model name="rotten_tree_stump_roots">
+      <static>true</static>
+      <pose>32.0 3.5 -2.60 0.15 0.1 0.4</pose>
+      <link name="l">
+        <visual name="stump_core">
+          <geometry><cylinder><radius>0.55</radius><length>1.60</length></cylinder></geometry>
+          <material><ambient>0.22 0.15 0.09 1</ambient><diffuse>0.26 0.18 0.11 1</diffuse></material>
+        </visual>
+        <collision name="stump_c"><geometry><cylinder><radius>0.55</radius><length>1.60</length></cylinder></geometry></collision>
+        <visual name="root_flange">
+          <pose>0 0 -0.5 0 0 0</pose>
+          <geometry><box><size>2.2 2.2 0.5</size></box></geometry>
+          <material><ambient>0.20 0.13 0.08 1</ambient></material>
+        </visual>
+        <collision name="root_flange_c"><pose>0 0 -0.5 0 0 0</pose><geometry><box><size>2.2 2.2 0.5</size></box></geometry></collision>
+      </link>
+    </model>
+
+    <!-- Broken Rotten Wooden Shipping Pallet on Riverbed (x = 45.0 m, y = -2.2 m) -->
+    <model name="rotten_wooden_pallet">
+      <static>true</static>
+      <pose>45.0 -2.2 -3.10 0.15 0.08 -0.4</pose>
+      <link name="l">
+        <!-- Main Rotting Stringer Board -->
+        <visual name="base">
+          <geometry><box><size>1.20 1.00 0.16</size></box></geometry>
+          <material><ambient>0.26 0.18 0.11 1</ambient><diffuse>0.30 0.22 0.13 1</diffuse></material>
+        </visual>
+        <collision name="c"><geometry><box><size>1.20 1.00 0.16</size></box></geometry></collision>
+      </link>
+    </model>
+
+    <!-- Rotten Timber Railway Sleeper / Beam (x = 56.0 m, y = 1.4 m) -->
+    <model name="rotten_railway_sleeper">
+      <static>true</static>
+      <pose>56.0 1.4 -3.15 0.1 0.2 0.9</pose>
+      <link name="l">
+        <visual name="v">
+          <geometry><box><size>2.60 0.26 0.18</size></box></geometry>
+          <material><ambient>0.18 0.13 0.08 1</ambient><diffuse>0.22 0.16 0.10 1</diffuse></material>
+        </visual>
+        <collision name="c"><geometry><box><size>2.60 0.26 0.18</size></box></geometry></collision>
+      </link>
+    </model>
+
+    <!-- Rotten Heavy Bridge Timber Beam Jammed near Sluice (x = 86.0 m, y = -1.8 m) -->
+    <model name="rotten_wooden_beam_weir">
+      <static>true</static>
+      <pose>86.0 -1.8 -2.40 0.25 0.35 0.2</pose>
+      <link name="l">
+        <visual name="v">
+          <geometry><box><size>4.50 0.35 0.35</size></box></geometry>
+          <material><ambient>0.20 0.14 0.09 1</ambient><diffuse>0.24 0.17 0.11 1</diffuse></material>
+        </visual>
+        <collision name="c"><geometry><box><size>4.50 0.35 0.35</size></box></geometry></collision>
+      </link>
+    </model>
+
+    <!-- =================================================================== -->
+    <!-- PLASTICS & UNUSED PLASTIC ITEMS (WITH FULL COLLISION PHYSICS)       -->
+    <!-- Drums, jerrycans, buckets, crates, PVC pipes, bottles               -->
+    <!-- =================================================================== -->
+    <!-- Blue 200L Polyethylene Chemical Drum Floating on Surface (x = 16.0 m, z = +0.08 m) -->
+    <model name="surface_plastic_drum_blue">
+      <static>true</static>
+      <pose>16.0 -1.8 0.08 0 1.5708 0.5</pose>
+      <link name="link">
+        <visual name="drum">
+          <geometry><cylinder><radius>0.30</radius><length>0.92</length></cylinder></geometry>
+          <material>
+            <ambient>0.08 0.28 0.72 1.0</ambient>
+            <diffuse>0.10 0.35 0.82 1.0</diffuse>
+            <specular>0.6 0.6 0.6 0.5</specular>
+          </material>
+        </visual>
+        <collision name="drum_c"><geometry><cylinder><radius>0.30</radius><length>0.92</length></cylinder></geometry></collision>
+      </link>
+    </model>
+
+    <!-- Submerged Blue 200L Drum Resting on Riverbed Silt (x = 26.0 m, z = -2.65 m) -->
+    <model name="submerged_plastic_drum_blue">
+      <static>true</static>
+      <pose>26.0 2.2 -2.65 0.3 1.2 0.8</pose>
+      <link name="link">
+        <visual name="v">
+          <geometry><cylinder><radius>0.30</radius><length>0.92</length></cylinder></geometry>
+          <material><ambient>0.06 0.22 0.58 1.0</ambient><diffuse>0.08 0.28 0.68 1.0</diffuse></material>
+        </visual>
+        <collision name="c"><geometry><cylinder><radius>0.30</radius><length>0.92</length></cylinder></geometry></collision>
+      </link>
+    </model>
+
+    <!-- Yellow 200L Chemical Drum Floating Mid-Water (x = 52.0 m, z = -1.35 m) -->
+    <model name="midwater_plastic_drum_yellow">
+      <static>true</static>
+      <pose>52.0 -0.8 -1.35 0.4 0.7 -0.5</pose>
+      <link name="link">
+        <visual name="v">
+          <geometry><cylinder><radius>0.30</radius><length>0.92</length></cylinder></geometry>
+          <material><ambient>0.82 0.70 0.06 1.0</ambient><diffuse>0.88 0.76 0.08 1.0</diffuse></material>
+        </visual>
+        <collision name="c"><geometry><cylinder><radius>0.30</radius><length>0.92</length></cylinder></geometry></collision>
+      </link>
+    </model>
+
+    <!-- Yellow 20L Oil Jerrycan Floating on Surface (x = 8.5 m, z = +0.05 m) -->
+    <model name="surface_jerrycan_yellow">
+      <static>true</static>
+      <pose>8.5 1.5 0.05 0.1 0.2 0.7</pose>
+      <link name="link">
+        <visual name="body">
+          <geometry><box><size>0.38 0.20 0.45</size></box></geometry>
+          <material><ambient>0.85 0.68 0.05 1</ambient><diffuse>0.90 0.74 0.08 1</diffuse></material>
+        </visual>
+        <collision name="c"><geometry><box><size>0.38 0.20 0.45</size></box></geometry></collision>
+      </link>
+    </model>
+
+    <!-- Submerged Blue 20L Water Canister on Riverbed (x = 39.0 m, z = -2.85 m) -->
+    <model name="submerged_jerrycan_blue">
+      <static>true</static>
+      <pose>39.0 1.8 -2.85 0.4 0.3 -0.6</pose>
+      <link name="link">
+        <visual name="v">
+          <geometry><box><size>0.38 0.20 0.45</size></box></geometry>
+          <material><ambient>0.08 0.30 0.75 1</ambient><diffuse>0.10 0.38 0.85 1</diffuse></material>
+        </visual>
+        <collision name="c"><geometry><box><size>0.38 0.20 0.45</size></box></geometry></collision>
+      </link>
+    </model>
+
+    <!-- Rigid Plastic Transport Crate 1 (Industrial milk crate, x = 19.5 m, z = -2.25 m) -->
+    <model name="plastic_crate_blue_1">
+      <static>true</static>
+      <pose>19.5 -2.4 -2.25 0.1 0.2 0.3</pose>
+      <link name="link">
+        <visual name="v">
+          <geometry><box><size>0.45 0.35 0.30</size></box></geometry>
+          <material><ambient>0.05 0.35 0.80 1</ambient><diffuse>0.08 0.42 0.90 1</diffuse></material>
+        </visual>
+        <collision name="c"><geometry><box><size>0.45 0.35 0.30</size></box></geometry></collision>
+      </link>
+    </model>
+
+    <!-- Rigid Plastic Transport Crate 2 (Orange crate wedged at pipeline, x = 42.5 m, z = -3.20 m) -->
+    <model name="plastic_crate_orange_pipeline">
+      <static>true</static>
+      <pose>42.5 3.0 -3.20 0.3 0.1 -0.8</pose>
+      <link name="link">
+        <visual name="v">
+          <geometry><box><size>0.48 0.38 0.32</size></box></geometry>
+          <material><ambient>0.85 0.35 0.05 1</ambient><diffuse>0.92 0.42 0.08 1</diffuse></material>
+        </visual>
+        <collision name="c"><geometry><box><size>0.48 0.38 0.32</size></box></geometry></collision>
+      </link>
+    </model>
+
+    <!-- Discarded Red Plastic Utility Bucket on Riverbed (x = 24.5 m, z = -2.60 m) -->
+    <model name="plastic_bucket_red">
+      <static>true</static>
+      <pose>24.5 1.5 -2.60 0.25 0.5 0.4</pose>
+      <link name="link">
+        <visual name="v">
+          <geometry><cylinder><radius>0.18</radius><length>0.36</length></cylinder></geometry>
+          <material><ambient>0.82 0.08 0.06 1</ambient><diffuse>0.90 0.12 0.08 1</diffuse></material>
+        </visual>
+        <collision name="c"><geometry><cylinder><radius>0.18</radius><length>0.36</length></cylinder></geometry></collision>
+      </link>
+    </model>
+
+    <!-- Discarded Large Plastic Wash Basin / Tub (x = 61.0 m, z = -2.85 m) -->
+    <model name="plastic_wash_tub_green">
+      <static>true</static>
+      <pose>61.0 -2.0 -2.85 0.2 0.1 0.5</pose>
+      <link name="link">
+        <visual name="v">
+          <geometry><cylinder><radius>0.42</radius><length>0.28</length></cylinder></geometry>
+          <material><ambient>0.08 0.65 0.25 1</ambient><diffuse>0.10 0.75 0.30 1</diffuse></material>
+        </visual>
+        <collision name="c"><geometry><cylinder><radius>0.42</radius><length>0.28</length></cylinder></geometry></collision>
+      </link>
+    </model>
+
+    <!-- Discarded PVC Drainage Pipe Bend on Riverbed (x = 35.0 m, z = -2.75 m) -->
+    <model name="discarded_pvc_bend">
+      <static>true</static>
+      <pose>35.0 -1.8 -2.75 0 0 0.7</pose>
+      <link name="link">
+        <visual name="p1"><geometry><cylinder><radius>0.12</radius><length>1.20</length></cylinder></geometry><material><ambient>0.78 0.78 0.75 1</ambient><diffuse>0.82 0.82 0.78 1</diffuse></material></visual>
+        <collision name="p1_c"><geometry><cylinder><radius>0.12</radius><length>1.20</length></cylinder></geometry></collision>
+        <visual name="p2"><pose>0.45 0.45 0 0 0 1.5708</pose><geometry><cylinder><radius>0.12</radius><length>1.00</length></cylinder></geometry><material><ambient>0.78 0.78 0.75 1</ambient></material></visual>
+        <collision name="p2_c"><pose>0.45 0.45 0 0 0 1.5708</pose><geometry><cylinder><radius>0.12</radius><length>1.00</length></cylinder></geometry></collision>
+      </link>
+    </model>
+
+    <!-- Long Cracked PVC Sewer Pipe Segment (x = 68.0 m, z = -3.40 m) -->
+    <model name="discarded_pvc_pipe_long">
+      <static>true</static>
+      <pose>68.0 2.5 -3.40 0.05 0.1 0.25</pose>
+      <link name="link">
+        <visual name="v">
+          <geometry><cylinder><radius>0.15</radius><length>4.50</length></cylinder></geometry>
+          <material><ambient>0.75 0.75 0.72 1</ambient><diffuse>0.80 0.80 0.76 1</diffuse></material>
+        </visual>
+        <collision name="c"><geometry><cylinder><radius>0.15</radius><length>4.50</length></cylinder></geometry></collision>
+      </link>
+    </model>
+
+    <!-- Unused Plastic Traffic Cone Washed in River (Floating at Surface, x = 13.5 m, z = +0.06 m) -->
+    <model name="plastic_traffic_cone">
+      <static>true</static>
+      <pose>13.5 0.8 0.06 0.3 1.5708 0.4</pose>
+      <link name="link">
+        <visual name="cone_base">
+          <geometry><box><size>0.32 0.32 0.05</size></box></geometry>
+          <material><ambient>0.92 0.35 0.05 1</ambient><diffuse>0.96 0.40 0.06 1</diffuse></material>
+        </visual>
+        <collision name="base_c"><geometry><box><size>0.32 0.32 0.05</size></box></geometry></collision>
+        <visual name="cone_body">
+          <pose>0 0 0.30 0 0 0</pose>
+          <geometry><cylinder><radius>0.12</radius><length>0.60</length></cylinder></geometry>
+          <material><ambient>0.92 0.35 0.05 1</ambient><diffuse>0.96 0.40 0.06 1</diffuse></material>
+        </visual>
+        <collision name="cone_body_c"><pose>0 0 0.30 0 0 0</pose><geometry><cylinder><radius>0.12</radius><length>0.60</length></cylinder></geometry></collision>
+      </link>
+    </model>
+
+    <!-- Discarded Plastic Storage Tub with Lid on Riverbed (x = 50.0 m, z = -3.10 m) -->
+    <model name="plastic_storage_tub_discarded">
+      <static>true</static>
+      <pose>50.0 -3.0 -3.10 0.2 0.15 -0.6</pose>
+      <link name="link">
+        <visual name="v">
+          <geometry><box><size>0.65 0.45 0.38</size></box></geometry>
+          <material><ambient>0.12 0.45 0.65 1</ambient><diffuse>0.15 0.52 0.75 1</diffuse></material>
+        </visual>
+        <collision name="c"><geometry><box><size>0.65 0.45 0.38</size></box></geometry></collision>
+      </link>
+    </model>
+
+    <!-- Discarded Automotive Plastic Bumper / Panel (x = 73.0 m, z = -3.65 m) -->
+    <model name="plastic_bumper_discarded">
+      <static>true</static>
+      <pose>73.0 -1.5 -3.65 0.3 0.1 0.8</pose>
+      <link name="link">
+        <visual name="v">
+          <geometry><box><size>1.65 0.40 0.22</size></box></geometry>
+          <material><ambient>0.15 0.15 0.15 1</ambient><diffuse>0.18 0.18 0.18 1</diffuse></material>
+        </visual>
+        <collision name="c"><geometry><box><size>1.65 0.40 0.22</size></box></geometry></collision>
+      </link>
+    </model>
+
+    <!-- Surface Floating PET Soda Bottle Cluster 1 (x = 6.0 m, z = +0.02 m) -->
+    <model name="surface_pet_bottle_1">
+      <static>true</static>
+      <pose>6.0 -0.5 0.02 0 1.5708 0.3</pose>
+      <link name="link">
+        <visual name="v"><geometry><cylinder><radius>0.045</radius><length>0.26</length></cylinder></geometry><material><ambient>0.70 0.88 0.95 0.65</ambient><diffuse>0.75 0.92 0.98 0.65</diffuse></material></visual>
+        <collision name="c"><geometry><cylinder><radius>0.045</radius><length>0.26</length></cylinder></geometry></collision>
+      </link>
+    </model>
+
+    <!-- Submerged Water-Filled PET Bottle 2 in Current Flow (x = 17.5 m, z = -0.90 m) -->
+    <model name="submerged_pet_bottle_2">
+      <static>true</static>
+      <pose>17.5 0.4 -0.90 0.5 0.8 -0.4</pose>
+      <link name="link">
+        <visual name="v"><geometry><cylinder><radius>0.042</radius><length>0.24</length></cylinder></geometry><material><ambient>0.60 0.80 0.90 0.55</ambient><diffuse>0.65 0.85 0.94 0.55</diffuse></material></visual>
+        <collision name="c"><geometry><cylinder><radius>0.042</radius><length>0.24</length></cylinder></geometry></collision>
+      </link>
+    </model>
+
+    <!-- =================================================================== -->
+    <!-- PLASTIC BAGS (WITH FULL COLLISION PHYSICS)                           -->
+    <!-- Crumpled polythene shopping bags, garbage bags, tarpaulin sheet     -->
+    <!-- =================================================================== -->
+    <!-- Submerged Polythene Shopping Bag 1 (Near start, z = -0.65 m) -->
+    <model name="submerged_plastic_bag_1">
+      <static>true</static>
+      <pose>9.0 -0.4 -0.65 0.4 0.2 -0.8</pose>
+      <link name="link">
+        <visual name="bag_fold_1">
+          <geometry><box><size>0.32 0.28 0.02</size></box></geometry>
+          <material>
+            <ambient>0.82 0.88 0.90 0.42</ambient>
+            <diffuse>0.86 0.92 0.94 0.42</diffuse>
+            <specular>0.5 0.6 0.7 0.5</specular>
+          </material>
+        </visual>
+        <collision name="c1"><geometry><box><size>0.32 0.28 0.02</size></box></geometry></collision>
+      </link>
+    </model>
+
+    <!-- Submerged Polythene Shopping Bag 2 (Hovering at mid-water, x = 23.0 m, z = -1.10 m) -->
+    <model name="submerged_plastic_bag_2">
+      <static>true</static>
+      <pose>23.0 1.2 -1.10 -0.5 0.4 0.6</pose>
+      <link name="link">
+        <visual name="v">
+          <geometry><box><size>0.35 0.30 0.025</size></box></geometry>
+          <material><ambient>0.80 0.86 0.88 0.45</ambient><diffuse>0.84 0.90 0.92 0.45</diffuse></material>
+        </visual>
+        <collision name="c"><geometry><box><size>0.35 0.30 0.025</size></box></geometry></collision>
+      </link>
+    </model>
+
+    <!-- Floating Black Polythene Garbage Bag (Floating near surface, x = 31.0 m, z = -0.06 m) -->
+    <model name="floating_garbage_bag_black">
+      <static>true</static>
+      <pose>31.0 -0.9 -0.06 0.2 0.1 0.4</pose>
+      <link name="link">
+        <visual name="v">
+          <geometry><box><size>0.48 0.38 0.14</size></box></geometry>
+          <material>
+            <ambient>0.08 0.08 0.08 0.85</ambient>
+            <diffuse>0.10 0.10 0.10 0.85</diffuse>
+            <specular>0.7 0.7 0.7 0.6</specular>
+          </material>
+        </visual>
+        <collision name="c"><geometry><box><size>0.48 0.38 0.14</size></box></geometry></collision>
+      </link>
+    </model>
+
+    <!-- Submerged Torn Plastic Tarpaulin Sheet (Snagged on riverbed log, x = 44.0 m, z = -2.85 m) -->
+    <model name="submerged_tarpaulin_sheet">
+      <static>true</static>
+      <pose>44.0 1.5 -2.85 0.3 0.2 -0.5</pose>
+      <link name="link">
+        <visual name="tarp">
+          <geometry><box><size>1.40 0.90 0.02</size></box></geometry>
+          <material>
+            <ambient>0.10 0.32 0.75 0.65</ambient>
+            <diffuse>0.12 0.38 0.85 0.65</diffuse>
+            <specular>0.4 0.5 0.6 0.4</specular>
+          </material>
+        </visual>
+        <collision name="c"><geometry><box><size>1.40 0.90 0.02</size></box></geometry></collision>
+      </link>
+    </model>
+
+    <!-- Submerged Polythene Bag 3 (Near barrage weir, x = 84.0 m, z = -1.65 m) -->
+    <model name="submerged_plastic_bag_3">
+      <static>true</static>
+      <pose>84.0 -0.5 -1.65 0.6 0.3 0.8</pose>
+      <link name="link">
+        <visual name="v">
+          <geometry><box><size>0.34 0.26 0.02</size></box></geometry>
+          <material><ambient>0.78 0.84 0.88 0.40</ambient><diffuse>0.82 0.88 0.92 0.40</diffuse></material>
+        </visual>
+        <collision name="c"><geometry><box><size>0.34 0.26 0.02</size></box></geometry></collision>
       </link>
     </model>
 
@@ -198,14 +874,14 @@
 
     <!-- =================================================================== -->
     <!-- STRUCTURE 2: SUBMERGED RIVER CROSSING PIPELINE (x = 42.0 m)         -->
-    <!-- Spans 32 m across riverbed with concrete anchor saddles             -->
+    <!-- Spans 36 m across riverbed with concrete anchor saddles             -->
     <!-- =================================================================== -->
     <model name="river_crossing_pipeline">
       <static>true</static>
       <pose>42.0 0.0 -3.6 1.5707963 0 0</pose>
       <link name="pipe_link">
         <visual name="pipe_v">
-          <geometry><cylinder><radius>0.30</radius><length>32.0</length></cylinder></geometry>
+          <geometry><cylinder><radius>0.30</radius><length>36.0</length></cylinder></geometry>
           <material>
             <ambient>0.28 0.32 0.35 1.0</ambient>
             <diffuse>0.32 0.36 0.38 1.0</diffuse>
@@ -213,7 +889,7 @@
           </material>
         </visual>
         <collision name="pipe_c">
-          <geometry><cylinder><radius>0.30</radius><length>32.0</length></cylinder></geometry>
+          <geometry><cylinder><radius>0.30</radius><length>36.0</length></cylinder></geometry>
         </collision>
       </link>
     </model>
@@ -271,64 +947,33 @@
     </model>
 
     <!-- =================================================================== -->
-    <!-- STRUCTURE 4: BARRAGE FLOOD CONTROL SLUICE WEIR (x = 92.0 m)         -->
+    <!-- STRUCTURE 4: BARRAGE FLOOD CONTROL SLUICE WEIR (x = 95.0 m)         -->
     <!-- =================================================================== -->
     <model name="barrage_sluice_weir">
       <static>true</static>
-      <pose>92.0 0.0 -1.5 0 0 0</pose>
+      <pose>95.0 0.0 -1.5 0 0 0</pose>
       <link name="link">
         <!-- Main Concrete Weir Wall -->
         <visual name="weir_wall">
-          <geometry><box><size>1.5 24.0 6.0</size></box></geometry>
+          <geometry><box><size>1.6 28.0 6.0</size></box></geometry>
           <material><ambient>0.48 0.46 0.42 1</ambient><diffuse>0.52 0.50 0.45 1</diffuse></material>
         </visual>
-        <collision name="weir_c"><geometry><box><size>1.5 24.0 6.0</size></box></geometry></collision>
+        <collision name="weir_c"><geometry><box><size>1.6 28.0 6.0</size></box></geometry></collision>
 
-        <!-- Sluice Gate 1 Open Conduit Opening (y = -4.0 m) -->
+        <!-- Sluice Gate 1 Open Conduit Opening (y = -4.5 m) -->
         <visual name="gate_conduit_1">
-          <pose>0 -4.0 -1.5 0 0 0</pose>
-          <geometry><box><size>1.6 3.0 2.5</size></box></geometry>
+          <pose>0 -4.5 -1.5 0 0 0</pose>
+          <geometry><box><size>1.8 3.5 2.5</size></box></geometry>
           <material><ambient>0.15 0.15 0.15 1</ambient></material>
         </visual>
 
-        <!-- Sluice Gate 2 Open Conduit Opening (y = 4.0 m) -->
+        <!-- Sluice Gate 2 Open Conduit Opening (y = 4.5 m) -->
         <visual name="gate_conduit_2">
-          <pose>0 4.0 -1.5 0 0 0</pose>
-          <geometry><box><size>1.6 3.0 2.5</size></box></geometry>
+          <pose>0 4.5 -1.5 0 0 0</pose>
+          <geometry><box><size>1.8 3.5 2.5</size></box></geometry>
           <material><ambient>0.15 0.15 0.15 1</ambient></material>
         </visual>
       </link>
-    </model>
-
-    <!-- =================================================================== -->
-    <!-- RIVERBED DEBRIS & HAZARDS                                           -->
-    <!-- =================================================================== -->
-    <!-- Sunken Large Driftwood Tree (x = 12.0 m, y = 3.0 m) -->
-    <model name="driftwood_tree">
-      <static>true</static>
-      <pose>12.0 3.0 -2.6 0.1 0.25 0.8</pose>
-      <link name="l">
-        <visual name="trunk">
-          <geometry><cylinder><radius>0.28</radius><length>6.5</length></cylinder></geometry>
-          <material><ambient>0.26 0.18 0.12 1</ambient><diffuse>0.30 0.20 0.14 1</diffuse></material>
-        </visual>
-        <collision name="c"><geometry><cylinder><radius>0.28</radius><length>6.5</length></cylinder></geometry></collision>
-      </link>
-    </model>
-
-    <!-- Riverbed Scour Boulder Field (x = 28.0 m to 32.0 m) -->
-    <model name="boulder_field_1">
-      <static>true</static>
-      <pose>28.0 -2.5 -3.3 0.2 0.3 0.5</pose>
-      <link name="l"><visual name="v"><geometry><box><size>1.4 1.2 0.9</size></box></geometry><material><ambient>0.32 0.30 0.26 1</ambient></material></visual>
-      <collision name="c"><geometry><box><size>1.4 1.2 0.9</size></box></geometry></collision></link>
-    </model>
-
-    <model name="boulder_field_2">
-      <static>true</static>
-      <pose>30.5 1.8 -3.4 -0.1 0.4 1.1</pose>
-      <link name="l"><visual name="v"><geometry><box><size>1.1 1.0 0.7</size></box></geometry><material><ambient>0.32 0.30 0.26 1</ambient></material></visual>
-      <collision name="c"><geometry><box><size>1.1 1.0 0.7</size></box></geometry></collision></link>
     </model>
 
     <!-- Tethered Navigation Marker Buoy 1 (Yellow, x = 16.0 m, y = -2.0 m) -->
@@ -350,37 +995,6 @@
         <visual name="s"><geometry><sphere><radius>0.20</radius></sphere></geometry><material><ambient>0.90 0.10 0.08 1</ambient><diffuse>0.90 0.10 0.08 1</diffuse></material></visual>
         <visual name="t"><pose>0 0 -0.9 0 0 0</pose><geometry><cylinder><radius>0.008</radius><length>1.8</length></cylinder></geometry><material><ambient>0.2 0.2 0.2 1</ambient></material></visual>
         <collision name="c"><geometry><sphere><radius>0.20</radius></sphere></geometry></collision>
-      </link>
-    </model>
-
-    <!-- =================================================================== -->
-    <!-- SUSPENDED SILT PLUMES (Muddy Flood Suspended Sediments)             -->
-    <!-- =================================================================== -->
-    <model name="flood_silt_plume_1">
-      <static>true</static>
-      <pose>18.0 0.0 -1.4 0 0 0</pose>
-      <link name="link">
-        <visual name="v">
-          <geometry><box><size>8.0 20.0 2.8</size></box></geometry>
-          <material>
-            <ambient>0.30 0.24 0.14 0.45</ambient>
-            <diffuse>0.30 0.24 0.14 0.45</diffuse>
-          </material>
-        </visual>
-      </link>
-    </model>
-
-    <model name="flood_silt_plume_2">
-      <static>true</static>
-      <pose>52.0 0.0 -1.8 0 0 0</pose>
-      <link name="link">
-        <visual name="v">
-          <geometry><box><size>12.0 24.0 3.2</size></box></geometry>
-          <material>
-            <ambient>0.32 0.26 0.15 0.50</ambient>
-            <diffuse>0.32 0.26 0.15 0.50</diffuse>
-          </material>
-        </visual>
       </link>
     </model>
 
