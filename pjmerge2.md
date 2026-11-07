@@ -221,28 +221,32 @@ ros2 run isonavi_rov_gazebo flood_ctl --preset extreme
 ros2 run isonavi_rov_gazebo flood_ctl --flow 1.5 --turbidity 2.2 --debris 12
 ```
 
-### 6.3 Uneven Riverbed Bathymetry, Rock Formations & Debris Collision Physics
+### 6.3 Uneven Riverbed Bathymetry, Dynamic Rocks, Mud Particles & Movable Debris Physics
 * **Expanded & Uneven Riverbed:** Extended the river world [`large_river.sdf`](file:///home/prjwaal/isonavi/isonavi-rov/ros/isonavi_rov_gazebo/worlds/large_river.sdf) to $130\,\text{m} \times 48\,\text{m}$ with non-uniform bathymetry, including upstream sand shoals, central scour dunes, side bank terraces, and deep scour pits ($1.6\,\text{m}$ to $5.8\,\text{m}$ depth).
-* **Rock & Boulder Formations:** Added jagged rock outcrops, granite boulder deflector fields around bridge piers, submerged rock shelves, and bedrock spires with full ODE `<collision>` physics.
-* **Reduced Murky Dust/Fog & Natural Optical Clarity:**
-  - Reduced dense underwater fog density from $0.55$ down to $0.10$, shifted fog `start` from $0.4\,\text{m}$ to $1.5\,\text{m}$, and extended `end` to $16.0\,\text{m}$.
-  - Calibrated natural ambient lighting ($0.35, 0.36, 0.32$) and sunlight diffuse levels ($0.62, 0.62, 0.55$), eliminating the overwhelming murky haze while preserving realistic depth attenuation. All debris, riverbed silt, and obstacles are now clearly visible through the ROV forward camera.
-* **Small Spherical Dirt Particles with Physical Collisions (Inside Water Only):**
-  - **High-Throughput Continuous Drift Emitter:** Integrated underwater box particle emitter (`underwater_spherical_dust_emitter`, rate: $350\,\text{Hz}$, lifetime: $20\,\text{s}$, size: $100\,\text{m} \times 36\,\text{m} \times 2.2\,\text{m}$) spanning billions of drifting micro-dirt specks across operational lifespans strictly below the waterline ($z \in [-3.6, -0.25]\,\text{m}$). Zero dust exists above water.
-  - **Discrete Collision Dirt Spheres & Silt Pebbles:** Added physical `<collision>` spherical dirt clusters (`dust_sphere_cluster_1` through `dust_sphere_cluster_6`) and an upstream riverbed silt pebble field (`dirt_pebble_field_upstream`), providing physical collision geometry ($r \in [15, 45]\,\text{mm}$) that physically interacts with the ROV chassis and thruster wash.
-* **Comprehensive Plastic Bags Collection (with Collision Physics):**
-  - Submerged polythene grocery bags in assorted colors (`submerged_plastic_bag_white_4`, `submerged_plastic_bag_red`, `submerged_plastic_bag_blue`, `submerged_plastic_bag_green`, `submerged_plastic_bag_yellow`).
-  - Floating heavy-duty garbage bag (`floating_garbage_bag_2`) and submerged transparent plastic packaging sheet (`submerged_plastic_packaging_sheet`), each configured with rigid `<collision>` boxes.
-* **Plastic Bottles & Household Containers (with Collision Physics):**
-  - Submerged clear mineral water bottles (`plastic_water_bottle_clear_1`, `2`, `3`, `4`).
-  - Submerged green PET soda bottles (`plastic_soda_bottle_green_1`, `2`) and crushed soda bottle (`plastic_soda_bottle_crushed`).
-  - High-density polyethylene (HDPE) industrial jugs: orange detergent jug (`plastic_detergent_bottle_orange`), white bleach container (`plastic_bleach_bottle_white`), and blue motor oil jug (`plastic_oil_bottle_blue`).
-  - 200L polyethylene chemical drums (floating and submerged), 20L oil jerrycans, rigid industrial plastic crates, discarded plastic utility buckets, wash basins, PVC sewer pipe segments, traffic cones, and automotive bumper panels.
-* **Rotten Wooden Items & Driftwood Particles (with Collision Physics):**
-  - Rotting driftwood tree trunks with branch stubs (`rotten_driftwood_trunk_1`, `rotten_driftwood_log_2`), gnarled tree root stumps (`gnarled_tree_root_stump`), broken wooden shipping pallets, railway sleepers, and rotting timber beams.
-  - Decaying submerged driftwood branches (`wood_particle_branch_1`, `2`, `3`) with collision cylinders.
-  - Floating and submerged rotting wood chip clusters (`wood_chip_cluster_1`, `wood_chip_cluster_2`) with collision boxes.
-  - Rotten timber stakes (`rotten_timber_stake_1`, `2`), rotten wood plank fragments (`rotten_wood_plank_fragment_1`, `2`), and submerged driftwood twig clusters (`driftwood_twig_cluster`).
+* **50 Big Dynamic River Rocks & Boulders (Movable Upon Contact):**
+  - Added 50 large riverbed boulders (`dynamic_rock_big_01` through `50`) with radii $r \in [0.24, 0.48]\,\text{m}$ and realistic basalt/granite masses $m \in [25.0, 130.0]\,\text{kg}$.
+  - Configured with `<static>false</static>`, moments of inertia $I_{xx}=I_{yy}=I_{zz}=\frac{2}{5}mr^2$, ODE contact friction, and hydrodynamic velocity damping (`<velocity_decay><linear>0.5</linear><angular>0.5</angular></velocity_decay>`).
+  - Rest naturally on the riverbed bathymetry under gravity; when impacted by the ROV ($10.5\,\text{kg}$), they shift, tilt, or slide according to rigid-body contact dynamics.
+* **200 Small Dynamic River Stones, Cobbles & Pebbles (Movable Upon Contact):**
+  - Added 200 small river stones and pebbles (`dynamic_rock_small_001` through `200`) distributed along shoals, scour dunes, and pier channels with radii $r \in [0.05, 0.16]\,\text{m}$ and masses $m \in [0.4, 5.5]\,\text{kg}$.
+  - Configured with `<static>false</static>`, full collision geometry, and water resistance damping ($0.6$).
+  - Freely roll, scatter, and tumble across the uneven riverbed when nudged or struck by the ROV chassis, skid frame, or thruster wash.
+* **Continuous Billions of Micro Mud, Dirt & Silt Particles (Particle Systems):**
+  - **Water Column Emitter:** Continuous box emitter (`underwater_spherical_dust_emitter`, $450\,\text{Hz}$, lifetime $25\,\text{s}$, size $100\,\text{m} \times 36\,\text{m} \times 2.2\,\text{m}$) generating $>10^9$ drifting micro-dirt and organic silt specks strictly below the waterline ($z \in [-3.6, -0.2]\,\text{m}$) with zero surface dust.
+  - **Riverbed Mud Cloud Emitter:** Secondary bottom silt emitter (`underwater_riverbed_mud_emitter`, $380\,\text{Hz}$, lifetime $20\,\text{s}$, size $90\,\text{m} \times 24\,\text{m} \times 1.2\,\text{m}$) kicking up continuous clouds of stirred mud and silt along the riverbed.
+* **40 Floating Dynamic Mud & Soil Clods (Water Column - Move When Touched):**
+  - 40 neutrally buoyant dynamic mud clods (`floating_mud_clod_01` through `40`) suspended at operational depths ($z \in [-0.4, -2.1]\,\text{m}$).
+  - Configured with `<static>false</static>`, `<gravity>false</gravity>`, light organic soil mass ($m \in [0.03, 0.22]\,\text{kg}$), collision spheres, and viscous fluid damping (`<velocity_decay><linear>0.85</linear><angular>0.85</angular></velocity_decay>`).
+  - When the ROV strikes or brushes past them, contact impulses deflect them, causing them to tumble and slowly drift away in the water column.
+* **50 Riverbed Dynamic Mud Nuggets & Silt Chunks (Bottom - Roll When Touched):**
+  - 50 dynamic bottom mud nuggets (`bottom_mud_nugget_01` through `50`) resting along the riverbed bathymetry ($z \approx -1.8\,\text{m}$ to $-3.3\,\text{m}$).
+  - Configured with `<static>false</static>`, `<gravity>true</gravity>`, mass $m \in [0.08, 0.55]\,\text{kg}$, collision spheres, and bottom friction.
+  - When the ROV descends to the riverbed or drags along the bottom, these mud chunks are kicked, rolled, and scattered.
+* **Dynamic Movable Plastics & Driftwood (Deflect Upon ROV Impact):**
+  - Upgraded plastic bottles (`plastic_water_bottle_*`, `plastic_soda_bottle_*`, `plastic_detergent_bottle_*`, `plastic_bleach_bottle_*`, `plastic_oil_bottle_*`), plastic shopping bags (`submerged_plastic_bag_*`, `floating_garbage_bag_*`), and driftwood branches (`wood_particle_branch_*`, `wood_chip_cluster_*`, `driftwood_twig_cluster`) to dynamic `<static>false</static>`.
+  - Configured with realistic mass ($0.04\,\text{kg} \to 2.5\,\text{kg}$) and fluid damping so they freely bob, deflect, and float away when touched by the ROV rather than behaving as rigid static walls.
+* **Atmospheric Clarity & Reduced Murky Fog:**
+  - Underwater fog density set to $0.10$, starting at $1.5\,\text{m}$ and extending to $16.0\,\text{m}$, with balanced natural ambient lighting ($0.35, 0.36, 0.32$), allowing all dynamic rocks, moving mud particles, and floating debris to be sharply resolved on the ROV forward camera.
 
 ---
 
