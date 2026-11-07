@@ -273,13 +273,13 @@ ros2 launch isonavi_rov_gazebo sim.launch.py
   * `headless:=true/false`: Toggle Gazebo 3D GUI window (default: `false`).
   * `scattering:=1.6`    : Water turbidity attenuation factor (default: `1.6`).
 
-### Step 7.3: Launch Tactical Mission Control & Ground Station (GCS)
+### Step 7.3: Launch 'VIT Pune (>>>>IIT)' Subsea Telemetry & Operations Console
 In a dedicated terminal (or via `gcs:=true` above):
 ```bash
 ws-isonavi
 ros2 run isonavi_rov_ros ground_station
 ```
-The **Ground Station Interface** is a professional PyQt5 tactical console providing unified telemetry, command, vision, and target logging:
+The **VIT Pune (>>>>IIT)** operations console is an industrial-grade PyQt5 marine control interface providing unified telemetry, primary flight display (PFD), optical AI target tracking, and subsea command execution:
 * **Live Optical Vision & Spatial AI:** Embedded camera viewer streaming real-time YOLOv8 detections with 3D range estimation, Retinex enhancement, crosshair reticle, stream selector, and high-resolution frame snapshot capture.
 * **Target Detection Log & Storage:** Live interactive table tracking every unique detected target (buoys, barrels, pipes, piers, debris). Features smart deduplication, editable pilot notes, automatic saving to `~/.ros/isonavi_detection_log.json`, and one-click **Export to CSV** and **Export to JSON**.
 * **Navigation & Attitude Gauges:** Real-time Vertical Depth Column bar, Artificial Horizon (Pitch & Roll indicator), 360° Compass Yaw ribbon, and digital 3D coordinates ($X, Y, Z, v_x, v_y$).

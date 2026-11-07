@@ -1,12 +1,12 @@
-"""ISONAVI-ROV Mission Control & Ground Station (GCS).
+"""VIT Pune (>>>>IIT) - Subsea Telemetry & Operations Console.
 
-A professional PyQt5 tactical ground control station for underwater inspection:
-  - Live Telemetry Monitoring: Depth, 3D Pose (X, Y, Z), Velocities, Heading Compass, Attitude
-  - Vehicle Status & Diagnostics: Safety Supervisor state, 8-Thruster matrix, Alarms
-  - Live Optical Camera Feed: Real-time YOLOv8 & Spatial AI detection stream
-  - Target Detection Log & Storage: Interactive detection inventory, CSV/JSON export, snapshots
-  - Subsea Command Deck: Teleoperation keypad, cruise presets, auto-center, flood control, kill switch
-  - Comms & Failure Watchdog: Connection heartbeat pulse, loss-of-signal alarm, tilt/depth limits
+A professional engineering ground control station for the ISONAVI-ROV platform:
+  - Live Subsea Telemetry: Depth tape, 3D Pose (X, Y, Z), Velocities, Heading Compass, Attitude PFD
+  - Vehicle Status & Diagnostics: Safety Supervisor state, 8-Thruster power matrix, Fault monitors
+  - Live Optical Vision Feed: Real-time YOLOv8 & Spatial AI detection stream with OSD
+  - Target Classification Log: Industrial detection inventory, CSV/JSON export, frame capture
+  - Subsea Command Deck: Teleoperation keypad, throttle scaling, lane centring, hydrodynamic forcing
+  - Communications Watchdog: Hardware heartbeat pulse, signal-loss alarm, safety envelope limits
 """
 
 import csv
@@ -54,7 +54,6 @@ from PyQt5.QtWidgets import (
     QSplitter,
     QTableWidget,
     QTableWidgetItem,
-    QTextEdit,
     QVBoxLayout,
     QWidget,
 )
@@ -95,7 +94,6 @@ class RosBridge(QObject):
     sig_thrusters = pyqtSignal(list)
     sig_status = pyqtSignal(dict)
     sig_detections = pyqtSignal(list)
-    sig_log = pyqtSignal(str)
 
     def __init__(self):
         super().__init__()
@@ -104,18 +102,17 @@ class RosBridge(QObject):
         self.active_stream = "detections"
         self.last_packet_t = 0.0
 
-        # Output states
+        # Command states
         self.surge = 0.0
         self.sway = 0.0
         self.heave = 0.0
         self.yaw = 0.0
         self.button_c = 0
-        self.armed = False
 
     def init_ros(self):
         if not rclpy.ok():
             rclpy.init()
-        self.node = Node("isonavi_ground_station")
+        self.node = Node("isonavi_gcs_node")
 
         qos_best_effort = QoSProfile(
             reliability=QoSReliabilityPolicy.BEST_EFFORT,
@@ -123,7 +120,7 @@ class RosBridge(QObject):
             depth=2,
         )
 
-        # Subscribers
+        # Subscriptions
         self.sub_img_det = self.node.create_subscription(
             Image, "camera/image_detections", self.on_image_det, qos_best_effort
         )
@@ -163,7 +160,7 @@ class RosBridge(QObject):
         self.pub_kill = self.node.create_publisher(Bool, "kill", 10)
         self.pub_flood = self.node.create_publisher(Bool, "flood", 10)
 
-        # Telemetry State Cache
+        # Telemetry Cache
         self.telemetry = {
             "depth": 0.0,
             "x": 4.0,
@@ -179,12 +176,14 @@ class RosBridge(QObject):
         self.status = {
             "safety_state": "INITIALIZING",
             "flood_active": False,
-            "flood_status": "NORMAL [CALM]",
+            "flood_status": "NORMAL [0.20 m/s]",
             "comms_online": False,
             "auto_center": False,
+            "packet_hz": 50,
+            "latency_ms": 4.2,
         }
 
-        # 20 Hz Joystick Heartbeat Timer
+        # 20 Hz Command/Heartbeat Timer
         self.timer_joy = self.node.create_timer(0.05, self.publish_joy)
 
     def set_stream(self, stream_type: str):
@@ -211,7 +210,7 @@ class RosBridge(QObject):
             bytes_per_line = ch * w
             qimg = QImage(rgb.data, w, h, bytes_per_line, QImage.Format_RGB888).copy()
             self.sig_image.emit(qimg)
-        except Exception as e:
+        except Exception:
             pass
 
     def on_depth(self, msg: Float64):
@@ -286,7 +285,7 @@ class RosBridge(QObject):
         msg.buttons = [int(self.button_c), 0, 0, 0, 0, 0, 0, 0]
         self.pub_joy.publish(msg)
 
-        # Check comms freshness
+        # Evaluate link health
         dt = time.time() - self.last_packet_t
         self.status["comms_online"] = (dt < 1.2 and self.last_packet_t > 0)
         self.status["auto_center"] = bool(self.button_c)
@@ -319,17 +318,158 @@ class RosBridge(QObject):
 
 
 # ==============================================================================
-# CUSTOM GRAPHICAL TACTICAL WIDGETS
+# PROFESSIONAL INSTRUMENT GAUGES
 # ==============================================================================
-class RiverMapWidget(QWidget):
-    """Top-Down Tactical Bathymetry & Trajectory Map."""
+class AttitudeIndicatorWidget(QWidget):
+    """Primary Flight Display (PFD) Artificial Horizon with Calibrated Roll/Pitch Scale."""
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setMinimumSize(320, 240)
+        self.setMinimumSize(150, 150)
+        self.roll = 0.0
+        self.pitch = 0.0
+
+    def update_attitude(self, roll, pitch):
+        self.roll = roll
+        self.pitch = pitch
+        self.update()
+
+    def paintEvent(self, event):
+        p = QPainter(self)
+        p.setRenderHint(QPainter.Antialiasing)
+
+        w = self.width()
+        h = self.height()
+        cx, cy = w / 2.0, h / 2.0
+        rad = min(cx, cy) - 6
+
+        # Instrument Border
+        p.fillRect(0, 0, w, h, QColor("#181a1f"))
+
+        # Circular horizon mask
+        clip = QPainterPath()
+        clip.addEllipse(QPointF(cx, cy), rad, rad)
+        p.setClipPath(clip)
+
+        # Transformed Sky & Ground
+        p.save()
+        p.translate(cx, cy)
+        p.rotate(-self.roll)
+
+        pitch_px = max(-rad * 1.5, min(rad * 1.5, self.pitch * 1.8))
+
+        # Sky (Aviation Dark Blue) & Ground (Marine Silt Olive-Brown)
+        p.fillRect(QRectF(-rad * 2, -rad * 2.5 + pitch_px, rad * 4, rad * 2.5), QColor("#1c3b5e"))
+        p.fillRect(QRectF(-rad * 2, pitch_px, rad * 4, rad * 2.5), QColor("#362f26"))
+
+        # Zero Horizon Line
+        p.setPen(QPen(QColor("#ffffff"), 1.8))
+        p.drawLine(QPointF(-rad * 1.5, pitch_px), QPointF(rad * 1.5, pitch_px))
+
+        # Pitch Ladder Rungs
+        p.setFont(QFont("Monospace", 7))
+        p.setPen(QPen(QColor("#ffffff"), 1.2))
+        for deg in (-30, -20, -10, 10, 20, 30):
+            ry = pitch_px - deg * 1.8
+            p.drawLine(QPointF(-18, ry), QPointF(-6, ry))
+            p.drawLine(QPointF(6, ry), QPointF(18, ry))
+            p.drawText(QPointF(20, ry + 3), f"{abs(deg)}")
+            p.drawText(QPointF(-32, ry + 3), f"{abs(deg)}")
+
+        p.restore()
+        p.setClipping(False)
+
+        # Fixed Aircraft / ROV Reference Symbol
+        p.setPen(QPen(QColor("#e5c07b"), 2.2))
+        p.drawLine(int(cx - 28), int(cy), int(cx - 10), int(cy))
+        p.drawLine(int(cx + 10), int(cy), int(cx + 28), int(cy))
+        p.drawLine(int(cx - 10), int(cy), int(cx - 10), int(cy + 6))
+        p.drawLine(int(cx + 10), int(cy), int(cx + 10), int(cy + 6))
+        p.drawEllipse(QPointF(cx, cy), 3, 3)
+
+        # Outer Instrument Bezel
+        p.setPen(QPen(QColor("#3b4048"), 2.0))
+        p.setBrush(Qt.NoBrush)
+        p.drawEllipse(QPointF(cx, cy), rad, rad)
+
+        # Roll Pointer Index
+        p.setPen(QPen(QColor("#e5c07b"), 2))
+        p.drawLine(int(cx), int(cy - rad), int(cx), int(cy - rad + 8))
+
+        # Subtitle readout
+        p.setFont(QFont("Monospace", 8, QFont.Bold))
+        p.setPen(QColor("#abb2bf"))
+        p.drawText(QRectF(0, h - 16, w, 14), Qt.AlignCenter, f"R:{self.roll:+.1f}°  P:{self.pitch:+.1f}°")
+
+
+class DepthGaugeWidget(QWidget):
+    """Calibrated Subsea Vertical Depth Tape with Digital Readout."""
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setMinimumSize(85, 180)
+        self.depth_m = 0.0
+
+    def update_depth(self, d):
+        self.depth_m = max(0.0, d)
+        self.update()
+
+    def paintEvent(self, event):
+        p = QPainter(self)
+        p.setRenderHint(QPainter.Antialiasing)
+
+        w, h = self.width(), self.height()
+        p.fillRect(0, 0, w, h, QColor("#181a1f"))
+
+        bar_x = 18
+        bar_w = 20
+        bar_y = 28
+        bar_h = h - 56
+
+        max_scale = 5.0  # 5 meters scale
+        clamped_d = min(max_scale, self.depth_m)
+        fill_h = (clamped_d / max_scale) * bar_h
+
+        # Column background
+        p.fillRect(bar_x, bar_y, bar_w, bar_h, QColor("#121417"))
+
+        # Water column fill
+        p.fillRect(bar_x, bar_y, bar_w, int(fill_h), QColor("#224b73"))
+
+        # Border
+        p.setPen(QPen(QColor("#3b4048"), 1.2))
+        p.drawRect(bar_x, bar_y, bar_w, bar_h)
+
+        # Ticks and graduation marks
+        p.setFont(QFont("Monospace", 7))
+        p.setPen(QColor("#7f848e"))
+        for m in range(0, 6):
+            ty = bar_y + (m / max_scale) * bar_h
+            p.drawLine(bar_x + bar_w, int(ty), bar_x + bar_w + 5, int(ty))
+            p.drawText(bar_x + bar_w + 7, int(ty + 3), f"{m}.0m")
+
+        # Current Depth Target Pointer
+        ind_y = bar_y + fill_h
+        p.setPen(QPen(QColor("#e06c75"), 2))
+        p.drawLine(bar_x - 4, int(ind_y), bar_x + bar_w + 4, int(ind_y))
+
+        # Title and digital box
+        p.setFont(QFont("Monospace", 8, QFont.Bold))
+        p.setPen(QColor("#61afef"))
+        p.drawText(QRectF(0, 8, w, 16), Qt.AlignCenter, "DEPTH (M)")
+
+        p.setFont(QFont("Monospace", 9, QFont.Bold))
+        p.setPen(QColor("#ffffff"))
+        p.drawText(QRectF(0, h - 22, w, 18), Qt.AlignCenter, f"{self.depth_m:.2f} m")
+
+
+class RiverMapWidget(QWidget):
+    """Tactical Bathymetry & Acoustic Positioning Grid Canvas."""
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setMinimumSize(320, 220)
         self.rov_x = 4.0
         self.rov_y = 0.0
         self.rov_yaw = 0.0
-        self.trail = deque(maxlen=200)
+        self.trail = deque(maxlen=240)
         self.targets = []
 
     def update_pose(self, x, y, yaw):
@@ -350,12 +490,10 @@ class RiverMapWidget(QWidget):
         w = self.width()
         h = self.height()
 
-        # Dark tactical background
-        p.fillRect(0, 0, w, h, QColor("#0d1117"))
+        p.fillRect(0, 0, w, h, QColor("#14161a"))
 
-        # Map projection: X in [0, 80m], Y in [-8m, +8m]
-        pad_x = 25
-        pad_y = 20
+        pad_x = 30
+        pad_y = 22
         map_w = w - 2 * pad_x
         map_h = h - 2 * pad_y
 
@@ -364,222 +502,115 @@ class RiverMapWidget(QWidget):
             sy = h / 2.0 - (wy / 8.0) * (map_h / 2.0)
             return sx, sy
 
-        # Draw River Channel Boundaries
-        p.setPen(QPen(QColor("#21262d"), 1, Qt.DashLine))
+        # Coordinate Grid Lines (Every 20m X, Every 4m Y)
+        p.setFont(QFont("Monospace", 7))
+        p.setPen(QPen(QColor("#242830"), 1, Qt.DotLine))
+        for gx in (0.0, 20.0, 40.0, 60.0, 80.0):
+            sx, _ = world_to_screen(gx, 0)
+            p.drawLine(int(sx), int(pad_y), int(sx), int(h - pad_y))
+            p.setPen(QColor("#5c6370"))
+            p.drawText(int(sx - 10), int(h - 8), f"{int(gx)}m")
+            p.setPen(QPen(QColor("#242830"), 1, Qt.DotLine))
+
+        for gy in (-6.0, 0.0, 6.0):
+            _, sy = world_to_screen(0, gy)
+            p.drawLine(int(pad_x), int(sy), int(w - pad_x), int(sy))
+
+        # River Channel Boundaries
         y_top_s = world_to_screen(0, 8.0)[1]
         y_bot_s = world_to_screen(0, -8.0)[1]
+        p.setPen(QPen(QColor("#3b4048"), 1.2))
         p.drawLine(int(pad_x), int(y_top_s), int(w - pad_x), int(y_top_s))
         p.drawLine(int(pad_x), int(y_bot_s), int(w - pad_x), int(y_bot_s))
 
-        # Riverbed flow fill
-        water_rect = QRectF(pad_x, y_top_s, map_w, y_bot_s - y_top_s)
-        p.fillRect(water_rect, QColor(14, 28, 44, 180))
+        # Water channel subtle shading
+        p.fillRect(QRectF(pad_x, y_top_s, map_w, y_bot_s - y_top_s), QColor(20, 32, 48, 120))
 
-        # Civil Structures Landmarks
-        p.setPen(QPen(QColor("#388bfd"), 1))
-        p.setBrush(QColor("#1f6feb"))
-        # Bridge Pier 1 (x=22)
+        # Landmark Infrastructure
+        p.setFont(QFont("Monospace", 7, QFont.Bold))
+        # Pier 1
         p1_x, p1_y = world_to_screen(22.0, 0.0)
-        p.drawEllipse(QPointF(p1_x, p1_y), 6, 6)
-        p.drawText(int(p1_x - 18), int(p1_y - 10), "PIER 1")
+        p.setPen(QPen(QColor("#61afef"), 1.2))
+        p.setBrush(QColor("#1e3b5e"))
+        p.drawRect(QRectF(p1_x - 6, p1_y - 6, 12, 12))
+        p.drawText(int(p1_x - 16), int(p1_y - 10), "PIER 1")
 
-        # Pipeline Crossing (x=42)
+        # Pipeline
         pipe_x = world_to_screen(42.0, 0.0)[0]
-        p.setPen(QPen(QColor("#d29922"), 2, Qt.DashLine))
+        p.setPen(QPen(QColor("#e5c07b"), 1.5, Qt.DashLine))
         p.drawLine(int(pipe_x), int(y_top_s), int(pipe_x), int(y_bot_s))
-        p.drawText(int(pipe_x - 16), int(y_bot_s + 14), "PIPE")
+        p.drawText(int(pipe_x - 14), int(y_bot_s + 12), "PIPELINE")
 
-        # Bridge Pier 2 (x=58)
+        # Pier 2
         p2_x, p2_y = world_to_screen(58.0, 0.0)
-        p.setPen(QPen(QColor("#388bfd"), 1))
-        p.setBrush(QColor("#1f6feb"))
-        p.drawEllipse(QPointF(p2_x, p2_y), 6, 6)
-        p.drawText(int(p2_x - 18), int(p2_y - 10), "PIER 2")
+        p.setPen(QPen(QColor("#61afef"), 1.2))
+        p.setBrush(QColor("#1e3b5e"))
+        p.drawRect(QRectF(p2_x - 6, p2_y - 6, 12, 12))
+        p.drawText(int(p2_x - 16), int(p2_y - 10), "PIER 2")
 
-        # Trajectory Breadcrumb Trail
+        # Historical Trajectory Trail
         if len(self.trail) > 1:
-            p.setPen(QPen(QColor(88, 166, 255, 140), 2))
+            p.setPen(QPen(QColor("#4078c0"), 1.5))
             pts = [QPointF(*world_to_screen(tx, ty)) for tx, ty in self.trail]
             for i in range(len(pts) - 1):
                 p.drawLine(pts[i], pts[i + 1])
 
-        # Draw Detected Targets on Map
+        # Plotted Targets (Acoustic Contacts)
         for t in self.targets:
             if "spatial_xyz" in t:
                 tx_w = self.rov_x + t["spatial_xyz"][0]
                 ty_w = self.rov_y + t["spatial_xyz"][1]
                 tsx, tsy = world_to_screen(tx_w, ty_w)
-                p.setPen(QPen(QColor("#ff7b72"), 1))
-                p.setBrush(QColor("#f85149"))
-                p.drawEllipse(QPointF(tsx, tsy), 4, 4)
-                lbl = t.get("class", "OBJ").split("_")[-1].upper()[:4]
-                p.setFont(QFont("Monospace", 7))
-                p.drawText(int(tsx + 5), int(tsy + 3), lbl)
+                p.setPen(QPen(QColor("#e06c75"), 1.2))
+                p.setBrush(QColor("#9c3a44"))
+                p.drawPolygon(QPolygonF([
+                    QPointF(tsx, tsy - 5),
+                    QPointF(tsx + 5, tsy),
+                    QPointF(tsx, tsy + 5),
+                    QPointF(tsx - 5, tsy),
+                ]))
+                cls_txt = t.get("class", "TGT").split("_")[-1].upper()[:4]
+                p.setPen(QColor("#e5c07b"))
+                p.drawText(int(tsx + 6), int(tsy + 3), cls_txt)
 
-        # Draw ROV Position Marker & Heading Vector
+        # ROV Vector & Icon
         rx, ry = world_to_screen(self.rov_x, self.rov_y)
         yaw_rad = math.radians(self.rov_yaw)
 
-        # Orientation vector
-        vec_len = 16.0
-        vx = rx + vec_len * math.cos(yaw_rad)
-        vy = ry - vec_len * math.sin(yaw_rad)
-        p.setPen(QPen(QColor("#58a6ff"), 2))
+        # Velocity Leader Line
+        p.setPen(QPen(QColor("#98c379"), 2))
+        vx = rx + 18.0 * math.cos(yaw_rad)
+        vy = ry - 18.0 * math.sin(yaw_rad)
         p.drawLine(QPointF(rx, ry), QPointF(vx, vy))
 
-        # ROV Triangle Icon
-        p.setPen(QPen(QColor("#ffffff"), 1.5))
-        p.setBrush(QColor("#2ea043"))
+        # Triangle symbol
+        p.setPen(QPen(QColor("#ffffff"), 1.4))
+        p.setBrush(QColor("#2d8a4e"))
         tip = QPointF(rx + 9 * math.cos(yaw_rad), ry - 9 * math.sin(yaw_rad))
-        left = QPointF(rx + 6 * math.cos(yaw_rad + 2.5), ry - 6 * math.sin(yaw_rad + 2.5))
-        right = QPointF(rx + 6 * math.cos(yaw_rad - 2.5), ry - 6 * math.sin(yaw_rad - 2.5))
-        p.drawPolygon(QPolygonF([tip, left, right]))
+        p1 = QPointF(rx + 6 * math.cos(yaw_rad + 2.5), ry - 6 * math.sin(yaw_rad + 2.5))
+        p2 = QPointF(rx + 6 * math.cos(yaw_rad - 2.5), ry - 6 * math.sin(yaw_rad - 2.5))
+        p.drawPolygon(QPolygonF([tip, p1, p2]))
 
-        # Scale and coordinate legend
+        # Telemetry Legend
         p.setFont(QFont("Monospace", 8))
-        p.setPen(QColor("#8b949e"))
-        p.drawText(pad_x, h - 5, f"POS: X={self.rov_x:.1f}m | Y={self.rov_y:.1f}m | YAW={self.rov_yaw:.0f}°")
-
-
-class AttitudeIndicatorWidget(QWidget):
-    """Artificial Horizon and Pitch/Roll Attitude Gauge."""
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.setMinimumSize(140, 140)
-        self.roll = 0.0
-        self.pitch = 0.0
-
-    def update_attitude(self, roll, pitch):
-        self.roll = roll
-        self.pitch = pitch
-        self.update()
-
-    def paintEvent(self, event):
-        p = QPainter(self)
-        p.setRenderHint(QPainter.Antialiasing)
-        w, h = self.width(), self.height()
-        cx, cy = w / 2.0, h / 2.0
-        rad = min(cx, cy) - 8
-
-        # Clip to circle
-        path = QPainterPath()
-        path.addEllipse(QPointF(cx, cy), rad, rad)
-        p.setClipPath(path)
-
-        # Save coordinate frame
-        p.save()
-        p.translate(cx, cy)
-        p.rotate(-self.roll)
-
-        # Pitch displacement (2 px per degree)
-        pitch_px = max(-rad, min(rad, self.pitch * 1.8))
-
-        # Sky (blue) & Ground (brown)
-        p.fillRect(QRectF(-rad * 2, -rad * 2 + pitch_px, rad * 4, rad * 2), QColor("#1f6feb"))
-        p.fillRect(QRectF(-rad * 2, pitch_px, rad * 4, rad * 2), QColor("#593f18"))
-
-        # Horizon Line
-        p.setPen(QPen(QColor("#ffffff"), 2))
-        p.drawLine(QPointF(-rad, pitch_px), QPointF(rad, pitch_px))
-
-        # Pitch ladder ticks
-        for deg in (-20, -10, 10, 20):
-            ty = pitch_px - deg * 1.8
-            p.drawLine(QPointF(-15, ty), QPointF(15, ty))
-
-        p.restore()
-        p.setClipping(False)
-
-        # Fixed Aircraft / ROV reticle in center
-        p.setPen(QPen(QColor("#ffea79"), 2.5))
-        p.drawLine(int(cx - 24), int(cy), int(cx - 8), int(cy))
-        p.drawLine(int(cx + 8), int(cy), int(cx + 24), int(cy))
-        p.drawEllipse(QPointF(cx, cy), 3, 3)
-
-        # Outer bezel
-        p.setPen(QPen(QColor("#30363d"), 2.5))
-        p.setBrush(Qt.NoBrush)
-        p.drawEllipse(QPointF(cx, cy), rad, rad)
-
-        # Text readout
-        p.setFont(QFont("Monospace", 8))
-        p.setPen(QColor("#c9d1d9"))
-        p.drawText(QRectF(0, h - 18, w, 16), Qt.AlignCenter, f"R:{self.roll:+.1f}° P:{self.pitch:+.1f}°")
-
-
-class DepthGaugeWidget(QWidget):
-    """Vertical Depth Column and Digital Water Column Gauge."""
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.setMinimumSize(80, 180)
-        self.depth_m = 0.0
-
-    def update_depth(self, d):
-        self.depth_m = max(0.0, d)
-        self.update()
-
-    def paintEvent(self, event):
-        p = QPainter(self)
-        p.setRenderHint(QPainter.Antialiasing)
-        w, h = self.width(), self.height()
-
-        p.fillRect(0, 0, w, h, QColor("#161b22"))
-
-        bar_x = 18
-        bar_w = 20
-        bar_y = 30
-        bar_h = h - 60
-
-        # Max scale: 5 meters depth
-        max_d = 5.0
-        fill_h = min(bar_h, (self.depth_m / max_d) * bar_h)
-
-        # Background column
-        p.fillRect(bar_x, bar_y, bar_w, bar_h, QColor("#0d1117"))
-
-        # Water fill gradient (cyan to deep blue)
-        p.fillRect(bar_x, bar_y, bar_w, int(fill_h), QColor("#388bfd"))
-
-        # Bezel and depth indicator arrow
-        p.setPen(QPen(QColor("#8b949e"), 1.5))
-        p.drawRect(bar_x, bar_y, bar_w, bar_h)
-
-        ind_y = bar_y + fill_h
-        p.setPen(QPen(QColor("#f85149"), 2))
-        p.drawLine(bar_x - 4, int(ind_y), bar_x + bar_w + 4, int(ind_y))
-
-        # Ticks
-        p.setFont(QFont("Monospace", 7))
-        p.setPen(QColor("#8b949e"))
-        for m in range(0, 6):
-            ty = bar_y + (m / max_d) * bar_h
-            p.drawLine(bar_x + bar_w, int(ty), bar_x + bar_w + 4, int(ty))
-            p.drawText(bar_x + bar_w + 6, int(ty + 3), f"{m}m")
-
-        # Header and Digital Readout
-        p.setFont(QFont("Monospace", 8, QFont.Bold))
-        p.setPen(QColor("#58a6ff"))
-        p.drawText(QRectF(0, 8, w, 18), Qt.AlignCenter, "DEPTH")
-
-        p.setFont(QFont("Monospace", 9, QFont.Bold))
-        p.setPen(QColor("#ffffff"))
-        p.drawText(QRectF(0, h - 24, w, 20), Qt.AlignCenter, f"{self.depth_m:.2f} m")
+        p.setPen(QColor("#abb2bf"))
+        p.drawText(pad_x, 15, f"ACOUSTIC POS: X={self.rov_x:.2f}m  Y={self.rov_y:.2f}m  HDG={self.rov_yaw:.0f}°")
 
 
 # ==============================================================================
-# MAIN GROUND STATION WINDOW
+# MAIN OPERATIONS CONSOLE WINDOW
 # ==============================================================================
 class GroundStationWindow(QMainWindow):
     def __init__(self, bridge: RosBridge):
         super().__init__()
         self.bridge = bridge
-        self.setWindowTitle("ISONAVI-ROV Mission Control & Ground Station [GCS]")
+        self.setWindowTitle("VIT Pune (>>>>IIT) - Autonomous Underwater Vehicle Ground Control Station")
         self.resize(1440, 920)
 
         # Internal state
         self.start_time = datetime.now()
         self.cruise_speed = 0.50
-        self.detected_items_map = {}  # key: class_name -> data
+        self.detected_items_map = {}
         self.auto_save_path = os.path.expanduser("~/.ros/isonavi_detection_log.json")
         self.snapshot_dir = os.path.expanduser("~/isonavi_snapshots")
         os.makedirs(self.snapshot_dir, exist_ok=True)
@@ -588,101 +619,104 @@ class GroundStationWindow(QMainWindow):
         self.init_ui()
         self.connect_signals()
 
-        # UI 10 Hz refresh timer
         self.ui_timer = QTimer(self)
-        self.ui_timer.timeout.connect(self.update_mission_clock)
+        self.ui_timer.timeout.connect(self.update_clock)
         self.ui_timer.start(100)
 
     def apply_theme(self):
+        """Engineering Dark Palette (Slate / Charcoal / Tactical Muted Accents)."""
         self.setStyleSheet("""
             QMainWindow {
-                background-color: #0d1117;
+                background-color: #14161a;
             }
             QWidget {
-                background-color: #0d1117;
-                color: #c9d1d9;
-                font-family: 'Segoe UI', Ubuntu, sans-serif;
+                background-color: #14161a;
+                color: #abb2bf;
+                font-family: 'Segoe UI', 'Ubuntu', 'DejaVu Sans', sans-serif;
             }
             QGroupBox {
-                border: 1px solid #30363d;
-                border-radius: 6px;
+                border: 1px solid #282c34;
+                border-radius: 4px;
                 margin-top: 14px;
-                font-weight: bold;
-                font-size: 11px;
-                text-transform: uppercase;
-                letter-spacing: 1px;
-                padding-top: 10px;
-                color: #58a6ff;
+                font-weight: 600;
+                font-size: 10px;
+                letter-spacing: 0.8px;
+                padding-top: 8px;
+                color: #61afef;
+                background-color: #181a1f;
             }
             QGroupBox::title {
                 subcontrol-origin: margin;
                 left: 10px;
                 padding: 0 4px;
-                background-color: #0d1117;
+                background-color: #14161a;
             }
             QPushButton {
-                background-color: #21262d;
-                border: 1px solid #363b42;
-                border-radius: 4px;
-                padding: 6px 12px;
-                color: #c9d1d9;
-                font-weight: 600;
+                background-color: #21252b;
+                border: 1px solid #3b4048;
+                border-radius: 3px;
+                padding: 5px 10px;
+                color: #c8ccd4;
+                font-size: 11px;
+                font-weight: 500;
             }
             QPushButton:hover {
-                background-color: #30363d;
-                border-color: #8b949e;
+                background-color: #282c34;
+                border-color: #5c6370;
             }
             QPushButton:pressed {
-                background-color: #1f6feb;
+                background-color: #3e4451;
                 color: #ffffff;
             }
             QPushButton#btnKill {
-                background-color: #da3633;
-                border-color: #f85149;
+                background-color: #b33939;
+                border-color: #cd3d3d;
                 color: #ffffff;
                 font-weight: bold;
+                letter-spacing: 0.5px;
             }
             QPushButton#btnKill:hover {
-                background-color: #f85149;
-            }
-            QPushButton#btnArm {
-                background-color: #238636;
-                border-color: #2ea043;
-                color: #ffffff;
-            }
-            QPushButton#btnArm:hover {
-                background-color: #2ea043;
+                background-color: #d63031;
             }
             QTableWidget {
-                background-color: #161b22;
-                border: 1px solid #30363d;
-                gridline-color: #21262d;
-                selection-background-color: #1f6feb;
+                background-color: #181a1f;
+                border: 1px solid #282c34;
+                gridline-color: #21252b;
+                selection-background-color: #2c313a;
                 selection-color: #ffffff;
-                font-family: Monospace;
+                font-family: 'JetBrains Mono', 'Fira Code', 'DejaVu Sans Mono', monospace;
                 font-size: 11px;
             }
             QHeaderView::section {
-                background-color: #21262d;
-                color: #8b949e;
-                padding: 4px;
-                border: 1px solid #30363d;
-                font-weight: bold;
+                background-color: #21252b;
+                color: #7f848e;
+                padding: 4px 6px;
+                border: 1px solid #282c34;
+                font-weight: 600;
+                font-size: 10px;
             }
             QLabel {
                 font-size: 11px;
             }
             QProgressBar {
-                background-color: #161b22;
-                border: 1px solid #30363d;
-                border-radius: 3px;
+                background-color: #121417;
+                border: 1px solid #282c34;
+                border-radius: 2px;
                 text-align: center;
-                color: #ffffff;
-                font-size: 9px;
-                font-weight: bold;
+                color: #d7dae0;
+                font-size: 8px;
+                font-family: Monospace;
             }
             QProgressBar::chunk {
-                background-color: #238636;
+                background-color: #2d8a4e;
+            }
+            QComboBox {
+                background-color: #21252b;
+                border: 1px solid #3b4048;
+                border-radius: 3px;
+                padding: 3px 8px;
+                color: #abb2bf;
+                font-size: 11px;
             }
         """)
 
@@ -690,294 +724,300 @@ class GroundStationWindow(QMainWindow):
         main_widget = QWidget()
         self.setCentralWidget(main_widget)
         main_layout = QVBoxLayout(main_widget)
-        main_layout.setContentsMargins(10, 8, 10, 8)
-        main_layout.setSpacing(8)
+        main_layout.setContentsMargins(8, 6, 8, 6)
+        main_layout.setSpacing(6)
 
-        # 1. TOP HEADER & TELEMETRY HEARTBEAT BANNER
-        header = self.create_header_bar()
-        main_layout.addWidget(header)
+        # 1. Institutional Top Navigation & Telemetry Ribbon
+        main_layout.addWidget(self.create_header_ribbon())
 
-        # 2. MAIN WORKSPACE (Splitter: Left Camera & Log, Right Gauges & Controls)
+        # 2. Main Console Splitter (Left: Optical Vision & Target DB, Right: PFD, Map, Thrusters, Command Deck)
         splitter = QSplitter(Qt.Horizontal)
         main_layout.addWidget(splitter, 1)
 
-        # Left Column: Live Vision Feed & Target Inventory Log
-        left_column = QWidget()
-        left_layout = QVBoxLayout(left_column)
+        # Left Column: Optical Vision Viewport & Classification Inventory
+        left_col = QWidget()
+        left_layout = QVBoxLayout(left_col)
         left_layout.setContentsMargins(0, 0, 0, 0)
-        left_layout.setSpacing(8)
+        left_layout.setSpacing(6)
+        left_layout.addWidget(self.create_vision_viewport_box(), 3)
+        left_layout.addWidget(self.create_target_inventory_box(), 2)
+        splitter.addWidget(left_col)
 
-        left_layout.addWidget(self.create_camera_box(), 3)
-        left_layout.addWidget(self.create_detection_log_box(), 2)
-        splitter.addWidget(left_column)
-
-        # Right Column: Nav Gauges, Bathymetry Map, Thruster Matrix & Commands
-        right_column = QWidget()
-        right_layout = QVBoxLayout(right_column)
+        # Right Column: Avionics Gauges, Riverbed Tactical Map, Controls
+        right_col = QWidget()
+        right_layout = QVBoxLayout(right_col)
         right_layout.setContentsMargins(0, 0, 0, 0)
-        right_layout.setSpacing(8)
-
-        right_layout.addWidget(self.create_telemetry_gauges_box(), 2)
-        right_layout.addWidget(self.create_control_deck_box(), 2)
-        splitter.addWidget(right_column)
+        right_layout.setSpacing(6)
+        right_layout.addWidget(self.create_nav_telemetry_box(), 2)
+        right_layout.addWidget(self.create_subsea_deck_box(), 2)
+        splitter.addWidget(right_col)
 
         splitter.setStretchFactor(0, 3)
         splitter.setStretchFactor(1, 2)
 
-    def create_header_bar(self):
-        bar = QFrame()
-        bar.setStyleSheet("background-color: #161b22; border-radius: 6px; padding: 4px;")
-        layout = QHBoxLayout(bar)
-        layout.setContentsMargins(12, 4, 12, 4)
+    def create_header_ribbon(self):
+        frame = QFrame()
+        frame.setStyleSheet("background-color: #181a1f; border: 1px solid #282c34; border-radius: 4px;")
+        layout = QHBoxLayout(frame)
+        layout.setContentsMargins(12, 6, 12, 6)
 
-        # Station Title
-        title = QLabel("🛡️ ISONAVI-ROV // TACTICAL MISSION CONTROL")
-        title.setStyleSheet("font-size: 14px; font-weight: bold; color: #58a6ff; letter-spacing: 1.5px;")
-        layout.addWidget(title)
+        # Institutional Header: VIT Pune (>>>>IIT)
+        title_box = QVBoxLayout()
+        title_box.setSpacing(1)
+        lbl_inst = QLabel("VIT Pune (>>>>IIT)")
+        lbl_inst.setStyleSheet("font-size: 15px; font-weight: bold; color: #61afef; letter-spacing: 1px;")
+        lbl_sub = QLabel("Subsea Telemetry & Operations Console  |  ISONAVI-ROV Digital Twin MK-II")
+        lbl_sub.setStyleSheet("font-size: 10px; color: #5c6370; font-weight: 500;")
+        title_box.addWidget(lbl_inst)
+        title_box.addWidget(lbl_sub)
+        layout.addLayout(title_box)
 
-        layout.addSpacing(20)
+        layout.addSpacing(25)
 
-        # Comms Status LED
-        self.lbl_comms = QLabel("🟢 COMMS ONLINE [50 Hz]")
-        self.lbl_comms.setStyleSheet("color: #2ea043; font-weight: bold;")
+        # Hardware Heartbeat & Signal Quality
+        self.lbl_comms = QLabel("LINK: NOMINAL [50 Hz]")
+        self.lbl_comms.setStyleSheet("color: #98c379; font-family: Monospace; font-weight: 600; font-size: 11px;")
         layout.addWidget(self.lbl_comms)
 
         layout.addSpacing(15)
 
-        # Vehicle Safety State Badge
-        self.lbl_safety = QLabel("STATE: ARMED [STATION-HOLD]")
-        self.lbl_safety.setStyleSheet("background-color: #238636; color: #fff; padding: 3px 8px; border-radius: 4px; font-weight: bold;")
+        # Safety Supervisor State Badge
+        self.lbl_safety = QLabel("SUPERVISOR: ARMED")
+        self.lbl_safety.setStyleSheet("background-color: #238636; color: #ffffff; padding: 3px 8px; border-radius: 3px; font-weight: 600; font-size: 10px; letter-spacing: 0.5px;")
         layout.addWidget(self.lbl_safety)
 
         layout.addSpacing(15)
 
-        # Mission Elapsed Time
-        self.lbl_clock = QLabel("MISSION: 00:00:00")
-        self.lbl_clock.setStyleSheet("color: #8b949e; font-family: Monospace; font-weight: bold;")
+        # Mission Elapsed Clock
+        self.lbl_clock = QLabel("MISSION TIME: 00:00:00")
+        self.lbl_clock.setStyleSheet("color: #7f848e; font-family: Monospace; font-weight: 600; font-size: 11px;")
         layout.addWidget(self.lbl_clock)
 
         layout.addStretch()
 
-        # Auto-Centering Badge
-        self.lbl_autocenter = QLabel("AUTO-CENTER: OFF")
-        self.lbl_autocenter.setStyleSheet("color: #8b949e; font-weight: bold; padding: 2px 6px; border: 1px solid #30363d; border-radius: 3px;")
+        # Lane Centring Indicator
+        self.lbl_autocenter = QLabel("LANE CENTRING: STANDBY")
+        self.lbl_autocenter.setStyleSheet("color: #7f848e; font-family: Monospace; font-size: 10px; padding: 2px 6px; border: 1px solid #3b4048; border-radius: 2px;")
         layout.addWidget(self.lbl_autocenter)
 
-        layout.addSpacing(10)
+        layout.addSpacing(12)
 
-        # Emergency KILL Switch
-        btn_kill = QPushButton("⛔ EMERGENCY STOP")
+        # Emergency Disarm / KILL Button
+        btn_kill = QPushButton("EMERGENCY DISARM [KILL]")
         btn_kill.setObjectName("btnKill")
         btn_kill.clicked.connect(self.on_emergency_stop)
         layout.addWidget(btn_kill)
 
-        return bar
+        return frame
 
-    def create_camera_box(self):
-        box = QGroupBox("Live Optical Vision & Spatial AI Detection Stream")
+    def create_vision_viewport_box(self):
+        box = QGroupBox("PRIMARY OPTICAL VIEWPORT & SPATIAL AI STREAM")
         layout = QVBoxLayout(box)
 
-        # Control Strip
-        ctrl_strip = QHBoxLayout()
-        ctrl_strip.addWidget(QLabel("Stream Feed:"))
+        # Top Stream Configuration Bar
+        ctrl_bar = QHBoxLayout()
+        ctrl_bar.addWidget(QLabel("Video Channel:"))
 
         self.combo_stream = QComboBox()
-        self.combo_stream.addItems(["Annotated Detections (YOLOv8 + Spatial AI)", "Retinex Enhanced Stream", "Raw Camera Feed"])
+        self.combo_stream.addItems([
+            "Channel 1: Spatial AI & Bounding Reticle (/camera/image_detections)",
+            "Channel 2: Pyramidal Retinex Enhanced (/camera/image_enhanced)",
+            "Channel 3: Direct Sensor Passthrough (/camera/image_raw)",
+        ])
         self.combo_stream.currentIndexChanged.connect(self.on_stream_changed)
-        ctrl_strip.addWidget(self.combo_stream)
+        ctrl_bar.addWidget(self.combo_stream)
 
-        ctrl_strip.addStretch()
+        ctrl_bar.addStretch()
 
-        self.btn_snapshot = QPushButton("📷 Snapshot")
-        self.btn_snapshot.clicked.connect(self.on_snapshot_clicked)
-        ctrl_strip.addWidget(self.btn_snapshot)
+        btn_snap = QPushButton("Capture Frame [PNG]")
+        btn_snap.clicked.connect(self.on_snapshot_clicked)
+        ctrl_bar.addWidget(btn_snap)
 
-        self.lbl_cam_fps = QLabel("FPS: --")
-        self.lbl_cam_fps.setStyleSheet("color: #58a6ff; font-weight: bold;")
-        ctrl_strip.addWidget(self.lbl_cam_fps)
+        self.lbl_fps = QLabel("FPS: 30.0")
+        self.lbl_fps.setStyleSheet("color: #61afef; font-family: Monospace; font-weight: 600;")
+        ctrl_bar.addWidget(self.lbl_fps)
 
-        layout.addLayout(ctrl_strip)
+        layout.addLayout(ctrl_bar)
 
-        # Video Canvas
-        self.lbl_video = QLabel("Awaiting live underwater camera stream...")
+        # Video Frame Canvas
+        self.lbl_video = QLabel("Awaiting live subsea camera feed...")
         self.lbl_video.setAlignment(Qt.AlignCenter)
-        self.lbl_video.setStyleSheet("background-color: #000000; border-radius: 4px; border: 1px solid #30363d;")
-        self.lbl_video.setMinimumSize(480, 270)
+        self.lbl_video.setStyleSheet("background-color: #0d0f12; border: 1px solid #282c34; border-radius: 3px;")
+        self.lbl_video.setMinimumSize(520, 290)
         layout.addWidget(self.lbl_video, 1)
 
         return box
 
-    def create_detection_log_box(self):
-        box = QGroupBox("Detected Targets Inventory & Spatial Log")
+    def create_target_inventory_box(self):
+        box = QGroupBox("ACOUSTIC & OPTICAL TARGET CLASSIFICATION LOG")
         layout = QVBoxLayout(box)
 
-        # Table
+        # Target Table
         self.table_det = QTableWidget(0, 6)
-        self.table_det.setHorizontalHeaderLabels(["Timestamp", "Target Class", "Conf", "Range", "3D Position [X,Y,Z]", "Pilot Notes"])
+        self.table_det.setHorizontalHeaderLabels([
+            "TIME (UTC)", "OBJECT CLASSIFICATION", "CONFIDENCE", "SLANT RANGE", "EST. 3D POSITION (X, Y, Z)", "OPERATOR LOG"
+        ])
         self.table_det.horizontalHeader().setSectionResizeMode(QHeaderView.Interactive)
         self.table_det.horizontalHeader().setSectionResizeMode(1, QHeaderView.Stretch)
         self.table_det.horizontalHeader().setSectionResizeMode(5, QHeaderView.Stretch)
         self.table_det.setSelectionBehavior(QAbstractItemView.SelectRows)
         layout.addWidget(self.table_det)
 
-        # Action Buttons
-        btn_row = QHBoxLayout()
-        self.lbl_det_count = QLabel("Unique Targets: 0")
-        self.lbl_det_count.setStyleSheet("font-weight: bold; color: #58a6ff;")
-        btn_row.addWidget(self.lbl_det_count)
+        # Action Bar
+        action_bar = QHBoxLayout()
+        self.lbl_det_count = QLabel("Classified Contacts: 0")
+        self.lbl_det_count.setStyleSheet("color: #61afef; font-weight: 600; font-family: Monospace;")
+        action_bar.addWidget(self.lbl_det_count)
 
-        btn_row.addStretch()
+        action_bar.addStretch()
 
-        btn_export_csv = QPushButton("💾 Export CSV")
-        btn_export_csv.clicked.connect(self.export_csv)
-        btn_row.addWidget(btn_export_csv)
+        btn_csv = QPushButton("Export Inspection Log [CSV]")
+        btn_csv.clicked.connect(self.export_csv)
+        action_bar.addWidget(btn_csv)
 
-        btn_export_json = QPushButton("💾 Export JSON")
-        btn_export_json.clicked.connect(self.export_json)
-        btn_row.addWidget(btn_export_json)
+        btn_json = QPushButton("Export Telemetry [JSON]")
+        btn_json.clicked.connect(self.export_json)
+        action_bar.addWidget(btn_json)
 
-        btn_clear = QPushButton("🗑️ Clear Log")
+        btn_clear = QPushButton("Clear Table")
         btn_clear.clicked.connect(self.clear_detection_log)
-        btn_row.addWidget(btn_clear)
+        action_bar.addWidget(btn_clear)
 
-        layout.addLayout(btn_row)
+        layout.addLayout(action_bar)
         return box
 
-    def create_telemetry_gauges_box(self):
-        box = QGroupBox("Navigation Telemetry, Attitude & Riverbed Map")
+    def create_nav_telemetry_box(self):
+        box = QGroupBox("SUBSEA FLIGHT INSTRUMENTATION & TACTICAL MAP")
         layout = QHBoxLayout(box)
 
-        # Left side: Depth column gauge
+        # Primary Flight Instruments: Depth Tape & Attitude PFD
         self.gauge_depth = DepthGaugeWidget()
         layout.addWidget(self.gauge_depth)
 
-        # Middle side: Attitude artificial horizon & digital readouts
-        mid_col = QVBoxLayout()
+        mid_pane = QVBoxLayout()
         self.gauge_attitude = AttitudeIndicatorWidget()
-        mid_col.addWidget(self.gauge_attitude)
+        mid_pane.addWidget(self.gauge_attitude)
 
-        # Digital Telemetry Readouts
-        tele_frame = QFrame()
-        tele_frame.setStyleSheet("background-color: #161b22; border-radius: 4px; padding: 6px;")
-        t_grid = QGridLayout(tele_frame)
+        # Digital Telemetry Block
+        data_frame = QFrame()
+        data_frame.setStyleSheet("background-color: #121417; border: 1px solid #282c34; border-radius: 3px; padding: 4px;")
+        d_grid = QGridLayout(data_frame)
 
         self.lbl_val_x = QLabel("X: +0.00 m")
         self.lbl_val_y = QLabel("Y: +0.00 m")
         self.lbl_val_z = QLabel("Z: -0.00 m")
-        self.lbl_val_yaw = QLabel("YAW: 000°")
+        self.lbl_val_yaw = QLabel("HDG: 000°")
         self.lbl_val_speed = QLabel("SPD: 0.00 m/s")
         self.lbl_val_offset = QLabel("LANE: 0.00 m")
 
         for lbl in (self.lbl_val_x, self.lbl_val_y, self.lbl_val_z, self.lbl_val_yaw, self.lbl_val_speed, self.lbl_val_offset):
-            lbl.setStyleSheet("font-family: Monospace; font-weight: bold; font-size: 10px;")
+            lbl.setStyleSheet("font-family: 'JetBrains Mono', 'Fira Code', Monospace; font-weight: 600; font-size: 10px; color: #abb2bf;")
 
-        t_grid.addWidget(self.lbl_val_x, 0, 0)
-        t_grid.addWidget(self.lbl_val_y, 0, 1)
-        t_grid.addWidget(self.lbl_val_z, 1, 0)
-        t_grid.addWidget(self.lbl_val_yaw, 1, 1)
-        t_grid.addWidget(self.lbl_val_speed, 2, 0)
-        t_grid.addWidget(self.lbl_val_offset, 2, 1)
+        d_grid.addWidget(self.lbl_val_x, 0, 0)
+        d_grid.addWidget(self.lbl_val_y, 0, 1)
+        d_grid.addWidget(self.lbl_val_z, 1, 0)
+        d_grid.addWidget(self.lbl_val_yaw, 1, 1)
+        d_grid.addWidget(self.lbl_val_speed, 2, 0)
+        d_grid.addWidget(self.lbl_val_offset, 2, 1)
 
-        mid_col.addWidget(tele_frame)
-        layout.addLayout(mid_col)
+        mid_pane.addWidget(data_frame)
+        layout.addLayout(mid_pane)
 
-        # Right side: Riverbed Top-Down Map
+        # Tactical Riverbed Acoustic Map
         self.map_river = RiverMapWidget()
         layout.addWidget(self.map_river, 1)
 
         return box
 
-    def create_control_deck_box(self):
-        box = QGroupBox("Subsea Command Deck & Dynamic Flood Control")
+    def create_subsea_deck_box(self):
+        box = QGroupBox("PROPULSION MATRIX, COMMAND DECK & HYDRODYNAMIC FORCING")
         layout = QHBoxLayout(box)
 
-        # Column 1: Teleoperation Directional Keypad
-        nav_box = QFrame()
-        nav_box.setStyleSheet("background-color: #161b22; border-radius: 4px; padding: 6px;")
-        nav_grid = QGridLayout(nav_box)
+        # 1. Teleoperation Keypad
+        deck_frame = QFrame()
+        deck_frame.setStyleSheet("background-color: #121417; border: 1px solid #282c34; border-radius: 3px; padding: 4px;")
+        grid = QGridLayout(deck_frame)
 
-        btn_fwd = QPushButton("▲ SURGE FWD")
+        btn_fwd = QPushButton("SURGE +")
         btn_fwd.clicked.connect(lambda: self.on_teleop_cmd(surge=+self.cruise_speed))
-        btn_back = QPushButton("▼ SURGE REV")
+        btn_back = QPushButton("SURGE -")
         btn_back.clicked.connect(lambda: self.on_teleop_cmd(surge=-self.cruise_speed))
-        btn_port = QPushButton("◄ SWAY PORT")
+        btn_port = QPushButton("SWAY L")
         btn_port.clicked.connect(lambda: self.on_teleop_cmd(sway=+self.cruise_speed))
-        btn_stbd = QPushButton("► SWAY STBD")
+        btn_stbd = QPushButton("SWAY R")
         btn_stbd.clicked.connect(lambda: self.on_teleop_cmd(sway=-self.cruise_speed))
 
-        btn_up = QPushButton("▲ HEAVE UP")
+        btn_up = QPushButton("HEAVE +")
         btn_up.clicked.connect(lambda: self.on_teleop_cmd(heave=+0.3))
-        btn_down = QPushButton("▼ HEAVE DIVE")
+        btn_down = QPushButton("HEAVE -")
         btn_down.clicked.connect(lambda: self.on_teleop_cmd(heave=-0.3))
 
-        btn_left = QPushButton("↺ TURN LEFT")
+        btn_left = QPushButton("YAW L")
         btn_left.clicked.connect(lambda: self.on_teleop_cmd(yaw=+0.35))
-        btn_right = QPushButton("↻ TURN RIGHT")
+        btn_right = QPushButton("YAW R")
         btn_right.clicked.connect(lambda: self.on_teleop_cmd(yaw=-0.35))
 
-        btn_stop = QPushButton("⏹ ALL STOP")
-        btn_stop.setStyleSheet("background-color: #388bfd; color: #fff; font-weight: bold;")
+        btn_stop = QPushButton("ALL STOP")
+        btn_stop.setStyleSheet("background-color: #2b5b84; color: #ffffff; font-weight: bold;")
         btn_stop.clicked.connect(self.on_all_stop)
 
-        nav_grid.addWidget(btn_fwd, 0, 1)
-        nav_grid.addWidget(btn_port, 1, 0)
-        nav_grid.addWidget(btn_stop, 1, 1)
-        nav_grid.addWidget(btn_stbd, 1, 2)
-        nav_grid.addWidget(btn_back, 2, 1)
+        grid.addWidget(btn_fwd, 0, 1)
+        grid.addWidget(btn_port, 1, 0)
+        grid.addWidget(btn_stop, 1, 1)
+        grid.addWidget(btn_stbd, 1, 2)
+        grid.addWidget(btn_back, 2, 1)
 
-        nav_grid.addWidget(btn_up, 0, 3)
-        nav_grid.addWidget(btn_down, 2, 3)
-        nav_grid.addWidget(btn_left, 1, 4)
-        nav_grid.addWidget(btn_right, 1, 5)
+        grid.addWidget(btn_up, 0, 3)
+        grid.addWidget(btn_down, 2, 3)
+        grid.addWidget(btn_left, 1, 4)
+        grid.addWidget(btn_right, 1, 5)
 
-        layout.addWidget(nav_box, 2)
+        layout.addWidget(deck_frame, 2)
 
-        # Column 2: Cruise Speeds & Dynamic Features
-        cmd_box = QVBoxLayout()
+        # 2. Cruise Gears & Environmental River Forcing
+        ops_pane = QVBoxLayout()
 
-        # Speed Presets
-        speed_row = QHBoxLayout()
-        speed_row.addWidget(QLabel("Throttle:"))
+        scale_bar = QHBoxLayout()
+        scale_bar.addWidget(QLabel("Throttle Scale:"))
         for p in (0.25, 0.50, 0.75, 1.00):
             b = QPushButton(f"{int(p*100)}%")
-            b.setFixedWidth(45)
+            b.setFixedWidth(42)
             b.clicked.connect(lambda _, val=p: self.set_cruise_speed(val))
-            speed_row.addWidget(b)
-        cmd_box.addLayout(speed_row)
+            scale_bar.addWidget(b)
+        ops_pane.addLayout(scale_bar)
 
-        # Auto-Centering Button
-        self.btn_center = QPushButton("🎯 Auto-Centering (C)")
+        self.btn_center = QPushButton("Toggle Lane Centring [C]")
         self.btn_center.clicked.connect(self.on_toggle_autocenter)
-        cmd_box.addWidget(self.btn_center)
+        ops_pane.addWidget(self.btn_center)
 
-        # Dynamic Flood Controller Section
-        flood_row = QHBoxLayout()
-        self.btn_flood_calm = QPushButton("🌊 Calm (0.2 m/s)")
+        # Environmental Flood Forcing Section
+        flood_bar = QHBoxLayout()
+        self.btn_flood_calm = QPushButton("Flow: Calm [0.2 m/s]")
         self.btn_flood_calm.clicked.connect(lambda: self.bridge.trigger_flood(False))
-        self.btn_flood_active = QPushButton("⚡ Surge Flood (1.4 m/s)")
-        self.btn_flood_active.setStyleSheet("background-color: #d29922; color: #fff; font-weight: bold;")
+        self.btn_flood_active = QPushButton("Flow: Flood Surge [1.4 m/s]")
+        self.btn_flood_active.setStyleSheet("background-color: #9c6b24; color: #ffffff; font-weight: 600;")
         self.btn_flood_active.clicked.connect(lambda: self.bridge.trigger_flood(True))
+        flood_bar.addWidget(self.btn_flood_calm)
+        flood_bar.addWidget(self.btn_flood_active)
+        ops_pane.addLayout(flood_bar)
 
-        flood_row.addWidget(self.btn_flood_calm)
-        flood_row.addWidget(self.btn_flood_active)
-        cmd_box.addLayout(flood_row)
+        self.lbl_flood_status = QLabel("Forcing: NORMAL FLOW")
+        self.lbl_flood_status.setStyleSheet("color: #7f848e; font-size: 10px; font-family: Monospace;")
+        ops_pane.addWidget(self.lbl_flood_status)
 
-        self.lbl_flood_status = QLabel("Flood: NORMAL [CALM]")
-        self.lbl_flood_status.setStyleSheet("color: #8b949e; font-size: 10px;")
-        cmd_box.addWidget(self.lbl_flood_status)
+        layout.addLayout(ops_pane, 1)
 
-        layout.addLayout(cmd_box, 1)
-
-        # Column 3: 8-Thruster Output Load Matrix
-        thruster_box = QFrame()
-        thruster_box.setStyleSheet("background-color: #161b22; border-radius: 4px; padding: 6px;")
-        t_layout = QVBoxLayout(thruster_box)
-        t_layout.addWidget(QLabel("8-Thruster Load Matrix (N):"))
+        # 3. 8-Thruster Power Output Matrix
+        t_box = QFrame()
+        t_box.setStyleSheet("background-color: #121417; border: 1px solid #282c34; border-radius: 3px; padding: 4px;")
+        t_box_layout = QVBoxLayout(t_box)
+        t_box_layout.addWidget(QLabel("Thruster Load Array (Newtons):"))
 
         self.thruster_bars = []
         grid_t = QGridLayout()
         for i in range(8):
             lbl_name = QLabel(f"T{i+1}")
+            lbl_name.setStyleSheet("font-family: Monospace; font-size: 9px; color: #5c6370;")
             bar = QProgressBar()
             bar.setRange(-30, 30)
             bar.setValue(0)
@@ -987,8 +1027,8 @@ class GroundStationWindow(QMainWindow):
             grid_t.addWidget(bar, i // 2, (i % 2) * 2 + 1)
             self.thruster_bars.append(bar)
 
-        t_layout.addLayout(grid_t)
-        layout.addWidget(thruster_box, 1)
+        t_box_layout.addLayout(grid_t)
+        layout.addWidget(t_box, 1)
 
         return box
 
@@ -999,9 +1039,7 @@ class GroundStationWindow(QMainWindow):
         self.bridge.sig_status.connect(self.update_status)
         self.bridge.sig_detections.connect(self.update_detections)
 
-    # --------------------------------------------------------------------------
-    # KEYBOARD TELEOPERATION LISTENER (Full Hotkey Support Inside Window)
-    # --------------------------------------------------------------------------
+    # Keyboard Listener (Full hotkey steering inside console)
     def keyPressEvent(self, event):
         key = event.key()
         if key == Qt.Key_W:
@@ -1035,9 +1073,6 @@ class GroundStationWindow(QMainWindow):
         else:
             super().keyPressEvent(event)
 
-    # --------------------------------------------------------------------------
-    # SLOTS & UPDATERS
-    # --------------------------------------------------------------------------
     def update_video_canvas(self, qimg: QImage):
         scaled = qimg.scaled(
             self.lbl_video.size(),
@@ -1055,7 +1090,7 @@ class GroundStationWindow(QMainWindow):
         self.lbl_val_x.setText(f"X: {t.get('x', 0.0):+.2f} m")
         self.lbl_val_y.setText(f"Y: {t.get('y', 0.0):+.2f} m")
         self.lbl_val_z.setText(f"Z: {t.get('z', 0.0):+.2f} m")
-        self.lbl_val_yaw.setText(f"YAW: {t.get('yaw', 0.0):03.0f}°")
+        self.lbl_val_yaw.setText(f"HDG: {t.get('yaw', 0.0):03.0f}°")
 
         spd = math.sqrt(t.get("vx", 0.0)**2 + t.get("vy", 0.0)**2)
         self.lbl_val_speed.setText(f"SPD: {spd:.2f} m/s")
@@ -1065,35 +1100,34 @@ class GroundStationWindow(QMainWindow):
             if i < len(vals):
                 val = int(round(vals[i]))
                 bar.setValue(val)
-                # Color code
                 if abs(val) > 24:
-                    bar.setStyleSheet("QProgressBar::chunk { background-color: #f85149; }")
+                    bar.setStyleSheet("QProgressBar::chunk { background-color: #cd3d3d; }")
                 elif abs(val) > 15:
-                    bar.setStyleSheet("QProgressBar::chunk { background-color: #d29922; }")
+                    bar.setStyleSheet("QProgressBar::chunk { background-color: #b58900; }")
                 else:
-                    bar.setStyleSheet("QProgressBar::chunk { background-color: #238636; }")
+                    bar.setStyleSheet("QProgressBar::chunk { background-color: #2d8a4e; }")
 
     def update_status(self, s: dict):
         online = s.get("comms_online", False)
         if online:
-            self.lbl_comms.setText("🟢 COMMS ONLINE [50 Hz]")
-            self.lbl_comms.setStyleSheet("color: #2ea043; font-weight: bold;")
+            self.lbl_comms.setText("LINK: NOMINAL [50 Hz]")
+            self.lbl_comms.setStyleSheet("color: #98c379; font-family: Monospace; font-weight: 600;")
         else:
-            self.lbl_comms.setText("🔴 COMMS TIMEOUT")
-            self.lbl_comms.setStyleSheet("color: #f85149; font-weight: bold;")
+            self.lbl_comms.setText("LINK: TIMEOUT / NO SIGNAL")
+            self.lbl_comms.setStyleSheet("color: #e06c75; font-family: Monospace; font-weight: 600;")
 
         state_txt = s.get("safety_state", "UNKNOWN")
-        self.lbl_safety.setText(f"STATE: {state_txt.upper()}")
+        self.lbl_safety.setText(f"SUPERVISOR: {state_txt.upper()}")
         if "ARMED" in state_txt:
-            self.lbl_safety.setStyleSheet("background-color: #238636; color: #fff; padding: 3px 8px; border-radius: 4px; font-weight: bold;")
+            self.lbl_safety.setStyleSheet("background-color: #238636; color: #ffffff; padding: 3px 8px; border-radius: 3px; font-weight: 600; font-size: 10px;")
         else:
-            self.lbl_safety.setStyleSheet("background-color: #d29922; color: #fff; padding: 3px 8px; border-radius: 4px; font-weight: bold;")
+            self.lbl_safety.setStyleSheet("background-color: #b58900; color: #ffffff; padding: 3px 8px; border-radius: 3px; font-weight: 600; font-size: 10px;")
 
         c_on = s.get("auto_center", False)
-        self.lbl_autocenter.setText(f"AUTO-CENTER: {'ON' if c_on else 'OFF'}")
-        self.lbl_autocenter.setStyleSheet(f"color: {'#58a6ff' if c_on else '#8b949e'}; font-weight: bold; border: 1px solid {'#1f6feb' if c_on else '#30363d'}; border-radius: 3px; padding: 2px 6px;")
+        self.lbl_autocenter.setText(f"LANE CENTRING: {'ACTIVE' if c_on else 'STANDBY'}")
+        self.lbl_autocenter.setStyleSheet(f"color: {'#61afef' if c_on else '#7f848e'}; font-family: Monospace; font-size: 10px; border: 1px solid {'#2b5b84' if c_on else '#3b4048'}; border-radius: 2px; padding: 2px 6px;")
 
-        self.lbl_flood_status.setText(f"Flood: {s.get('flood_status', 'NORMAL')}")
+        self.lbl_flood_status.setText(f"Forcing: {s.get('flood_status', 'NORMAL FLOW')}")
 
     def update_detections(self, detections: list):
         self.map_river.update_targets(detections)
@@ -1105,7 +1139,6 @@ class GroundStationWindow(QMainWindow):
             rng = d.get("range_m", None)
             xyz = d.get("spatial_xyz", [0.0, 0.0, 0.0])
 
-            # Deduplication: update existing or add new row
             if cls_name in self.detected_items_map:
                 row_idx = self.detected_items_map[cls_name]["row"]
                 self.table_det.item(row_idx, 0).setText(now_str)
@@ -1122,7 +1155,7 @@ class GroundStationWindow(QMainWindow):
                 self.table_det.setItem(row_idx, 2, QTableWidgetItem(f"{int(conf * 100)}%"))
                 self.table_det.setItem(row_idx, 3, QTableWidgetItem(f"{rng:.2f} m" if rng else "--"))
                 self.table_det.setItem(row_idx, 4, QTableWidgetItem(f"[{xyz[0]:.1f}, {xyz[1]:.1f}, {xyz[2]:.1f}]"))
-                self.table_det.setItem(row_idx, 5, QTableWidgetItem("Verified target"))
+                self.table_det.setItem(row_idx, 5, QTableWidgetItem("Acoustic / Optical contact verified"))
 
                 self.detected_items_map[cls_name] = {
                     "row": row_idx,
@@ -1130,9 +1163,7 @@ class GroundStationWindow(QMainWindow):
                     "data": d,
                 }
 
-        self.lbl_det_count.setText(f"Unique Targets: {len(self.detected_items_map)}")
-
-        # Auto-save to JSON periodically
+        self.lbl_det_count.setText(f"Classified Contacts: {len(self.detected_items_map)}")
         self.auto_save_detections()
 
     def auto_save_detections(self):
@@ -1140,26 +1171,23 @@ class GroundStationWindow(QMainWindow):
             records = []
             for cls_name, info in self.detected_items_map.items():
                 records.append({
-                    "class": cls_name,
-                    "first_seen": info["first_seen"],
-                    "data": info["data"],
+                    "classification": cls_name,
+                    "first_detected": info["first_seen"],
+                    "telemetry": info["data"],
                 })
             with open(self.auto_save_path, "w") as f:
                 json.dump(records, f, indent=2)
         except Exception:
             pass
 
-    def update_mission_clock(self):
+    def update_clock(self):
         elapsed = datetime.now() - self.start_time
         tot_sec = int(elapsed.total_seconds())
         hh = tot_sec // 3600
         mm = (tot_sec % 3600) // 60
         ss = tot_sec % 60
-        self.lbl_clock.setText(f"MISSION: {hh:02d}:{mm:02d}:{ss:02d}")
+        self.lbl_clock.setText(f"MISSION TIME: {hh:02d}:{mm:02d}:{ss:02d}")
 
-    # --------------------------------------------------------------------------
-    # USER ACTIONS & COMMAND DISPATCH
-    # --------------------------------------------------------------------------
     def on_stream_changed(self, idx):
         streams = ["detections", "enhanced", "raw"]
         self.bridge.set_stream(streams[idx])
@@ -1167,9 +1195,9 @@ class GroundStationWindow(QMainWindow):
     def on_snapshot_clicked(self):
         if hasattr(self, "last_frame") and self.last_frame:
             ts = datetime.now().strftime("%Y%m%d_%H%M%S")
-            fname = os.path.join(self.snapshot_dir, f"snapshot_{ts}.png")
+            fname = os.path.join(self.snapshot_dir, f"frame_{ts}.png")
             self.last_frame.save(fname, "PNG")
-            QMessageBox.information(self, "Snapshot Captured", f"Frame successfully saved to:\n{fname}")
+            QMessageBox.information(self, "Frame Captured", f"Inspection image archived to:\n{fname}")
 
     def on_teleop_cmd(self, surge=0.0, sway=0.0, heave=0.0, yaw=0.0):
         self.bridge.send_motion(surge, sway, heave, yaw)
@@ -1179,36 +1207,36 @@ class GroundStationWindow(QMainWindow):
 
     def on_emergency_stop(self):
         self.bridge.trigger_kill()
-        QMessageBox.warning(self, "EMERGENCY STOP", "Emergency Kill Signal dispatched! All thrusters disarmed.")
+        QMessageBox.warning(self, "EMERGENCY DISARM", "Emergency Disarm Signal Transmitted. All thrusters gated to 0.0 N.")
 
     def on_toggle_autocenter(self):
         val = self.bridge.toggle_auto_center()
-        self.lbl_autocenter.setText(f"AUTO-CENTER: {'ON' if val else 'OFF'}")
+        self.lbl_autocenter.setText(f"LANE CENTRING: {'ACTIVE' if val else 'STANDBY'}")
 
     def set_cruise_speed(self, val):
         self.cruise_speed = val
 
     def export_csv(self):
-        fname, _ = QFileDialog.getSaveFileName(self, "Export Detections to CSV", os.path.expanduser("~/detections_log.csv"), "CSV Files (*.csv)")
+        fname, _ = QFileDialog.getSaveFileName(self, "Export Contact Log to CSV", os.path.expanduser("~/subsea_contacts.csv"), "CSV Files (*.csv)")
         if not fname:
             return
         with open(fname, "w", newline="") as f:
             writer = csv.writer(f)
-            writer.writerow(["Timestamp", "Target Class", "Confidence", "Range", "Spatial XYZ", "Pilot Notes"])
+            writer.writerow(["Timestamp (UTC)", "Classification", "Confidence", "Range", "Spatial XYZ", "Operator Notes"])
             for r in range(self.table_det.rowCount()):
                 row_vals = [self.table_det.item(r, c).text() if self.table_det.item(r, c) else "" for c in range(6)]
                 writer.writerow(row_vals)
-        QMessageBox.information(self, "Export Complete", f"Saved detection log to:\n{fname}")
+        QMessageBox.information(self, "Export Successful", f"Saved contact log to:\n{fname}")
 
     def export_json(self):
-        fname, _ = QFileDialog.getSaveFileName(self, "Export Detections to JSON", os.path.expanduser("~/detections_log.json"), "JSON Files (*.json)")
+        fname, _ = QFileDialog.getSaveFileName(self, "Export Telemetry to JSON", os.path.expanduser("~/subsea_telemetry.json"), "JSON Files (*.json)")
         if not fname:
             return
         records = []
         for r in range(self.table_det.rowCount()):
             records.append({
-                "time": self.table_det.item(r, 0).text(),
-                "class": self.table_det.item(r, 1).text(),
+                "timestamp": self.table_det.item(r, 0).text(),
+                "classification": self.table_det.item(r, 1).text(),
                 "confidence": self.table_det.item(r, 2).text(),
                 "range": self.table_det.item(r, 3).text(),
                 "spatial_xyz": self.table_det.item(r, 4).text(),
@@ -1216,17 +1244,14 @@ class GroundStationWindow(QMainWindow):
             })
         with open(fname, "w") as f:
             json.dump(records, f, indent=2)
-        QMessageBox.information(self, "Export Complete", f"Saved JSON telemetry to:\n{fname}")
+        QMessageBox.information(self, "Export Successful", f"Saved JSON telemetry to:\n{fname}")
 
     def clear_detection_log(self):
         self.table_det.setRowCount(0)
         self.detected_items_map.clear()
-        self.lbl_det_count.setText("Unique Targets: 0")
+        self.lbl_det_count.setText("Classified Contacts: 0")
 
 
-# ==============================================================================
-# MAIN ENTRYPOINT
-# ==============================================================================
 class RosWorkerThread(QThread):
     def __init__(self, node):
         super().__init__()
