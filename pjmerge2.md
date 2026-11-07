@@ -268,12 +268,28 @@ ros2 launch isonavi_rov_gazebo sim.launch.py
   * `world:=large_river` : Open river environment with submerged obstacles and currents (default: `large_river`).
   * `world:=indian_river`: High-turbidity river canyon environment.
   * `world:=pool_course` : Competition arena ($20 \times 10\,\text{m}$) with gate and targets.
+  * `gcs:=true/false`    : Automatically launch Ground Station Mission Control (default: `false`).
   * `camera:=true/false` : Toggle automatic camera window popup (default: `true`).
   * `headless:=true/false`: Toggle Gazebo 3D GUI window (default: `false`).
   * `scattering:=1.6`    : Water turbidity attenuation factor (default: `1.6`).
 
-### Step 7.3: Launch Keyboard Teleoperation
-In a second terminal:
+### Step 7.3: Launch Tactical Mission Control & Ground Station (GCS)
+In a dedicated terminal (or via `gcs:=true` above):
+```bash
+ws-isonavi
+ros2 run isonavi_rov_ros ground_station
+```
+The **Ground Station Interface** is a professional PyQt5 tactical console providing unified telemetry, command, vision, and target logging:
+* **Live Optical Vision & Spatial AI:** Embedded camera viewer streaming real-time YOLOv8 detections with 3D range estimation, Retinex enhancement, crosshair reticle, stream selector, and high-resolution frame snapshot capture.
+* **Target Detection Log & Storage:** Live interactive table tracking every unique detected target (buoys, barrels, pipes, piers, debris). Features smart deduplication, editable pilot notes, automatic saving to `~/.ros/isonavi_detection_log.json`, and one-click **Export to CSV** and **Export to JSON**.
+* **Navigation & Attitude Gauges:** Real-time Vertical Depth Column bar, Artificial Horizon (Pitch & Roll indicator), 360° Compass Yaw ribbon, and digital 3D coordinates ($X, Y, Z, v_x, v_y$).
+* **Riverbed Top-Down Radar Map:** Dynamic 2D bathymetry canvas rendering the river channel, civil landmarks (piers, pipeline), real-time ROV position with orientation vector arrow, historical breadcrumb trail, and plotted target markers.
+* **8-Thruster Power Matrix:** Live 8-bar effort display showing exact thrust in Newtons ($T_1 \dots T_8$) with green/amber/red saturation alerts.
+* **Command Deck & Pilot Console:** Integrated teleoperation keypad (Surge, Sway, Heave, Yaw), throttle scale presets (25%, 50%, 75%, 100%), Auto-Centering toggle (`C`), Dynamic Flood trigger buttons (Calm vs Surge Flood), and high-visibility **Emergency Stop (KILL)** button. Full window hotkey support allows steering directly from the GCS window!
+* **Comms & Failure Watchdog:** 50 Hz pulse heartbeat monitor (`🟢 COMMS ONLINE` vs `🔴 COMMS TIMEOUT`), Safety Supervisor state banner (`ARMED` / `DISARMED`), and automated alerts for excessive tilt ($>25^\circ$) or depth limits.
+
+### Step 7.4: Launch Keyboard Teleoperation (CLI Standalone)
+In a separate terminal (if not using GCS teleop):
 ```bash
 ws-isonavi
 ros2 run isonavi_rov_ros teleop

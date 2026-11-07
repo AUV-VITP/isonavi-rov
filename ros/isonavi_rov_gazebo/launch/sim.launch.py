@@ -23,6 +23,7 @@ def generate_launch_description():
 
     headless = LaunchConfiguration("headless")
     camera_arg = LaunchConfiguration("camera")
+    gcs_arg = LaunchConfiguration("gcs")
     mode = LaunchConfiguration("mode")
     scattering = LaunchConfiguration("scattering")
     world_name = LaunchConfiguration("world")
@@ -138,10 +139,19 @@ def generate_launch_description():
         condition=IfCondition(camera_arg),
     )
 
+    # Professional Mission Control & Ground Station GUI
+    ground_station_node = Node(
+        package="isonavi_rov_ros",
+        executable="ground_station",
+        output="screen",
+        condition=IfCondition(gcs_arg),
+    )
+
     return LaunchDescription([
         DeclareLaunchArgument("world", default_value="large_river", description="Gazebo world: large_river, indian_river, or pool_course"),
         DeclareLaunchArgument("headless", default_value="false", description="Run Gazebo in headless mode (set true for no GUI)"),
         DeclareLaunchArgument("camera", default_value="true", description="Automatically open camera feed viewer window"),
+        DeclareLaunchArgument("gcs", default_value="false", description="Automatically launch ISONAVI-ROV Ground Station UI"),
         DeclareLaunchArgument("mode", default_value="assist", description="Pilot mode: manual, assist, auto, shared"),
         DeclareLaunchArgument("scattering", default_value="1.6", description="Water scattering turbidity b (1/m). Murky river: 1.6 - 2.5"),
         set_python_env,
@@ -156,4 +166,5 @@ def generate_launch_description():
         pilot_node,
         vision_node,
         camera_viewer_node,
+        ground_station_node,
     ])
