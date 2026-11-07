@@ -72,7 +72,7 @@ def generate_launch_description():
         on_exit=Shutdown(),
     )
     gz_gui = ExecuteProcess(
-        cmd=["gz", "sim", "-r", "-v", "1", world_path],
+        cmd=["gz", "sim", "-r", "-v", "3", world_path],
         additional_env=gz_env,
         output="screen",
         condition=UnlessCondition(headless),

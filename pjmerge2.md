@@ -224,10 +224,25 @@ ros2 run isonavi_rov_gazebo flood_ctl --flow 1.5 --turbidity 2.2 --debris 12
 ### 6.3 Uneven Riverbed Bathymetry, Rock Formations & Debris Collision Physics
 * **Expanded & Uneven Riverbed:** Extended the river world [`large_river.sdf`](file:///home/prjwaal/isonavi/isonavi-rov/ros/isonavi_rov_gazebo/worlds/large_river.sdf) to $130\,\text{m} \times 48\,\text{m}$ with non-uniform bathymetry, including upstream sand shoals, central scour dunes, side bank terraces, and deep scour pits ($1.6\,\text{m}$ to $5.8\,\text{m}$ depth).
 * **Rock & Boulder Formations:** Added jagged rock outcrops, granite boulder deflector fields around bridge piers, submerged rock shelves, and bedrock spires with full ODE `<collision>` physics.
-* **Plastic & Unused Plastic Debris:** Added 200L polyethylene chemical drums (floating and submerged), 20L oil jerrycans, rigid industrial plastic crates, discarded plastic utility buckets, wash basins, PVC sewer pipe segments, traffic cones, and automotive bumper panels—all configured with rigid collision hulls.
-* **Plastic Bags & Wrappers:** Added crumpled polythene bags, floating garbage bags, and submerged tarpaulin sheets with collision envelopes.
-* **Rotten Wooden Items:** Added decaying driftwood tree trunks with branch stubs, rotting logs wedged against bridge piers, gnarled tree root stumps, broken wooden shipping pallets, railway sleepers, and rotting heavy timber beams.
-* **Suspended Spherical Dust (Strictly Inside Water):** Removed all dust elements above the water. Placed small spherical dust particle clusters ($r \in [15, 35]\,\text{mm}$) and an underwater-bounded box particle emitter strictly below the surface ($z \in [-3.6, -0.25]\,\text{m}$) simulating realistic marine snow and silt without surface smoke or dust.
+* **Reduced Murky Dust/Fog & Natural Optical Clarity:**
+  - Reduced dense underwater fog density from $0.55$ down to $0.10$, shifted fog `start` from $0.4\,\text{m}$ to $1.5\,\text{m}$, and extended `end` to $16.0\,\text{m}$.
+  - Calibrated natural ambient lighting ($0.35, 0.36, 0.32$) and sunlight diffuse levels ($0.62, 0.62, 0.55$), eliminating the overwhelming murky haze while preserving realistic depth attenuation. All debris, riverbed silt, and obstacles are now clearly visible through the ROV forward camera.
+* **Small Spherical Dirt Particles with Physical Collisions (Inside Water Only):**
+  - **High-Throughput Continuous Drift Emitter:** Integrated underwater box particle emitter (`underwater_spherical_dust_emitter`, rate: $350\,\text{Hz}$, lifetime: $20\,\text{s}$, size: $100\,\text{m} \times 36\,\text{m} \times 2.2\,\text{m}$) spanning billions of drifting micro-dirt specks across operational lifespans strictly below the waterline ($z \in [-3.6, -0.25]\,\text{m}$). Zero dust exists above water.
+  - **Discrete Collision Dirt Spheres & Silt Pebbles:** Added physical `<collision>` spherical dirt clusters (`dust_sphere_cluster_1` through `dust_sphere_cluster_6`) and an upstream riverbed silt pebble field (`dirt_pebble_field_upstream`), providing physical collision geometry ($r \in [15, 45]\,\text{mm}$) that physically interacts with the ROV chassis and thruster wash.
+* **Comprehensive Plastic Bags Collection (with Collision Physics):**
+  - Submerged polythene grocery bags in assorted colors (`submerged_plastic_bag_white_4`, `submerged_plastic_bag_red`, `submerged_plastic_bag_blue`, `submerged_plastic_bag_green`, `submerged_plastic_bag_yellow`).
+  - Floating heavy-duty garbage bag (`floating_garbage_bag_2`) and submerged transparent plastic packaging sheet (`submerged_plastic_packaging_sheet`), each configured with rigid `<collision>` boxes.
+* **Plastic Bottles & Household Containers (with Collision Physics):**
+  - Submerged clear mineral water bottles (`plastic_water_bottle_clear_1`, `2`, `3`, `4`).
+  - Submerged green PET soda bottles (`plastic_soda_bottle_green_1`, `2`) and crushed soda bottle (`plastic_soda_bottle_crushed`).
+  - High-density polyethylene (HDPE) industrial jugs: orange detergent jug (`plastic_detergent_bottle_orange`), white bleach container (`plastic_bleach_bottle_white`), and blue motor oil jug (`plastic_oil_bottle_blue`).
+  - 200L polyethylene chemical drums (floating and submerged), 20L oil jerrycans, rigid industrial plastic crates, discarded plastic utility buckets, wash basins, PVC sewer pipe segments, traffic cones, and automotive bumper panels.
+* **Rotten Wooden Items & Driftwood Particles (with Collision Physics):**
+  - Rotting driftwood tree trunks with branch stubs (`rotten_driftwood_trunk_1`, `rotten_driftwood_log_2`), gnarled tree root stumps (`gnarled_tree_root_stump`), broken wooden shipping pallets, railway sleepers, and rotting timber beams.
+  - Decaying submerged driftwood branches (`wood_particle_branch_1`, `2`, `3`) with collision cylinders.
+  - Floating and submerged rotting wood chip clusters (`wood_chip_cluster_1`, `wood_chip_cluster_2`) with collision boxes.
+  - Rotten timber stakes (`rotten_timber_stake_1`, `2`), rotten wood plank fragments (`rotten_wood_plank_fragment_1`, `2`), and submerged driftwood twig clusters (`driftwood_twig_cluster`).
 
 ---
 
