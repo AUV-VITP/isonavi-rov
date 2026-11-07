@@ -129,7 +129,7 @@ def generate_launch_description():
         output="screen",
     )
 
-    # Automatic Camera Feed Visualizer Window (Matsya 7 Enhanced Stream + Spatial HUD)
+    # Automatic Camera Feed Visualizer Window (ISONAVI Enhanced Stream + Spatial HUD)
     camera_viewer_node = Node(
         package="rqt_image_view",
         executable="rqt_image_view",

@@ -1,4 +1,4 @@
-"""Underwater Optical Enhancement and Matsya 7-Inspired Spatial AI Detection Node.
+"""Underwater Optical Enhancement and Spatial AI Detection Node.
 
 Subscribes:
   /camera/image_raw           (sensor_msgs/msg/Image)
@@ -6,7 +6,7 @@ Subscribes:
 
 Publishes:
   /camera/image_enhanced      (sensor_msgs/msg/Image) - Dehazed, color-balanced, sharp frame via Pyramidal Retinex
-  /camera/image_detections    (sensor_msgs/msg/Image) - Frame annotated with Matsya 7 HUD, YOLOv8 & Spatial AI
+  /camera/image_detections    (sensor_msgs/msg/Image) - Frame annotated with Tactical HUD, YOLOv8 & Spatial AI
   /camera/detections          (std_msgs/msg/String)   - JSON detection list with bboxes, labels, confidences, 3D XYZ
   /targets                    (std_msgs/msg/String)   - Balloon target locations for autonomy
   /corridor_offset            (std_msgs/msg/Float64)  - Centreline lateral offset for pilot assist
@@ -46,7 +46,7 @@ except ImportError:
 
 
 # Known physical dimensions for river infrastructure and marine objects (meters)
-# Inspired by IIT Bombay Matsya 7 Spatial AI and RoboSub competition specs
+# Inspired by IIT Bombay Spatial AI and RoboSub competition specs
 KNOWN_OBJECT_SIZES = {
     "bridge_pier": {"dim": 2.4, "axis": "width"},      # 2.4m diameter concrete pier
     "pier": {"dim": 2.4, "axis": "width"},
@@ -66,8 +66,8 @@ KNOWN_OBJECT_SIZES = {
 }
 
 
-def fast_matsya_retinex(img_bgr: np.ndarray, flood_mode: bool = False) -> np.ndarray:
-    """Enhance underwater imagery using IIT Bombay Matsya 6/7 Pyramidal Retinex & CIELAB balancing.
+def fast_pyramidal_retinex(img_bgr: np.ndarray, flood_mode: bool = False) -> np.ndarray:
+    """Enhance underwater imagery using Pyramidal Retinex & CIELAB balancing.
 
     1. Pyramidal Multi-Scale Retinex (MSR) Illumination Decomposition:
        Separates raw frame S into illumination L and surface reflectance R: S = L * R.
@@ -126,7 +126,7 @@ def fast_matsya_retinex(img_bgr: np.ndarray, flood_mode: bool = False) -> np.nda
 
 
 def estimate_spatial_pose(bbox, cls_name, f_px=381.36, cx=320.0, cy=240.0):
-    """Estimate 3D spatial position (X, Y, Z in meters) using Matsya 7 Spatial AI pinhole projection."""
+    """Estimate 3D spatial position (X, Y, Z in meters) using Spatial AI pinhole projection."""
     x1, y1, x2, y2 = bbox
     w_px = max(1.0, float(x2 - x1))
     h_px = max(1.0, float(y2 - y1))
@@ -161,8 +161,8 @@ def estimate_spatial_pose(bbox, cls_name, f_px=381.36, cx=320.0, cy=240.0):
     return round(x, 2), round(y, 2), round(z, 2)
 
 
-def draw_matsya_hud(img, bbox, label, color=(0, 255, 255), dist_m=None):
-    """Draw sleek corner brackets and Matsya 7 tactical HUD labels."""
+def draw_tactical_hud(img, bbox, label, color=(0, 255, 255), dist_m=None):
+    """Draw sleek corner brackets and Tactical HUD labels."""
     x1, y1, x2, y2 = [int(v) for v in bbox]
     l = min(16, max(6, (x2 - x1) // 4, (y2 - y1) // 4))
     t = 2
@@ -277,7 +277,7 @@ class VisionNode(Node):
         self.fps = 0.0
         self.sub_flood = self.create_subscription(Bool, "flood_active", self.on_flood_active, 10)
         self.sub_cam = self.create_subscription(Image, "camera/image_raw", self.on_image, 2)
-        self.get_logger().info("VisionNode (Matsya 7 Pyramidal Retinex & Spatial AI) initialized.")
+        self.get_logger().info("VisionNode (ISONAVI Optical Enhancement & Spatial AI) initialized.")
 
     def on_flood_active(self, m: Bool):
         self.flood_active = bool(m.data)
@@ -315,9 +315,9 @@ class VisionNode(Node):
         if m.encoding == "rgb8":
             raw_bgr = cv2.cvtColor(raw_bgr, cv2.COLOR_RGB2BGR)
 
-        # 1. Apply IIT Bombay Matsya Pyramidal Retinex Enhancement
+        # 1. Apply Pyramidal Retinex Enhancement
         if self.enable_enhancement:
-            enhanced_bgr = fast_matsya_retinex(raw_bgr, flood_mode=self.flood_active)
+            enhanced_bgr = fast_pyramidal_retinex(raw_bgr, flood_mode=self.flood_active)
         else:
             enhanced_bgr = raw_bgr.copy()
 
@@ -347,7 +347,7 @@ class VisionNode(Node):
         except Exception:
             pass
 
-        # 3. Object Detection & Spatial AI (Matsya 7)
+        # 3. Object Detection & Spatial AI (Tactical AI)
         all_detections = []
         annotated_bgr = enhanced_bgr.copy()
 
@@ -371,8 +371,8 @@ class VisionNode(Node):
                         "spatial_xyz": [x_m, y_m, z_m],
                     })
 
-                    # Draw Matsya 7 corner bracket HUD
-                    draw_matsya_hud(
+                    # Draw Tactical corner bracket HUD
+                    draw_tactical_hud(
                         annotated_bgr,
                         bbox,
                         f"{name.upper()} {int(conf * 100)}%",
@@ -407,7 +407,7 @@ class VisionNode(Node):
             })
 
             circle_color = color_map.get(d.colour, (255, 255, 255))
-            draw_matsya_hud(
+            draw_tactical_hud(
                 annotated_bgr,
                 bbox,
                 f"BUOY:{d.colour.upper()}",
@@ -427,7 +427,7 @@ class VisionNode(Node):
             )
             if not overlap:
                 all_detections.append(infra)
-                draw_matsya_hud(
+                draw_tactical_hud(
                     annotated_bgr,
                     infra["bbox"],
                     infra["class"].replace("_", " ").upper(),
@@ -443,7 +443,7 @@ class VisionNode(Node):
 
         # Header status badge
         mode_str = "FLOOD TURBIDITY ACTIVE" if self.flood_active else "CLEAR WATER"
-        badge_text = f"ISONAVI MATSYA-7 | {mode_str} | FPS:{self.fps:.1f} | TARGETS:{len(all_detections)}"
+        badge_text = f"ISONAVI-ROV | {mode_str} | FPS:{self.fps:.1f} | TARGETS:{len(all_detections)}"
         badge_color = (0, 140, 255) if self.flood_active else (0, 255, 120)
 
         (tw, th), _ = cv2.getTextSize(badge_text, cv2.FONT_HERSHEY_SIMPLEX, 0.45, 1)

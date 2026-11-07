@@ -9,7 +9,7 @@
 
 This document provides a comprehensive, production-grade technical manual for the **ISONAVI-ROV** project. It chronicles the full architecture, hydrodynamics, optical image restoration, autonomous dynamic positioning, safety gating, and simulation infrastructure developed for the 8-thruster vectored underwater inspection robot.
 
-The system is designed for freshwater inspection, flood response, and competitive underwater robotics (inspired by state-of-the-art platforms such as **IIT Bombay Matsya 6 / Matsya 7**, SAUVC, and RoboSub).
+The system is designed for freshwater inspection, flood response, and competitive underwater robotics (inspired by state-of-the-art platforms such as **modern autonomous inspection platforms**, SAUVC, and RoboSub).
 
 ### Key Vehicle Specifications
 
@@ -35,14 +35,14 @@ flowchart TD
     subgraph Human_Interface["Pilot & Supervisory Control"]
         Teleop["Keyboard Teleop / Joy\n(keyboard_teleop.py)"]
         FloodCTL["Flood Controller CLI\n(flood_ctl.py)"]
-        RqtViewer["Matsya 7 Camera HUD\n(rqt_image_view)"]
+        RqtViewer["ISONAVI Camera HUD\n(rqt_image_view)"]
         RqtGraph["ROS 2 Graph Viewer\n(rqt_graph)"]
     end
 
     subgraph ROS2_Core["ROS 2 Jazzy Core Stack (isonavi_rov_ros)"]
         PilotNode["Pilot Flight Controller\n(pilot_node.py)\n- Active DP & Station Hold\n- Damped PID Heave/Yaw\n- Output Low-Pass Filter"]
         SafetyNode["Safety Supervisor\n(safety_node.py)\n- Heartbeat Watchdog\n- Tilt / Depth Gating\n- Failsafe State Machine"]
-        VisionNode["Advanced Optical AI\n(vision_node.py)\n- Pyramidal Retinex (Matsya 7)\n- CLAHE Color Balance\n- YOLOv8 Object Detection"]
+        VisionNode["Advanced Optical AI\n(vision_node.py)\n- Pyramidal Retinex (Tactical AI)\n- CLAHE Color Balance\n- YOLOv8 Object Detection"]
     end
 
     subgraph Simulation_Bridge["Gazebo <-> ROS 2 Bridge (isonavi_rov_gazebo)"]
@@ -140,7 +140,7 @@ alias rqt_image_view="ros2 run rqt_image_view rqt_image_view"
   2. The simulation launch file (`sim.launch.py`) did not launch the camera GUI node.
 * **Implemented Solution:**
   * Embedded `camera_viewer_node` directly into [`sim.launch.py`](file:///home/prjwaal/isonavi/isonavi-rov/ros/isonavi_rov_gazebo/launch/sim.launch.py) defaulting to `camera:=true`.
-  * Pre-configured the viewer argument to automatically hook into `/camera/image_detections` (Matsya 7 Spatial AI HUD).
+  * Pre-configured the viewer argument to automatically hook into `/camera/image_detections` (Tactical Spatial AI HUD).
   * Provided the `rqt_image_view` bash alias.
 
 ### 4.3 Resolution of DART Added Mass Numerical Explosions
@@ -159,13 +159,13 @@ alias rqt_image_view="ros2 run rqt_image_view rqt_image_view"
 
 ---
 
-## 5. Matsya 6 & 7 Inspired Underwater Vision & AI Pipeline
+## 5. Advanced Underwater Vision & AI Pipeline
 
 Underwater imagery in turbid rivers and pools suffers from:
 1. **Wavelength-Dependent Light Attenuation:** Red light absorbs within $1-2\,\text{m}$, creating a dark cyan/blue/green cast.
 2. **Forward & Backward Light Scattering:** Suspended particulates cause loss of high-frequency edge details and low dynamic contrast.
 
-The vision system in [`vision_node.py`](file:///home/prjwaal/isonavi/isonavi-rov/ros/isonavi_rov_ros/isonavi_rov_ros/vision_node.py) replicates the image processing methodologies employed by **IIT Bombay Matsya 6 and Matsya 7**:
+The vision system in [`vision_node.py`](file:///home/prjwaal/isonavi/isonavi-rov/ros/isonavi_rov_ros/isonavi_rov_ros/vision_node.py) replicates the image processing methodologies employed by **advanced underwater inspection platforms**:
 
 ```mermaid
 flowchart LR
@@ -328,7 +328,7 @@ Below is the definitive catalog of all source files in the ISONAVI-ROV project s
 | **Gazebo Launch** | [`sim.launch.py`](file:///home/prjwaal/isonavi/isonavi-rov/ros/isonavi_rov_gazebo/launch/sim.launch.py) | Master launch description: launches Gazebo, ROS-GZ bridge, adapters, pilot, safety, vision, and camera viewer |
 | **Flight Pilot Node** | [`pilot_node.py`](file:///home/prjwaal/isonavi/isonavi-rov/ros/isonavi_rov_ros/isonavi_rov_ros/pilot_node.py) | 6-DoF flight control, active dynamic positioning, damped PID depth/yaw hold, low-pass wrench smoothing |
 | **Safety Supervisor** | [`safety_node.py`](file:///home/prjwaal/isonavi/isonavi-rov/ros/isonavi_rov_ros/isonavi_rov_ros/safety_node.py) | Supervisor state machine (`BOOT`, `DISARMED`, `ARMED`, `FAILSAFE`), tilt/depth boundary enforcement |
-| **Matsya 7 Vision Node**| [`vision_node.py`](file:///home/prjwaal/isonavi/isonavi-rov/ros/isonavi_rov_ros/isonavi_rov_ros/vision_node.py) | Pyramidal Retinex, CLAHE, underwater white balance, YOLOv8 object detection, and spatial telemetry HUD |
+| **ISONAVI Vision Node**| [`vision_node.py`](file:///home/prjwaal/isonavi/isonavi-rov/ros/isonavi_rov_ros/isonavi_rov_ros/vision_node.py) | Pyramidal Retinex, CLAHE, underwater white balance, YOLOv8 object detection, and spatial telemetry HUD |
 | **Keyboard Teleop** | [`keyboard_teleop.py`](file:///home/prjwaal/isonavi/isonavi-rov/ros/isonavi_rov_ros/isonavi_rov_ros/keyboard_teleop.py) | Non-blocking terminal keyboard teleoperation node publishing 6-axis commands to `/joy` |
 | **Flood Controller** | [`flood_controller.py`](file:///home/prjwaal/isonavi/isonavi-rov/ros/isonavi_rov_gazebo/isonavi_rov_gazebo/flood_controller.py) | Dynamic river current, surge pulse, and turbidity simulation engine |
 | **Flood CLI Tool** | [`flood_ctl.py`](file:///home/prjwaal/isonavi/isonavi-rov/ros/isonavi_rov_gazebo/isonavi_rov_gazebo/flood_ctl.py) | Operator CLI to publish river presets and surge commands to `/flood` |
@@ -356,7 +356,7 @@ Below is the definitive catalog of all source files in the ISONAVI-ROV project s
 | `/thrusters` | `std_msgs/msg/Float64MultiArray` | `safety_node` | `thruster_bridge` | $50\,\text{Hz}$ | Power-governed, safety-gated 8-thruster force vector ($N$) |
 | `/model/isonavi_rov/joint/thruster_{1..8}_joint/cmd_thrust` | `std_msgs/msg/Float64` | `thruster_bridge` | `parameter_bridge` | $50\,\text{Hz}$ | Individual thruster force forwarded to Gazebo |
 | `/camera/image_raw` | `sensor_msgs/msg/Image` | `parameter_bridge` | `vision_node` | $30\,\text{Hz}$ | Raw $1280 \times 720$ RGB optical video stream |
-| `/camera/image_detections`| `sensor_msgs/msg/Image` | `vision_node` | `rqt_image_view` | $30\,\text{Hz}$ | Matsya 7 Retinex-enhanced stream with Spatial AI HUD |
+| `/camera/image_detections`| `sensor_msgs/msg/Image` | `vision_node` | `rqt_image_view` | $30\,\text{Hz}$ | Retinex-enhanced stream with Spatial AI HUD |
 | `/depth` | `std_msgs/msg/Float64` | `depth_adapter` | `pilot_node`, `safety_node`| $50\,\text{Hz}$ | Hydrostatic depth in meters ($z \ge 0.0\,\text{m}$) |
 | `/imu` | `sensor_msgs/msg/Imu` | `parameter_bridge` | `pilot_node`, `safety_node`| $100\,\text{Hz}$ | 6-axis linear acceleration & angular velocity |
 | `/model/isonavi_rov/odometry`| `nav_msgs/msg/Odometry`| `parameter_bridge` | `depth_adapter`, `pilot_node`| $50\,\text{Hz}$ | Full 6-DoF vehicle pose and twist |
@@ -373,4 +373,4 @@ The entire stack has been verified under continuous integration testing:
 2. **Simulation Bringup:** Headless and 3D GUI simulation runs without Ogre or X11 segmentation faults.
 3. **Teleoperation Stability:** Zero hull resonance or twitching when maneuvering through all 6 degrees of freedom.
 4. **Failsafe Assertions:** Verified automatic thruster power cutoff ($0.0\,\text{N}$) upon teleop link-loss timeout ($>0.5\,\text{s}$).
-5. **Computer Vision Performance:** Matsya 7 Pyramidal Retinex and YOLOv8 pipeline runs in real time, delivering clear object detection and telemetry visualization on `/camera/image_detections`.
+5. **Computer Vision Performance:** Pyramidal Retinex and YOLOv8 pipeline runs in real time, delivering clear object detection and telemetry visualization on `/camera/image_detections`.
