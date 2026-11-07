@@ -101,6 +101,9 @@ class RosBridge(QObject):
         self.bridge = CvBridge()
         self.active_stream = "detections"
         self.last_packet_t = 0.0
+        self.latest_turbid_cv = None
+        self.latest_det_cv = None
+        self.latest_raw_cv = None
 
         # Command states
         self.surge = 0.0
@@ -126,6 +129,9 @@ class RosBridge(QObject):
         )
         self.sub_img_enh = self.node.create_subscription(
             Image, "camera/image_enhanced", self.on_image_enh, qos_best_effort
+        )
+        self.sub_img_turbid = self.node.create_subscription(
+            Image, "camera/image_raw_turbid", self.on_image_turbid, qos_best_effort
         )
         self.sub_img_raw = self.node.create_subscription(
             Image, "camera/image_raw", self.on_image_raw, qos_best_effort
@@ -190,26 +196,96 @@ class RosBridge(QObject):
         self.active_stream = stream_type
 
     def on_image_det(self, msg: Image):
+        try:
+            self.latest_det_cv = self.bridge.imgmsg_to_cv2(msg, desired_encoding="bgr8")
+        except Exception:
+            pass
         if self.active_stream == "detections":
             self.process_image(msg)
+        elif self.active_stream == "split":
+            self.generate_split_view()
 
     def on_image_enh(self, msg: Image):
         if self.active_stream == "enhanced":
             self.process_image(msg)
 
+    def on_image_turbid(self, msg: Image):
+        try:
+            self.latest_turbid_cv = self.bridge.imgmsg_to_cv2(msg, desired_encoding="bgr8")
+        except Exception:
+            pass
+        if self.active_stream == "turbid":
+            self.process_image(msg)
+        elif self.active_stream == "split":
+            self.generate_split_view()
+
     def on_image_raw(self, msg: Image):
+        try:
+            self.latest_raw_cv = self.bridge.imgmsg_to_cv2(msg, desired_encoding="bgr8")
+        except Exception:
+            pass
         if self.active_stream == "raw":
             self.process_image(msg)
+        elif self.active_stream == "turbid" and self.latest_turbid_cv is None:
+            self.process_image(msg)
+        elif self.active_stream == "split" and self.latest_turbid_cv is None:
+            self.generate_split_view()
 
-    def process_image(self, msg: Image):
+    def generate_split_view(self):
+        left_bgr = self.latest_turbid_cv if self.latest_turbid_cv is not None else self.latest_raw_cv
+        right_bgr = self.latest_det_cv
+        if left_bgr is None and right_bgr is None:
+            return
+        if left_bgr is None:
+            self.emit_cv_image(right_bgr)
+            return
+        if right_bgr is None:
+            self.emit_cv_image(left_bgr)
+            return
+
+        h, w = right_bgr.shape[:2]
+        if left_bgr.shape[:2] != (h, w):
+            left_bgr = cv2.resize(left_bgr, (w, h))
+
+        mid_x = w // 2
+        split = np.empty_like(right_bgr)
+        split[:, :mid_x] = left_bgr[:, :mid_x]
+        split[:, mid_x:] = right_bgr[:, mid_x:]
+
+        # Center vertical divider line (amber gold #e5c07b)
+        cv2.line(split, (mid_x, 0), (mid_x, h), (123, 192, 229), 2)
+
+        # Tactical Label Left: RAW TURBID SILT (BLURRED)
+        cv2.rectangle(split, (8, 8), (242, 30), (18, 18, 18), -1)
+        cv2.putText(split, "RAW TURBID SILT (BLURRED)", (14, 23), cv2.FONT_HERSHEY_SIMPLEX, 0.40, (180, 200, 220), 1, cv2.LINE_AA)
+
+        # Tactical Label Right: RETINEX ENHANCED + YOLOv8 AI
+        cv2.rectangle(split, (mid_x + 8, 8), (mid_x + 252, 30), (18, 18, 18), -1)
+        cv2.putText(split, "RETINEX ENHANCED + YOLOv8 AI", (mid_x + 14, 23), cv2.FONT_HERSHEY_SIMPLEX, 0.40, (0, 255, 120), 1, cv2.LINE_AA)
+
+        # Centered Dual Split-View Badge
+        (bw, bh), _ = cv2.getTextSize("DUAL SPLIT-VIEW COMPARISON", cv2.FONT_HERSHEY_SIMPLEX, 0.38, 1)
+        bx = (w - bw) // 2
+        cv2.rectangle(split, (bx - 6, h - 24), (bx + bw + 6, h - 6), (18, 18, 18), -1)
+        cv2.putText(split, "DUAL SPLIT-VIEW COMPARISON", (bx, h - 11), cv2.FONT_HERSHEY_SIMPLEX, 0.38, (123, 192, 229), 1, cv2.LINE_AA)
+
+        self.emit_cv_image(split)
+
+    def emit_cv_image(self, cv_img: np.ndarray):
         self.last_packet_t = time.time()
         try:
-            cv_img = self.bridge.imgmsg_to_cv2(msg, desired_encoding="bgr8")
             rgb = cv2.cvtColor(cv_img, cv2.COLOR_BGR2RGB)
             h, w, ch = rgb.shape
             bytes_per_line = ch * w
             qimg = QImage(rgb.data, w, h, bytes_per_line, QImage.Format_RGB888).copy()
             self.sig_image.emit(qimg)
+        except Exception:
+            pass
+
+    def process_image(self, msg: Image):
+        try:
+            cv_img = self.bridge.imgmsg_to_cv2(msg, desired_encoding="bgr8")
+            self.emit_cv_image(cv_img)
         except Exception:
             pass
 
@@ -822,7 +898,8 @@ class GroundStationWindow(QMainWindow):
         self.combo_stream.addItems([
             "Channel 1: Spatial AI & Bounding Reticle (/camera/image_detections)",
             "Channel 2: Pyramidal Retinex Enhanced (/camera/image_enhanced)",
-            "Channel 3: Direct Sensor Passthrough (/camera/image_raw)",
+            "Channel 3: Turbid River Silt & Dirt Blur (/camera/image_raw_turbid)",
+            "Channel 4: Dual Split-View [Raw Murky Mud (Left) vs Retinex Enhanced + AI (Right)]",
         ])
         self.combo_stream.currentIndexChanged.connect(self.on_stream_changed)
         ctrl_bar.addWidget(self.combo_stream)
@@ -1189,8 +1266,9 @@ class GroundStationWindow(QMainWindow):
         self.lbl_clock.setText(f"MISSION TIME: {hh:02d}:{mm:02d}:{ss:02d}")
 
     def on_stream_changed(self, idx):
-        streams = ["detections", "enhanced", "raw"]
-        self.bridge.set_stream(streams[idx])
+        streams = ["detections", "enhanced", "turbid", "split"]
+        if idx < len(streams):
+            self.bridge.set_stream(streams[idx])
 
     def on_snapshot_clicked(self):
         if hasattr(self, "last_frame") and self.last_frame:

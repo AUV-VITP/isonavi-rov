@@ -5,6 +5,7 @@ Subscribes:
   /flood_active               (std_msgs/msg/Bool)
 
 Publishes:
+  /camera/image_raw_turbid    (sensor_msgs/msg/Image) - River silt & mud-blurred optical stream with drifting flakes
   /camera/image_enhanced      (sensor_msgs/msg/Image) - Dehazed, color-balanced, sharp frame via Pyramidal Retinex
   /camera/image_detections    (sensor_msgs/msg/Image) - Frame annotated with Tactical HUD, YOLOv8 & Spatial AI
   /camera/detections          (std_msgs/msg/String)   - JSON detection list with bboxes, labels, confidences, 3D XYZ
@@ -64,6 +65,61 @@ KNOWN_OBJECT_SIZES = {
     "sports ball": {"dim": 0.3, "axis": "diag"},
     "default": {"dim": 1.0, "axis": "max"},
 }
+
+
+def apply_mud_turbidity(
+    raw_bgr: np.ndarray,
+    scattering: float = 0.65,
+    flood_mode: bool = False,
+    sim_time: float = 0.0,
+) -> np.ndarray:
+    """Simulate physical river mud forward-scattering blur, suspended micro-silt & veiling luminance.
+
+    Gazebo OGRE2 cameras apply distance-based fog blending, but lack optical Point Spread Function
+    (PSF) forward scattering of micro-dirt particles and suspended colloidal sediment.
+    This function physically simulates:
+    1. Forward-Scattering Modulation Transfer Function (MTF) blur:
+       High spatial frequency attenuation through dense colloidal sediment (PSF kernel).
+    2. Silt & River Mud Backscatter (Veiling Luminance):
+       Brownish-ochre ambient backscatter from sunlight scattering off suspended clay/silt.
+    3. Floating Suspended Micro-Dirt Specks & Silt Flakes:
+       Continuous drifting mud specks and organic silt grains that tumble with river flow.
+    """
+    h, w = raw_bgr.shape[:2]
+
+    # 1. Optical Forward-Scattering Point Spread Function (PSF) Blur
+    ksize = 13 if flood_mode else 9
+    sigma = 3.6 if flood_mode else 2.2
+    blur_direct = cv2.GaussianBlur(raw_bgr, (ksize, ksize), sigmaX=sigma)
+    blur_halo = cv2.GaussianBlur(raw_bgr, (27, 27), sigmaX=7.5)
+    optical_blur = cv2.addWeighted(blur_direct, 0.65, blur_halo, 0.35, 0)
+
+    # 2. Muddy Ochre-Tan Veiling Luminance (Sediment Backscatter)
+    veil_bgr = np.full_like(raw_bgr, (35, 55, 78), dtype=np.uint8)
+    veil_alpha = 0.38 + (0.22 if flood_mode else 0.0)
+    turbid = cv2.addWeighted(optical_blur, 1.0 - veil_alpha, veil_bgr, veil_alpha, 0)
+
+    # 3. Suspended Micro-Dirt Specks & Drifting Silt Flakes
+    num_particles = 140 if flood_mode else 85
+    np.random.seed(99)
+    base_x = np.random.uniform(0, w, num_particles)
+    base_y = np.random.uniform(0, h, num_particles)
+    radii = np.random.randint(1, 4, num_particles)
+    speeds = np.random.uniform(15.0, 45.0, num_particles)
+    vert_drift = np.sin(sim_time * 1.5 + base_x) * 4.0
+
+    cur_x = ((base_x + sim_time * speeds) % w).astype(np.int32)
+    cur_y = np.clip((base_y + vert_drift), 0, h - 1).astype(np.int32)
+
+    for i in range(num_particles):
+        px = int(cur_x[i])
+        py = int(cur_y[i])
+        pr = int(radii[i])
+        fc = int(np.random.randint(22, 55))
+        color = (int(fc * 0.7), int(fc * 0.9), int(fc))
+        cv2.circle(turbid, (px, py), pr, color, -1)
+
+    return turbid
 
 
 def fast_pyramidal_retinex(img_bgr: np.ndarray, flood_mode: bool = False) -> np.ndarray:
@@ -265,6 +321,7 @@ class VisionNode(Node):
         self.bridge = CvBridge()
 
         # Publishers
+        self.pub_turbid = self.create_publisher(Image, "camera/image_raw_turbid", 10)
         self.pub_enhanced = self.create_publisher(Image, "camera/image_enhanced", 10)
         self.pub_detections = self.create_publisher(Image, "camera/image_detections", 10)
         self.pub_det_json = self.create_publisher(String, "camera/detections", 10)
@@ -273,6 +330,7 @@ class VisionNode(Node):
 
         # Subscription to camera feed and flood alerts
         self.flood_active = False
+        self.start_time = time.time()
         self.last_frame_time = time.time()
         self.fps = 0.0
         self.sub_flood = self.create_subscription(Bool, "flood_active", self.on_flood_active, 10)
@@ -315,11 +373,24 @@ class VisionNode(Node):
         if m.encoding == "rgb8":
             raw_bgr = cv2.cvtColor(raw_bgr, cv2.COLOR_RGB2BGR)
 
-        # 1. Apply Pyramidal Retinex Enhancement
+        # 1. Physical River Mud Turbidity & Suspended Silt Blur Simulation
+        turbid_bgr = apply_mud_turbidity(
+            raw_bgr,
+            scattering=self.scattering,
+            flood_mode=self.flood_active,
+            sim_time=now - self.start_time,
+        )
+
+        # Publish turbid camera stream
+        msg_turbid = self.bridge.cv2_to_imgmsg(turbid_bgr, encoding="bgr8")
+        msg_turbid.header = m.header
+        self.pub_turbid.publish(msg_turbid)
+
+        # 2. Apply Pyramidal Retinex Enhancement (Dehaze mud, remove blur & silt, restore colors)
         if self.enable_enhancement:
-            enhanced_bgr = fast_pyramidal_retinex(raw_bgr, flood_mode=self.flood_active)
+            enhanced_bgr = fast_pyramidal_retinex(turbid_bgr, flood_mode=self.flood_active)
         else:
-            enhanced_bgr = raw_bgr.copy()
+            enhanced_bgr = turbid_bgr.copy()
 
         # Publish enhanced image stream
         msg_enhanced = self.bridge.cv2_to_imgmsg(enhanced_bgr, encoding="bgr8")
