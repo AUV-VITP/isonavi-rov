@@ -234,14 +234,14 @@ ros2 run isonavi_rov_gazebo flood_ctl --flow 1.5 --turbidity 2.2 --debris 12
 * **Continuous Billions of Micro Mud, Dirt & Silt Particles (Particle Systems):**
   - **Water Column Emitter:** Continuous box emitter (`underwater_spherical_dust_emitter`, $450\,\text{Hz}$, lifetime $25\,\text{s}$, size $100\,\text{m} \times 36\,\text{m} \times 2.2\,\text{m}$) generating $>10^9$ drifting micro-dirt and organic silt specks strictly below the waterline ($z \in [-3.6, -0.2]\,\text{m}$) with zero surface dust.
   - **Riverbed Mud Cloud Emitter:** Secondary bottom silt emitter (`underwater_riverbed_mud_emitter`, $380\,\text{Hz}$, lifetime $20\,\text{s}$, size $90\,\text{m} \times 24\,\text{m} \times 1.2\,\text{m}$) kicking up continuous clouds of stirred mud and silt along the riverbed.
-* **60 Camera-FOV Floating Mud & Soil Clods (Directly Ahead of ROV):**
-  - Added 60 dynamic mud clods (`cam_fov_mud_01` through `60`) placed specifically inside the ROV camera's visual cone: $x \in [4.35, 10.45]\,\text{m}$, $y \in [-1.55, 1.55]\,\text{m}$, $z \in [-1.42, -0.68]\,\text{m}$.
-  - Radii $r \in [0.035, 0.082]\,\text{m}$, masses $m \in [0.28, 3.7]\,\text{kg}$, dynamic contact physics (`<static>false</static>`, `<gravity>false</gravity>`, `<velocity_decay><linear>0.85</linear><angular>0.85</angular></velocity_decay>`), with realistic earthy mud diffuse colors.
+* **140 Camera-FOV Floating Mud & Soil Clods (Directly Ahead of ROV):**
+  - Added 140 dynamic mud clods (`cam_fov_mud_01` through `140`) placed specifically inside the ROV camera's visual cone: $x \in [4.35, 11.20]\,\text{m}$, $y \in [-1.85, 1.85]\,\text{m}$, $z \in [-1.48, -0.62]\,\text{m}$.
+  - Radii $r \in [0.030, 0.090]\,\text{m}$, masses $m \in [0.28, 4.2]\,\text{kg}$, dynamic contact physics (`<static>false</static>`, `<gravity>false</gravity>`, `<velocity_decay><linear>0.85</linear><angular>0.85</angular></velocity_decay>`), with realistic earthy mud diffuse colors.
   - Tumble, disperse, and deflect when contacted by the ROV hull or thruster wake.
-* **Camera Sensor FOV Silt & Mud Drift Emitter:**
-  - Local box emitter (`camera_fov_mud_emitter`, pose: $6.8, 0.0, -1.0$, size $6.0 \times 3.6 \times 1.8\,\text{m}$, rate $480\,\text{Hz}$, lifetime $15\,\text{s}$) continuously generating drifting micro-sediment flakes across the camera lens.
-* **30 Riverbed Mud Chunks Under and Around ROV Spawn:**
-  - 30 dynamic mud chunks (`cam_bed_mud_01` through `30`) resting on the bottom at $x \in [4.1, 11.5]\,\text{m}$, $y \in [-2.5, 2.5]\,\text{m}$, $z \in [-2.35, -2.10]\,\text{m}$.
+* **High-Throughput Camera Sensor FOV Silt & Mud Drift Emitter:**
+  - Local box emitter (`camera_fov_mud_emitter`, pose: $6.8, 0.0, -1.0$, size $8.0 \times 4.2 \times 2.2\,\text{m}$, rate $850\,\text{Hz}$, lifetime $20\,\text{s}$, particle size $0.035\,\text{m}$) continuously generating high-density drifting micro-sediment flakes across the camera lens.
+* **80 Riverbed Mud Chunks Under and Around ROV Spawn:**
+  - 80 dynamic mud chunks (`cam_bed_mud_01` through `80`) resting on the bottom at $x \in [4.0, 14.0]\,\text{m}$, $y \in [-3.0, 3.0]\,\text{m}$, $z \in [-2.45, -2.05]\,\text{m}$.
   - Roll and scatter across the bottom when disturbed by the vehicle or descent maneuvers.
 * **40 Floating Dynamic Mud & Soil Clods (Water Column - Move When Touched):**
   - 40 neutrally buoyant dynamic mud clods (`floating_mud_clod_01` through `40`) suspended at operational depths ($z \in [-0.4, -2.1]\,\text{m}$).
@@ -251,10 +251,15 @@ ros2 run isonavi_rov_gazebo flood_ctl --flow 1.5 --turbidity 2.2 --debris 12
   - 50 dynamic bottom mud nuggets (`bottom_mud_nugget_01` through `50`) resting along the riverbed bathymetry ($z \approx -1.8\,\text{m}$ to $-3.3\,\text{m}$).
   - Configured with `<static>false</static>`, `<gravity>true</gravity>`, mass $m \in [0.08, 0.55]\,\text{kg}$, collision spheres, and bottom friction.
   - When the ROV descends to the riverbed or drags along the bottom, these mud chunks are kicked, rolled, and scattered.
-* **Forward-Scattering Turbidity Blur & Drifting Silt flakes:**
-  - Implemented optical forward-scattering Modulation Transfer Function (MTF) Point Spread Function blur, ochre-tan veiling backscatter, and dynamic micro-silt drift flakes published on `/camera/image_raw_turbid`.
-  - Pyramidal Retinex filters out the suspended sediment, cancels the muddy color cast, and sharpens outlines before feeding YOLOv8 and Spatial AI detectors.
-  - Channel 4 in the **VIT Pune (>>>>IIT)** Ground Station displays real-time split comparison (`[RAW TURBID SILT (BLURRED)]` vs `[RETINEX ENHANCED + YOLOv8 AI]`).
+* **Forward-Scattering Turbidity Blur & Drifting Silt flakes (320-Particle Engine):**
+  - Implemented optical forward-scattering Modulation Transfer Function (MTF) Point Spread Function blur, heavy ochre-tan veiling backscatter, and 320 dynamic micro-silt drift flakes published on `/camera/image_raw_turbid`.
+  - Upgraded **Dark-Channel Retinex Adaptive Restoration Pipeline**: automatically derives ambient mud backscatter $A$, computes transmission map $t(x)$, inverts radiative transfer equation $J = (I - A)/t + A$, expands contrast via 1%-99% percentile stretch on $L^*$, and sharpens target contours.
+  - Console Channel Options:
+    - **Channel 1:** Spatial AI & Bounding Reticle (`/camera/image_detections`)
+    - **Channel 2:** Pyramidal Retinex Enhanced (`/camera/image_enhanced`)
+    - **Channel 3:** Turbid River Silt & Dirt Blur (`/camera/image_raw_turbid`)
+    - **Channel 4:** Dual Split-View `[Raw Murky Mud (Left) vs Retinex Enhanced + AI (Right)]`
+    - **Channel 5:** Virtual Sensor Passthrough (`/camera/image_raw`)
 * **Dynamic Movable Plastics & Driftwood (Deflect Upon ROV Impact):**
   - Upgraded plastic bottles (`plastic_water_bottle_*`, `plastic_soda_bottle_*`, `plastic_detergent_bottle_*`, `plastic_bleach_bottle_*`, `plastic_oil_bottle_*`), plastic shopping bags (`submerged_plastic_bag_*`, `floating_garbage_bag_*`), and driftwood branches (`wood_particle_branch_*`, `wood_chip_cluster_*`, `driftwood_twig_cluster`) to dynamic `<static>false</static>`.
   - Configured with realistic mass ($0.04\,\text{kg} \to 2.5\,\text{kg}$) and fluid damping so they freely bob, deflect, and float away when touched by the ROV rather than behaving as rigid static walls.

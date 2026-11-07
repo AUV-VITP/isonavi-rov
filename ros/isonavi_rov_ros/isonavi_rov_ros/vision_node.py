@@ -82,103 +82,124 @@ def apply_mud_turbidity(
        High spatial frequency attenuation through dense colloidal sediment (PSF kernel).
     2. Silt & River Mud Backscatter (Veiling Luminance):
        Brownish-ochre ambient backscatter from sunlight scattering off suspended clay/silt.
-    3. Floating Suspended Micro-Dirt Specks & Silt Flakes:
-       Continuous drifting mud specks and organic silt grains that tumble with river flow.
+    3. Dense Floating Suspended Micro-Dirt Specks & Silt Flakes:
+       320 continuous drifting mud specks and organic silt grains in multiple fluid layers.
     """
     h, w = raw_bgr.shape[:2]
 
     # 1. Optical Forward-Scattering Point Spread Function (PSF) Blur
-    ksize = 13 if flood_mode else 9
-    sigma = 3.6 if flood_mode else 2.2
+    ksize = 15 if flood_mode else 11
+    sigma = 4.2 if flood_mode else 2.8
     blur_direct = cv2.GaussianBlur(raw_bgr, (ksize, ksize), sigmaX=sigma)
-    blur_halo = cv2.GaussianBlur(raw_bgr, (27, 27), sigmaX=7.5)
-    optical_blur = cv2.addWeighted(blur_direct, 0.65, blur_halo, 0.35, 0)
+    blur_halo = cv2.GaussianBlur(raw_bgr, (31, 31), sigmaX=8.5)
+    optical_blur = cv2.addWeighted(blur_direct, 0.60, blur_halo, 0.40, 0)
 
     # 2. Muddy Ochre-Tan Veiling Luminance (Sediment Backscatter)
-    veil_bgr = np.full_like(raw_bgr, (35, 55, 78), dtype=np.uint8)
-    veil_alpha = 0.38 + (0.22 if flood_mode else 0.0)
+    veil_bgr = np.full_like(raw_bgr, (32, 58, 82), dtype=np.uint8)
+    veil_alpha = 0.46 + (0.24 if flood_mode else 0.0)
     turbid = cv2.addWeighted(optical_blur, 1.0 - veil_alpha, veil_bgr, veil_alpha, 0)
 
-    # 3. Suspended Micro-Dirt Specks & Drifting Silt Flakes
-    num_particles = 140 if flood_mode else 85
+    # 3. Dense Suspended Micro-Dirt Specks & Drifting Silt Particles (320 specks across 3 layers)
     np.random.seed(99)
-    base_x = np.random.uniform(0, w, num_particles)
-    base_y = np.random.uniform(0, h, num_particles)
-    radii = np.random.randint(1, 4, num_particles)
-    speeds = np.random.uniform(15.0, 45.0, num_particles)
-    vert_drift = np.sin(sim_time * 1.5 + base_x) * 4.0
+    # Layer 1: 180 fine micro-silt specks (r = 1-2) drifting rapidly with river current
+    n1 = 180
+    b_x1 = np.random.uniform(0, w, n1)
+    b_y1 = np.random.uniform(0, h, n1)
+    spd1 = np.random.uniform(25.0, 60.0, n1)
+    cur_x1 = ((b_x1 + sim_time * spd1) % w).astype(np.int32)
+    cur_y1 = np.clip(b_y1 + np.sin(sim_time * 2.0 + b_x1) * 3.5, 0, h - 1).astype(np.int32)
+    r1 = np.random.randint(1, 3, n1)
+    for i in range(n1):
+        fc = int(np.random.randint(20, 50))
+        cv2.circle(turbid, (int(cur_x1[i]), int(cur_y1[i])), int(r1[i]), (int(fc * 0.7), int(fc * 0.9), int(fc)), -1)
 
-    cur_x = ((base_x + sim_time * speeds) % w).astype(np.int32)
-    cur_y = np.clip((base_y + vert_drift), 0, h - 1).astype(np.int32)
+    # Layer 2: 100 medium mud flakes (r = 2-4) with eddy tumbling
+    n2 = 100
+    b_x2 = np.random.uniform(0, w, n2)
+    b_y2 = np.random.uniform(0, h, n2)
+    spd2 = np.random.uniform(15.0, 40.0, n2)
+    cur_x2 = ((b_x2 + sim_time * spd2) % w).astype(np.int32)
+    cur_y2 = np.clip(b_y2 + np.cos(sim_time * 1.5 + b_x2) * 5.0, 0, h - 1).astype(np.int32)
+    r2 = np.random.randint(2, 5, n2)
+    for i in range(n2):
+        fc = int(np.random.randint(24, 58))
+        cv2.circle(turbid, (int(cur_x2[i]), int(cur_y2[i])), int(r2[i]), (int(fc * 0.65), int(fc * 0.85), int(fc)), -1)
 
-    for i in range(num_particles):
-        px = int(cur_x[i])
-        py = int(cur_y[i])
-        pr = int(radii[i])
-        fc = int(np.random.randint(22, 55))
-        color = (int(fc * 0.7), int(fc * 0.9), int(fc))
-        cv2.circle(turbid, (px, py), pr, color, -1)
+    # Layer 3: 40 large organic mud clumps (r = 4-6)
+    n3 = 40
+    b_x3 = np.random.uniform(0, w, n3)
+    b_y3 = np.random.uniform(0, h, n3)
+    spd3 = np.random.uniform(8.0, 22.0, n3)
+    cur_x3 = ((b_x3 + sim_time * spd3) % w).astype(np.int32)
+    cur_y3 = np.clip(b_y3 + np.sin(sim_time * 1.0 + b_x3) * 6.5, 0, h - 1).astype(np.int32)
+    r3 = np.random.randint(4, 7, n3)
+    for i in range(n3):
+        fc = int(np.random.randint(18, 48))
+        cv2.circle(turbid, (int(cur_x3[i]), int(cur_y3[i])), int(r3[i]), (int(fc * 0.6), int(fc * 0.8), int(fc)), -1)
 
     return turbid
 
 
 def fast_pyramidal_retinex(img_bgr: np.ndarray, flood_mode: bool = False) -> np.ndarray:
-    """Enhance underwater imagery using Pyramidal Retinex & CIELAB balancing.
+    """Enhance underwater imagery using Dark-Channel Radiance Recovery & CIELAB equalization.
 
-    1. Pyramidal Multi-Scale Retinex (MSR) Illumination Decomposition:
-       Separates raw frame S into illumination L and surface reflectance R: S = L * R.
-       Downsamples 4x to rapidly compute low-frequency Gaussian illumination (sigma=15, sigma=35).
-       Reflectance R = S / (L + eps) neutralizes severe attenuation, light falloff, and vignetting.
-       Dynamic range is normalized to preserve midtones and details without shadow clipping.
-    2. CIELAB Neutral-Point Chromatic Balancing (Anti-Color-Crush):
-       Centers chromatic channels a* and b* towards neutral (128.0) using an adaptive damping factor.
-       Completely eliminates the unnatural black-and-blue artifact, restoring natural hues.
-    3. Luminance Adaptive CLAHE:
-       Applies CLAHE strictly on the L* channel (clipLimit 2.0 - 2.5, tileGrid 8x8) to maximize
-       underwater contrast without color distorting or blowing highlights.
-    4. Silt Denoising & Edge Sharpening (Bilateral + Unsharp Masking):
-       Edge-preserving bilateral filter strips suspended sediment specks ('marine snow')
-       while high-boost unsharp masking accentuates structural outlines (piers, pipes, buoys).
+    1. Suspended Silt Rejection: Edge-preserving bilateral filter strips drifting sediment flakes.
+    2. Atmospheric / Veiling Backscatter Estimation: Automatically derives veiling light A [B, G, R].
+    3. Transmission Radiance Recovery: Inverts the underwater optical transmission equation
+       J = (I - A) / t + A, canceling out the mud turbidity veil.
+    4. Adaptive Dynamic Range Stretching: Stretches L* channel to full [0, 255] via 1%-99% percentiles.
+    5. Neutral-Point Chromatic Balancing: Centers a* and b* to eliminate brownish-yellow casts.
+    6. High-Boost Unsharp Masking: Sharpens high-frequency outlines of pipes, buoys, and piers.
     """
-    h, w = img_bgr.shape[:2]
-    img_f = img_bgr.astype(np.float32) + 1.0
+    # 1. Bilateral speckle filter to eliminate suspended sediment grains first
+    denoised = cv2.bilateralFilter(img_bgr, d=7, sigmaColor=35, sigmaSpace=35)
 
-    # 1. Multi-scale illumination decomposition (Pyramidal Retinex)
-    scale = 4
-    small = cv2.resize(img_f, (max(1, w // scale), max(1, h // scale)), interpolation=cv2.INTER_AREA)
-    blur1 = cv2.GaussianBlur(small, (0, 0), sigmaX=15.0)
-    blur2 = cv2.GaussianBlur(small, (0, 0), sigmaX=35.0)
-    illum_small = 0.5 * (blur1 + blur2)
-    illum = cv2.resize(illum_small, (w, h), interpolation=cv2.INTER_LINEAR)
+    # 2. Estimate ambient mud veiling light A (dark channel)
+    img_f = denoised.astype(np.float32)
+    dark_channel = np.min(img_f, axis=2)
+    dark_blur = cv2.GaussianBlur(dark_channel, (31, 31), 0)
+    top_val = np.percentile(dark_blur, 95)
+    veil_mask = dark_blur >= top_val
+    A = np.median(img_f[veil_mask], axis=0) if np.any(veil_mask) else np.array([35.0, 60.0, 80.0])
+    A = np.clip(A, 15.0, 240.0)
 
-    # Reflectance R = S / L
-    reflectance = img_f / illum
+    # 3. Transmission map t(x) with haze subtraction
+    omega = 0.82 if flood_mode else 0.72
+    norm_img = img_f / A
+    raw_transmission = 1.0 - omega * np.min(norm_img, axis=2)
+    transmission = cv2.GaussianBlur(raw_transmission, (25, 25), 0)
+    transmission = np.clip(transmission, 0.18, 1.0)[:, :, np.newaxis]
 
-    # Normalization without crushing shadows: map [0.4, 1.8] to [0, 255]
-    norm_r = np.clip((reflectance - 0.4) / (1.8 - 0.4) * 255.0, 0, 255).astype(np.uint8)
+    # Recover scene radiance: J = (I - A) / t + A
+    dehazed = (img_f - A) / transmission + A
+    dehazed = np.clip(dehazed, 0.0, 255.0).astype(np.uint8)
 
-    # 2. CIELAB Neutral-Point Chromatic Balancing
-    lab = cv2.cvtColor(norm_r, cv2.COLOR_BGR2LAB)
-    l_ch, a_ch, b_ch = cv2.split(lab)
+    # 4. Dynamic Range & Contrast Adaptive Equalization (CIELAB)
+    lab = cv2.cvtColor(dehazed, cv2.COLOR_BGR2LAB)
+    l, a, b = cv2.split(lab)
 
-    clip_lim = 2.5 if flood_mode else 2.0
-    clahe = cv2.createCLAHE(clipLimit=clip_lim, tileGridSize=(8, 8))
-    l_eq = clahe.apply(l_ch)
+    p1, p99 = np.percentile(l, (1.0, 99.0))
+    if p99 > p1 + 5:
+        l_stretched = np.clip((l.astype(np.float32) - p1) / (p99 - p1) * 255.0, 0, 255).astype(np.uint8)
+    else:
+        l_stretched = l
 
-    mean_a = float(np.mean(a_ch))
-    mean_b = float(np.mean(b_ch))
-    alpha = 0.6 if flood_mode else 0.45
-    a_bal = np.clip(a_ch.astype(np.float32) - alpha * (mean_a - 128.0), 0, 255).astype(np.uint8)
-    b_bal = np.clip(b_ch.astype(np.float32) - alpha * (mean_b - 128.0), 0, 255).astype(np.uint8)
+    clahe = cv2.createCLAHE(clipLimit=2.2 if flood_mode else 1.8, tileGridSize=(8, 8))
+    l_clahe = clahe.apply(l_stretched)
 
-    lab_out = cv2.merge([l_eq, a_bal, b_bal])
-    balanced_bgr = cv2.cvtColor(lab_out, cv2.COLOR_LAB2BGR)
+    # Neutralize muddy yellowish cast (white balance / chromatic centering)
+    a_mean = float(np.mean(a))
+    b_mean = float(np.mean(b))
+    alpha = 0.65 if flood_mode else 0.50
+    a_bal = np.clip(a.astype(np.float32) - alpha * (a_mean - 128.0), 0, 255).astype(np.uint8)
+    b_bal = np.clip(b.astype(np.float32) - alpha * (b_mean - 128.0), 0, 255).astype(np.uint8)
 
-    # 3. Bilateral filter (suspended silt rejection) + Unsharp Masking
-    denoised = cv2.bilateralFilter(balanced_bgr, d=5, sigmaColor=25, sigmaSpace=25)
-    blurred = cv2.GaussianBlur(denoised, (0, 0), sigmaX=1.5)
-    sharpened = cv2.addWeighted(denoised, 1.35, blurred, -0.35, 0)
-    return sharpened
+    restored = cv2.cvtColor(cv2.merge([l_clahe, a_bal, b_bal]), cv2.COLOR_LAB2BGR)
+
+    # 5. High-Boost Unsharp Masking for crisp edge recovery
+    blur_sharp = cv2.GaussianBlur(restored, (0, 0), sigmaX=1.6)
+    sharp = cv2.addWeighted(restored, 1.35, blur_sharp, -0.35, 0)
+    return sharp
 
 
 def estimate_spatial_pose(bbox, cls_name, f_px=381.36, cx=320.0, cy=240.0):

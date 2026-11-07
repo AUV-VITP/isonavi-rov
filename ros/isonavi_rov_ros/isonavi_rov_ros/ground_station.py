@@ -900,6 +900,7 @@ class GroundStationWindow(QMainWindow):
             "Channel 2: Pyramidal Retinex Enhanced (/camera/image_enhanced)",
             "Channel 3: Turbid River Silt & Dirt Blur (/camera/image_raw_turbid)",
             "Channel 4: Dual Split-View [Raw Murky Mud (Left) vs Retinex Enhanced + AI (Right)]",
+            "Channel 5: Virtual Sensor Passthrough (/camera/image_raw)",
         ])
         self.combo_stream.currentIndexChanged.connect(self.on_stream_changed)
         ctrl_bar.addWidget(self.combo_stream)
@@ -1266,7 +1267,7 @@ class GroundStationWindow(QMainWindow):
         self.lbl_clock.setText(f"MISSION TIME: {hh:02d}:{mm:02d}:{ss:02d}")
 
     def on_stream_changed(self, idx):
-        streams = ["detections", "enhanced", "turbid", "split"]
+        streams = ["detections", "enhanced", "turbid", "split", "raw"]
         if idx < len(streams):
             self.bridge.set_stream(streams[idx])
 
