@@ -15,7 +15,7 @@ from sensor_msgs.msg import Joy
 
 HELP_MSG = """
 ======================================================
-         ISONAVI-ROV KEYBOARD TELEOPERATION
+         isonavi-rov keyboard teleoperation
 ======================================================
   Surge (Forward / Back)  :  W / S   (+/- 0.25)
   Sway  (Port / Stbd)     :  A / D   (+/- 0.25)

@@ -21,10 +21,8 @@ import cv2
 import numpy as np
 from PyQt5.QtCore import QObject, QPointF, QRectF, Qt, QThread, QTimer, pyqtSignal
 from PyQt5.QtGui import (
-    QBrush,
     QColor,
     QFont,
-    QIcon,
     QImage,
     QPainter,
     QPainterPath,
@@ -35,7 +33,6 @@ from PyQt5.QtGui import (
 from PyQt5.QtWidgets import (
     QAbstractItemView,
     QApplication,
-    QCheckBox,
     QComboBox,
     QFileDialog,
     QFrame,
@@ -44,12 +41,10 @@ from PyQt5.QtWidgets import (
     QHBoxLayout,
     QHeaderView,
     QLabel,
-    QLineEdit,
     QMainWindow,
     QMessageBox,
     QProgressBar,
     QPushButton,
-    QSlider,
     QSplitter,
     QTableWidget,
     QTableWidgetItem,
@@ -62,7 +57,6 @@ from rclpy.node import Node
 from rclpy.qos import QoSHistoryPolicy, QoSProfile, QoSReliabilityPolicy
 from cv_bridge import CvBridge
 
-from geometry_msgs.msg import Wrench
 from nav_msgs.msg import Odometry
 from sensor_msgs.msg import Image, Imu, Joy
 from std_msgs.msg import Bool, Float64, Float64MultiArray, String
@@ -713,7 +707,7 @@ class GroundStationWindow(QMainWindow):
         self.ui_timer.start(100)
 
     def apply_theme(self):
-        """Engineering Dark Palette (Slate / Charcoal / Tactical Muted Accents)."""
+        """Dark palette."""
         self.setStyleSheet("""
             QMainWindow {
                 background-color: #14161a;
