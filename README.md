@@ -157,7 +157,8 @@ thruster forces, it agrees with the python dynamics to 0.08 mm in a free rise,
 roll over a 25 degree swing. Gazebo renders the camera without water, so
 the vision results stay with the camera model; the Gazebo camera is for the
 plumbing and the pilot's video. It renders at 640 x 480 and the vision node
-averages it back to the calibrated 160 x 120.
+averages it back to the calibrated 160 x 120; without a GPU that is about
+2.5 frames a second rather than 10.
 
 For piloting by hand there is a keyboard teleop and a ground station, two
 river worlds (`indian_river`, and the heavier `large_river`, both hand built

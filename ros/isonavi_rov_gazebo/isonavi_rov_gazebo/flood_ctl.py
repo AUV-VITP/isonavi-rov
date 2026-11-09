@@ -47,13 +47,11 @@ def main():
         print("flood stopped")
 
     elif cmd in ("status", "info"):
-        def on_status(msg):
-            print(msg.data)
-            rclpy.shutdown()
-
-        node.create_subscription(String, "flood_status", on_status, 10)
-        rclpy.spin(node)
-        return
+        got = []
+        node.create_subscription(String, "flood_status", lambda m: got.append(m.data), 10)
+        while not got:
+            rclpy.spin_once(node, timeout_sec=0.1)
+        print(got[0])
     else:
         print(f"Unknown command: {cmd}")
         print_help()

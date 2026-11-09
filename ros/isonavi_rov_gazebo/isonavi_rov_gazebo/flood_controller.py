@@ -11,6 +11,7 @@ flood_status (std_msgs/String).
 
 import rclpy
 from geometry_msgs.msg import Vector3
+from rclpy.executors import ExternalShutdownException
 from rclpy.node import Node
 from std_msgs.msg import Bool, String
 
@@ -48,7 +49,7 @@ def main():
     node = FloodControllerNode()
     try:
         rclpy.spin(node)
-    except KeyboardInterrupt:
+    except (KeyboardInterrupt, ExternalShutdownException):
         pass
     finally:
         node.destroy_node()

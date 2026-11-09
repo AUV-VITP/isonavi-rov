@@ -80,6 +80,9 @@ assert len(v) == 8 and all(x == 0.0 for x in v), v
 print('  all eight thrusters at zero')"
 
 echo "5. flood current"
+gz service -s /world/pool_course/set_pose --reqtype gz.msgs.Pose --reptype gz.msgs.Boolean --timeout 3000 \
+  --req 'name: "isonavi_rov", position: {x: 1.2, y: 0.0, z: -0.5}' > /dev/null
+sleep 1
 x0=$(field /model/isonavi_rov/odometry pose.pose.position.x)
 ros2 run isonavi_rov_gazebo flood_ctl start > /dev/null 2>&1
 sleep 8
