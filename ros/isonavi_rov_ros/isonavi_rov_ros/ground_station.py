@@ -12,6 +12,7 @@ import csv
 import json
 import math
 import os
+import signal
 import sys
 import time
 from collections import deque
@@ -1375,6 +1376,13 @@ def main():
 
     win = GroundStationWindow(bridge)
     win.show()
+
+    # Ctrl+C and launch shutdown; the timer gives python a chance to run the handler
+    for sig in (signal.SIGINT, signal.SIGTERM):
+        signal.signal(sig, lambda *_: app.quit())
+    tick = QTimer()
+    tick.timeout.connect(lambda: None)
+    tick.start(200)
 
     exit_code = app.exec_()
 

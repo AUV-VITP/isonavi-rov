@@ -31,7 +31,7 @@ cleanup() {
   pkill -f parameter_bridge 2>/dev/null || true
 }
 trap cleanup EXIT
-field() { timeout 15 ros2 topic echo --once "$1" --field "$2" 2>/dev/null | grep -v "message was lost" | head -1; }
+field() { timeout 15 ros2 topic echo --once "$1" --field "$2" 2>/dev/null | grep -vE "message was lost|total count" | head -1; }
 
 echo "1. Gazebo model against the python dynamics"
 python3 ros/isonavi_rov_gazebo/isonavi_rov_gazebo/twin_check.py
