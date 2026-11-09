@@ -96,7 +96,7 @@ ros2 run isonavi_rov_gazebo flood_ctl stop > /dev/null 2>&1
 echo "6. operator video and ground station"
 ros2 run isonavi_rov_gazebo mud_camera > /tmp/sim_mud.log 2>&1 &
 ros2 run isonavi_rov_ros operator_view --ros-args -p image_topic:=camera/image_raw_turbid > /tmp/sim_view.log 2>&1 &
-timeout 30 ros2 topic echo --once /camera/image_detections --field width > /tmp/sim_view.txt 2>/dev/null
+timeout 30 ros2 topic echo --once /camera/image_detections sensor_msgs/msg/Image --field width > /tmp/sim_view.txt 2>/dev/null
 grep -q 640 /tmp/sim_view.txt && echo "  operator view publishing"
 QT_QPA_PLATFORM=offscreen timeout 8 ros2 run isonavi_rov_ros ground_station --ros-args -p drive:=false > /tmp/sim_gcs.log 2>&1 \
   || [ $? -eq 124 ]

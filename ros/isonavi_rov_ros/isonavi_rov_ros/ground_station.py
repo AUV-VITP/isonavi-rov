@@ -141,6 +141,9 @@ class RosBridge(QObject):
         self.sub_det_json = self.node.create_subscription(
             String, "camera/detections", self.on_detections, 10
         )
+        self.sub_offset = self.node.create_subscription(
+            Float64, "corridor_offset", self.on_offset, 10
+        )
         self.sub_depth = self.node.create_subscription(
             Float64, "depth", self.on_depth, 10
         )
@@ -285,6 +288,9 @@ class RosBridge(QObject):
             self.emit_cv_image(cv_img)
         except Exception:
             pass
+
+    def on_offset(self, msg: Float64):
+        self.telemetry["offset"] = float(msg.data)
 
     def on_depth(self, msg: Float64):
         self.telemetry["depth"] = float(msg.data)
@@ -936,7 +942,7 @@ class GroundStationWindow(QMainWindow):
         return box
 
     def create_target_inventory_box(self):
-        box = QGroupBox("ACOUSTIC & OPTICAL TARGET CLASSIFICATION LOG")
+        box = QGroupBox("CAMERA CONTACTS")
         layout = QVBoxLayout(box)
 
         # Target Table
@@ -995,7 +1001,7 @@ class GroundStationWindow(QMainWindow):
         self.lbl_val_z = QLabel("Z: -0.00 m")
         self.lbl_val_yaw = QLabel("HDG: 000°")
         self.lbl_val_speed = QLabel("SPD: 0.00 m/s")
-        self.lbl_val_offset = QLabel("LANE: 0.00 m")
+        self.lbl_val_offset = QLabel("LANE: --")
 
         for lbl in (self.lbl_val_x, self.lbl_val_y, self.lbl_val_z, self.lbl_val_yaw, self.lbl_val_speed, self.lbl_val_offset):
             lbl.setStyleSheet("font-family: 'JetBrains Mono', 'Fira Code', Monospace; font-weight: 600; font-size: 10px; color: #abb2bf;")
@@ -1184,6 +1190,8 @@ class GroundStationWindow(QMainWindow):
 
         spd = math.sqrt(t.get("vx", 0.0)**2 + t.get("vy", 0.0)**2)
         self.lbl_val_speed.setText(f"SPD: {spd:.2f} m/s")
+        if "offset" in t:
+            self.lbl_val_offset.setText(f"LANE: {t['offset']:+.2f} m")
 
     def update_thrusters(self, vals: list):
         for i, bar in enumerate(self.thruster_bars):
