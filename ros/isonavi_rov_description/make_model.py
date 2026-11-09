@@ -40,6 +40,7 @@ from isonavi.optics import CameraConfig              # noqa: E402
 from isonavi.sensors import IMUConfig                # noqa: E402
 
 OUT = os.path.join(HERE, "models", "isonavi_rov")
+VIEW_SCALE = 4               # the camera renders this much finer for the pilot; vision_node averages back
 THRUSTER_LINK_KG = 0.05      # propeller links the thruster plugin spins; taken out of the base link
 THRUSTER_CT = 0.40 / (2 * math.pi) ** 2     # cad/thruster.py's coefficient, per rad/s rather than rev/s
 
@@ -209,7 +210,7 @@ class Model:
         w("        <topic>/model/isonavi_rov/camera/image</topic>")
         w("        <camera>")
         w(f"          <horizontal_fov>{f(math.radians(cam.hfov_deg))}</horizontal_fov>")
-        w(f"          <image><width>{cam.width}</width><height>{cam.height}</height><format>R8G8B8</format></image>")
+        w(f"          <image><width>{cam.width * VIEW_SCALE}</width><height>{cam.height * VIEW_SCALE}</height><format>R8G8B8</format></image>")
         w("          <clip><near>0.05</near><far>12</far></clip>")
         w(f"          <noise><type>gaussian</type><mean>0</mean><stddev>{f(cam.read_noise)}</stddev></noise>")
         w("        </camera>")

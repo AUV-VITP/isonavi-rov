@@ -24,11 +24,8 @@ cad/*.stl
 
 # ROS 2 build artifacts
 build/
-build
 install/
-install
 log/
-log
 *.egg-info/
 
 # Slide deck, kept out of the repository.

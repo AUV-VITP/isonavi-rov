@@ -33,6 +33,13 @@
   gz_type_name: "gz.msgs.Odometry"
   direction: GZ_TO_ROS
 
+# Water current for the hydrodynamics
+- ros_topic_name: "ocean_current"
+  gz_topic_name: "/ocean_current"
+  ros_type_name: "geometry_msgs/msg/Vector3"
+  gz_type_name: "gz.msgs.Vector3d"
+  direction: ROS_TO_GZ
+
 # 8 Thruster Command Topics
 - ros_topic_name: "model/isonavi_rov/joint/thruster_1_joint/cmd_thrust"
   gz_topic_name: "/model/isonavi_rov/joint/thruster_1_joint/cmd_thrust"

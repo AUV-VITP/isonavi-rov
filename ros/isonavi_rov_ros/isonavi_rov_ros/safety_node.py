@@ -46,8 +46,6 @@ class SafetyNode(Node):
         self.leak = self.leak or bool(m.data)
 
     def on_wrench(self, w):
-        # Active flight controller wrench commands keep supervisor armed
-        self.sup.pilot_packet(self.now())
         tau = [w.force.x, w.force.y, w.force.z, w.torque.x, w.torque.y, w.torque.z]
         self.f, _ = self.gov.limit(self.dyn.allocate(tau))
 

@@ -1,12 +1,11 @@
-"""VIT Pune (>>>>IIT) - Subsea Telemetry & Operations Console.
+"""Pilot's ground station for isonavi-rov.
 
-A professional engineering ground control station for the ISONAVI-ROV platform:
-  - Live Subsea Telemetry: Depth tape, 3D Pose (X, Y, Z), Velocities, Heading Compass, Attitude PFD
-  - Vehicle Status & Diagnostics: Safety Supervisor state, 8-Thruster power matrix, Fault monitors
-  - Live Optical Vision Feed: Real-time YOLOv8 & Spatial AI detection stream with OSD
-  - Target Classification Log: Industrial detection inventory, CSV/JSON export, frame capture
-  - Subsea Command Deck: Teleoperation keypad, throttle scaling, lane centring, hydrodynamic forcing
-  - Communications Watchdog: Hardware heartbeat pulse, signal-loss alarm, safety envelope limits
+Shows the video streams, depth, attitude, thruster loads and the supervisor
+state, and drives the vehicle from the keypad or keyboard. The plan view uses
+the simulator's odometry, which the vehicle has no equivalent of.
+
+It publishes joy at 20 Hz, so it is the pilot link: stop it and the supervisor
+holds. Run with -p drive:=false to watch alongside a gamepad or keyboard_teleop.
 """
 
 import csv
@@ -100,7 +99,6 @@ class RosBridge(QObject):
         self.node = None
         self.bridge = CvBridge()
         self.active_stream = "detections"
-        self.last_packet_t = 0.0
         self.latest_turbid_cv = None
         self.latest_det_cv = None
         self.latest_raw_cv = None
@@ -110,12 +108,16 @@ class RosBridge(QObject):
         self.sway = 0.0
         self.heave = 0.0
         self.yaw = 0.0
-        self.button_c = 0
+        self.auto_center = False
+        self.press_ticks = 0    # the pilot toggles centring on a rising edge
+        self.last_supervisor_t = 0.0
 
     def init_ros(self):
         if not rclpy.ok():
             rclpy.init()
         self.node = Node("isonavi_gcs_node")
+        self.drive = self.node.declare_parameter("drive", True).value
+        self.world = self.node.declare_parameter("world", "pool_course").value
 
         qos_best_effort = QoSProfile(
             reliability=QoSReliabilityPolicy.BEST_EFFORT,
@@ -169,9 +171,9 @@ class RosBridge(QObject):
         # Telemetry Cache
         self.telemetry = {
             "depth": 0.0,
-            "x": 4.0,
+            "x": 0.0,
             "y": 0.0,
-            "z": -1.0,
+            "z": 0.0,
             "vx": 0.0,
             "vy": 0.0,
             "vz": 0.0,
@@ -182,11 +184,9 @@ class RosBridge(QObject):
         self.status = {
             "safety_state": "INITIALIZING",
             "flood_active": False,
-            "flood_status": "NORMAL [0.20 m/s]",
+            "flood_status": "CALM",
             "comms_online": False,
             "auto_center": False,
-            "packet_hz": 50,
-            "latency_ms": 4.2,
         }
 
         # 20 Hz Command/Heartbeat Timer
@@ -255,13 +255,11 @@ class RosBridge(QObject):
         # Center vertical divider line (amber gold #e5c07b)
         cv2.line(split, (mid_x, 0), (mid_x, h), (123, 192, 229), 2)
 
-        # Tactical Label Left: RAW TURBID SILT (BLURRED)
         cv2.rectangle(split, (8, 8), (242, 30), (18, 18, 18), -1)
-        cv2.putText(split, "RAW TURBID SILT (BLURRED)", (14, 23), cv2.FONT_HERSHEY_SIMPLEX, 0.40, (180, 200, 220), 1, cv2.LINE_AA)
+        cv2.putText(split, "CAMERA", (14, 23), cv2.FONT_HERSHEY_SIMPLEX, 0.40, (180, 200, 220), 1, cv2.LINE_AA)
 
-        # Tactical Label Right: RETINEX ENHANCED + YOLOv8 AI
         cv2.rectangle(split, (mid_x + 8, 8), (mid_x + 252, 30), (18, 18, 18), -1)
-        cv2.putText(split, "RETINEX ENHANCED + YOLOv8 AI", (mid_x + 14, 23), cv2.FONT_HERSHEY_SIMPLEX, 0.40, (0, 255, 120), 1, cv2.LINE_AA)
+        cv2.putText(split, "DEHAZED", (mid_x + 14, 23), cv2.FONT_HERSHEY_SIMPLEX, 0.40, (0, 255, 120), 1, cv2.LINE_AA)
 
         # Centered Dual Split-View Badge
         (bw, bh), _ = cv2.getTextSize("DUAL SPLIT-VIEW COMPARISON", cv2.FONT_HERSHEY_SIMPLEX, 0.38, 1)
@@ -272,7 +270,6 @@ class RosBridge(QObject):
         self.emit_cv_image(split)
 
     def emit_cv_image(self, cv_img: np.ndarray):
-        self.last_packet_t = time.time()
         try:
             rgb = cv2.cvtColor(cv_img, cv2.COLOR_BGR2RGB)
             h, w, ch = rgb.shape
@@ -290,12 +287,10 @@ class RosBridge(QObject):
             pass
 
     def on_depth(self, msg: Float64):
-        self.last_packet_t = time.time()
         self.telemetry["depth"] = float(msg.data)
         self.sig_telemetry.emit(dict(self.telemetry))
 
     def on_odom(self, msg: Odometry):
-        self.last_packet_t = time.time()
         p = msg.pose.pose.position
         v = msg.twist.twist.linear
         self.telemetry["x"] = float(p.x)
@@ -312,7 +307,6 @@ class RosBridge(QObject):
         self.sig_telemetry.emit(dict(self.telemetry))
 
     def on_imu(self, msg: Imu):
-        self.last_packet_t = time.time()
         r, pt, y = quat_to_euler(msg.orientation)
         self.telemetry["roll"] = r
         self.telemetry["pitch"] = pt
@@ -320,11 +314,10 @@ class RosBridge(QObject):
         self.sig_telemetry.emit(dict(self.telemetry))
 
     def on_thrusters(self, msg: Float64MultiArray):
-        self.last_packet_t = time.time()
         self.sig_thrusters.emit(list(msg.data))
 
     def on_safety(self, msg: String):
-        self.last_packet_t = time.time()
+        self.last_supervisor_t = time.time()
         self.status["safety_state"] = msg.data
         self.sig_status.emit(dict(self.status))
 
@@ -358,13 +351,14 @@ class RosBridge(QObject):
             0.0,
             0.0,
         ]
-        msg.buttons = [int(self.button_c), 0, 0, 0, 0, 0, 0, 0]
-        self.pub_joy.publish(msg)
+        msg.buttons = [1 if self.press_ticks > 0 else 0, 0, 0, 0, 0, 0, 0, 0]
+        self.press_ticks = max(0, self.press_ticks - 1)
+        if self.drive:
+            self.pub_joy.publish(msg)
 
-        # Evaluate link health
-        dt = time.time() - self.last_packet_t
-        self.status["comms_online"] = (dt < 1.2 and self.last_packet_t > 0)
-        self.status["auto_center"] = bool(self.button_c)
+        # The link is up while the vehicle's supervisor is reporting
+        self.status["comms_online"] = time.time() - self.last_supervisor_t < 1.2
+        self.status["auto_center"] = self.auto_center
         self.sig_status.emit(dict(self.status))
 
     def send_motion(self, surge, sway, heave, yaw):
@@ -374,10 +368,11 @@ class RosBridge(QObject):
         self.yaw = float(yaw)
 
     def toggle_auto_center(self):
-        self.button_c = 1 if self.button_c == 0 else 0
-        self.status["auto_center"] = bool(self.button_c)
+        self.auto_center = not self.auto_center
+        self.press_ticks = 2
+        self.status["auto_center"] = self.auto_center
         self.sig_status.emit(dict(self.status))
-        return self.button_c
+        return self.auto_center
 
     def stop_all(self):
         self.surge = 0.0
@@ -537,12 +532,21 @@ class DepthGaugeWidget(QWidget):
         p.drawText(QRectF(0, h - 22, w, 18), Qt.AlignCenter, f"{self.depth_m:.2f} m")
 
 
+# x from, x to, half width in metres, and whether the large river's structures apply
+MAP_EXTENTS = {
+    "pool_course": (0.0, 20.0, 5.0, False),
+    "indian_river": (-2.5, 32.5, 9.0, False),
+    "large_river": (0.0, 80.0, 8.0, True),
+}
+
+
 class RiverMapWidget(QWidget):
-    """Tactical Bathymetry & Acoustic Positioning Grid Canvas."""
-    def __init__(self, parent=None):
+    """Plan view from the simulator's odometry."""
+    def __init__(self, world="pool_course", parent=None):
         super().__init__(parent)
         self.setMinimumSize(320, 220)
-        self.rov_x = 4.0
+        self.x0, self.x1, self.half, self.landmarks = MAP_EXTENTS.get(world, MAP_EXTENTS["pool_course"])
+        self.rov_x = 0.0
         self.rov_y = 0.0
         self.rov_yaw = 0.0
         self.trail = deque(maxlen=240)
@@ -574,27 +578,27 @@ class RiverMapWidget(QWidget):
         map_h = h - 2 * pad_y
 
         def world_to_screen(wx, wy):
-            sx = pad_x + (wx / 80.0) * map_w
-            sy = h / 2.0 - (wy / 8.0) * (map_h / 2.0)
+            sx = pad_x + ((wx - self.x0) / (self.x1 - self.x0)) * map_w
+            sy = h / 2.0 - (wy / self.half) * (map_h / 2.0)
             return sx, sy
 
-        # Coordinate Grid Lines (Every 20m X, Every 4m Y)
+        # Grid lines
         p.setFont(QFont("Monospace", 7))
         p.setPen(QPen(QColor("#242830"), 1, Qt.DotLine))
-        for gx in (0.0, 20.0, 40.0, 60.0, 80.0):
+        for gx in np.linspace(self.x0, self.x1, 5):
             sx, _ = world_to_screen(gx, 0)
             p.drawLine(int(sx), int(pad_y), int(sx), int(h - pad_y))
             p.setPen(QColor("#5c6370"))
             p.drawText(int(sx - 10), int(h - 8), f"{int(gx)}m")
             p.setPen(QPen(QColor("#242830"), 1, Qt.DotLine))
 
-        for gy in (-6.0, 0.0, 6.0):
+        for gy in (-0.75 * self.half, 0.0, 0.75 * self.half):
             _, sy = world_to_screen(0, gy)
             p.drawLine(int(pad_x), int(sy), int(w - pad_x), int(sy))
 
-        # River Channel Boundaries
-        y_top_s = world_to_screen(0, 8.0)[1]
-        y_bot_s = world_to_screen(0, -8.0)[1]
+        # Channel boundaries
+        y_top_s = world_to_screen(0, self.half)[1]
+        y_bot_s = world_to_screen(0, -self.half)[1]
         p.setPen(QPen(QColor("#3b4048"), 1.2))
         p.drawLine(int(pad_x), int(y_top_s), int(w - pad_x), int(y_top_s))
         p.drawLine(int(pad_x), int(y_bot_s), int(w - pad_x), int(y_bot_s))
@@ -602,27 +606,28 @@ class RiverMapWidget(QWidget):
         # Water channel subtle shading
         p.fillRect(QRectF(pad_x, y_top_s, map_w, y_bot_s - y_top_s), QColor(20, 32, 48, 120))
 
-        # Landmark Infrastructure
-        p.setFont(QFont("Monospace", 7, QFont.Bold))
-        # Pier 1
-        p1_x, p1_y = world_to_screen(22.0, 0.0)
-        p.setPen(QPen(QColor("#61afef"), 1.2))
-        p.setBrush(QColor("#1e3b5e"))
-        p.drawRect(QRectF(p1_x - 6, p1_y - 6, 12, 12))
-        p.drawText(int(p1_x - 16), int(p1_y - 10), "PIER 1")
+        # Structures in the large river
+        if self.landmarks:
+            p.setFont(QFont("Monospace", 7, QFont.Bold))
+            # Pier 1
+            p1_x, p1_y = world_to_screen(22.0, 0.0)
+            p.setPen(QPen(QColor("#61afef"), 1.2))
+            p.setBrush(QColor("#1e3b5e"))
+            p.drawRect(QRectF(p1_x - 6, p1_y - 6, 12, 12))
+            p.drawText(int(p1_x - 16), int(p1_y - 10), "PIER 1")
 
-        # Pipeline
-        pipe_x = world_to_screen(42.0, 0.0)[0]
-        p.setPen(QPen(QColor("#e5c07b"), 1.5, Qt.DashLine))
-        p.drawLine(int(pipe_x), int(y_top_s), int(pipe_x), int(y_bot_s))
-        p.drawText(int(pipe_x - 14), int(y_bot_s + 12), "PIPELINE")
+            # Pipeline
+            pipe_x = world_to_screen(42.0, 0.0)[0]
+            p.setPen(QPen(QColor("#e5c07b"), 1.5, Qt.DashLine))
+            p.drawLine(int(pipe_x), int(y_top_s), int(pipe_x), int(y_bot_s))
+            p.drawText(int(pipe_x - 14), int(y_bot_s + 12), "PIPELINE")
 
-        # Pier 2
-        p2_x, p2_y = world_to_screen(58.0, 0.0)
-        p.setPen(QPen(QColor("#61afef"), 1.2))
-        p.setBrush(QColor("#1e3b5e"))
-        p.drawRect(QRectF(p2_x - 6, p2_y - 6, 12, 12))
-        p.drawText(int(p2_x - 16), int(p2_y - 10), "PIER 2")
+            # Pier 2
+            p2_x, p2_y = world_to_screen(58.0, 0.0)
+            p.setPen(QPen(QColor("#61afef"), 1.2))
+            p.setBrush(QColor("#1e3b5e"))
+            p.drawRect(QRectF(p2_x - 6, p2_y - 6, 12, 12))
+            p.drawText(int(p2_x - 16), int(p2_y - 10), "PIER 2")
 
         # Historical Trajectory Trail
         if len(self.trail) > 1:
@@ -631,11 +636,13 @@ class RiverMapWidget(QWidget):
             for i in range(len(pts) - 1):
                 p.drawLine(pts[i], pts[i + 1])
 
-        # Plotted Targets (Acoustic Contacts)
+        # Contacts: camera frame x right, z forward, turned by the heading
+        heading = math.radians(self.rov_yaw)
         for t in self.targets:
             if "spatial_xyz" in t:
-                tx_w = self.rov_x + t["spatial_xyz"][0]
-                ty_w = self.rov_y + t["spatial_xyz"][1]
+                right, _, fwd = t["spatial_xyz"]
+                tx_w = self.rov_x + fwd * math.cos(heading) + right * math.sin(heading)
+                ty_w = self.rov_y + fwd * math.sin(heading) - right * math.cos(heading)
                 tsx, tsy = world_to_screen(tx_w, ty_w)
                 p.setPen(QPen(QColor("#e06c75"), 1.2))
                 p.setBrush(QColor("#9c3a44"))
@@ -670,7 +677,7 @@ class RiverMapWidget(QWidget):
         # Telemetry Legend
         p.setFont(QFont("Monospace", 8))
         p.setPen(QColor("#abb2bf"))
-        p.drawText(pad_x, 15, f"ACOUSTIC POS: X={self.rov_x:.2f}m  Y={self.rov_y:.2f}m  HDG={self.rov_yaw:.0f}°")
+        p.drawText(pad_x, 15, f"SIM POS: X={self.rov_x:.2f}m  Y={self.rov_y:.2f}m  HDG={self.rov_yaw:.0f}°")
 
 
 # ==============================================================================
@@ -680,7 +687,7 @@ class GroundStationWindow(QMainWindow):
     def __init__(self, bridge: RosBridge):
         super().__init__()
         self.bridge = bridge
-        self.setWindowTitle("VIT Pune (>>>>IIT) - Autonomous Underwater Vehicle Ground Control Station")
+        self.setWindowTitle("isonavi-rov ground station")
         self.resize(1440, 920)
 
         # Internal state
@@ -819,7 +826,7 @@ class GroundStationWindow(QMainWindow):
         left_layout.addWidget(self.create_target_inventory_box(), 2)
         splitter.addWidget(left_col)
 
-        # Right Column: Avionics Gauges, Riverbed Tactical Map, Controls
+        # Right column: instruments, plan view, controls
         right_col = QWidget()
         right_layout = QVBoxLayout(right_col)
         right_layout.setContentsMargins(0, 0, 0, 0)
@@ -837,12 +844,12 @@ class GroundStationWindow(QMainWindow):
         layout = QHBoxLayout(frame)
         layout.setContentsMargins(12, 6, 12, 6)
 
-        # Institutional Header: VIT Pune (>>>>IIT)
+        # Title
         title_box = QVBoxLayout()
         title_box.setSpacing(1)
-        lbl_inst = QLabel("VIT Pune (>>>>IIT)")
+        lbl_inst = QLabel("isonavi-rov")
         lbl_inst.setStyleSheet("font-size: 15px; font-weight: bold; color: #61afef; letter-spacing: 1px;")
-        lbl_sub = QLabel("Subsea Telemetry & Operations Console  |  ISONAVI-ROV Digital Twin MK-II")
+        lbl_sub = QLabel("Ground station")
         lbl_sub.setStyleSheet("font-size: 10px; color: #5c6370; font-weight: 500;")
         title_box.addWidget(lbl_inst)
         title_box.addWidget(lbl_sub)
@@ -850,15 +857,15 @@ class GroundStationWindow(QMainWindow):
 
         layout.addSpacing(25)
 
-        # Hardware Heartbeat & Signal Quality
-        self.lbl_comms = QLabel("LINK: NOMINAL [50 Hz]")
+        # Link state
+        self.lbl_comms = QLabel("LINK: WAITING")
         self.lbl_comms.setStyleSheet("color: #98c379; font-family: Monospace; font-weight: 600; font-size: 11px;")
         layout.addWidget(self.lbl_comms)
 
         layout.addSpacing(15)
 
         # Safety Supervisor State Badge
-        self.lbl_safety = QLabel("SUPERVISOR: ARMED")
+        self.lbl_safety = QLabel("SUPERVISOR: --")
         self.lbl_safety.setStyleSheet("background-color: #238636; color: #ffffff; padding: 3px 8px; border-radius: 3px; font-weight: 600; font-size: 10px; letter-spacing: 0.5px;")
         layout.addWidget(self.lbl_safety)
 
@@ -887,7 +894,7 @@ class GroundStationWindow(QMainWindow):
         return frame
 
     def create_vision_viewport_box(self):
-        box = QGroupBox("PRIMARY OPTICAL VIEWPORT & SPATIAL AI STREAM")
+        box = QGroupBox("VIDEO")
         layout = QVBoxLayout(box)
 
         # Top Stream Configuration Bar
@@ -896,11 +903,11 @@ class GroundStationWindow(QMainWindow):
 
         self.combo_stream = QComboBox()
         self.combo_stream.addItems([
-            "Channel 1: Spatial AI & Bounding Reticle (/camera/image_detections)",
-            "Channel 2: Pyramidal Retinex Enhanced (/camera/image_enhanced)",
-            "Channel 3: Turbid River Silt & Dirt Blur (/camera/image_raw_turbid)",
-            "Channel 4: Dual Split-View [Raw Murky Mud (Left) vs Retinex Enhanced + AI (Right)]",
-            "Channel 5: Virtual Sensor Passthrough (/camera/image_raw)",
+            "Detections (/camera/image_detections)",
+            "Dehazed (/camera/image_enhanced)",
+            "Simulated mud (/camera/image_raw_turbid)",
+            "Split: camera and detections",
+            "Camera (/camera/image_raw)",
         ])
         self.combo_stream.currentIndexChanged.connect(self.on_stream_changed)
         ctrl_bar.addWidget(self.combo_stream)
@@ -911,7 +918,9 @@ class GroundStationWindow(QMainWindow):
         btn_snap.clicked.connect(self.on_snapshot_clicked)
         ctrl_bar.addWidget(btn_snap)
 
-        self.lbl_fps = QLabel("FPS: 30.0")
+        self.lbl_fps = QLabel("FPS: --")
+        self.fps = 0.0
+        self.last_frame_t = None
         self.lbl_fps.setStyleSheet("color: #61afef; font-family: Monospace; font-weight: 600;")
         ctrl_bar.addWidget(self.lbl_fps)
 
@@ -965,7 +974,7 @@ class GroundStationWindow(QMainWindow):
         return box
 
     def create_nav_telemetry_box(self):
-        box = QGroupBox("SUBSEA FLIGHT INSTRUMENTATION & TACTICAL MAP")
+        box = QGroupBox("INSTRUMENTS AND PLAN VIEW")
         layout = QHBoxLayout(box)
 
         # Primary Flight Instruments: Depth Tape & Attitude PFD
@@ -1001,14 +1010,13 @@ class GroundStationWindow(QMainWindow):
         mid_pane.addWidget(data_frame)
         layout.addLayout(mid_pane)
 
-        # Tactical Riverbed Acoustic Map
-        self.map_river = RiverMapWidget()
+        self.map_river = RiverMapWidget(self.bridge.world)
         layout.addWidget(self.map_river, 1)
 
         return box
 
     def create_subsea_deck_box(self):
-        box = QGroupBox("PROPULSION MATRIX, COMMAND DECK & HYDRODYNAMIC FORCING")
+        box = QGroupBox("THRUSTERS AND COMMANDS")
         layout = QHBoxLayout(box)
 
         # 1. Teleoperation Keypad
@@ -1052,7 +1060,7 @@ class GroundStationWindow(QMainWindow):
 
         layout.addWidget(deck_frame, 2)
 
-        # 2. Cruise Gears & Environmental River Forcing
+        # 2. Throttle, centring and the flood current
         ops_pane = QVBoxLayout()
 
         scale_bar = QHBoxLayout()
@@ -1068,18 +1076,17 @@ class GroundStationWindow(QMainWindow):
         self.btn_center.clicked.connect(self.on_toggle_autocenter)
         ops_pane.addWidget(self.btn_center)
 
-        # Environmental Flood Forcing Section
         flood_bar = QHBoxLayout()
-        self.btn_flood_calm = QPushButton("Flow: Calm [0.2 m/s]")
+        self.btn_flood_calm = QPushButton("Current off")
         self.btn_flood_calm.clicked.connect(lambda: self.bridge.trigger_flood(False))
-        self.btn_flood_active = QPushButton("Flow: Flood Surge [1.4 m/s]")
+        self.btn_flood_active = QPushButton("Flood current on")
         self.btn_flood_active.setStyleSheet("background-color: #9c6b24; color: #ffffff; font-weight: 600;")
         self.btn_flood_active.clicked.connect(lambda: self.bridge.trigger_flood(True))
         flood_bar.addWidget(self.btn_flood_calm)
         flood_bar.addWidget(self.btn_flood_active)
         ops_pane.addLayout(flood_bar)
 
-        self.lbl_flood_status = QLabel("Forcing: NORMAL FLOW")
+        self.lbl_flood_status = QLabel("Water: CALM")
         self.lbl_flood_status.setStyleSheet("color: #7f848e; font-size: 10px; font-family: Monospace;")
         ops_pane.addWidget(self.lbl_flood_status)
 
@@ -1158,12 +1165,17 @@ class GroundStationWindow(QMainWindow):
             Qt.SmoothTransformation,
         )
         self.lbl_video.setPixmap(QPixmap.fromImage(scaled))
+        now = time.time()
+        if self.last_frame_t is not None and now > self.last_frame_t:
+            self.fps = 0.9 * self.fps + 0.1 / (now - self.last_frame_t)
+            self.lbl_fps.setText(f"FPS: {self.fps:.1f}")
+        self.last_frame_t = now
         self.last_frame = qimg
 
     def update_telemetry(self, t: dict):
         self.gauge_depth.update_depth(t.get("depth", 0.0))
         self.gauge_attitude.update_attitude(t.get("roll", 0.0), t.get("pitch", 0.0))
-        self.map_river.update_pose(t.get("x", 4.0), t.get("y", 0.0), t.get("yaw", 0.0))
+        self.map_river.update_pose(t.get("x", 0.0), t.get("y", 0.0), t.get("yaw", 0.0))
 
         self.lbl_val_x.setText(f"X: {t.get('x', 0.0):+.2f} m")
         self.lbl_val_y.setText(f"Y: {t.get('y', 0.0):+.2f} m")
@@ -1188,7 +1200,7 @@ class GroundStationWindow(QMainWindow):
     def update_status(self, s: dict):
         online = s.get("comms_online", False)
         if online:
-            self.lbl_comms.setText("LINK: NOMINAL [50 Hz]")
+            self.lbl_comms.setText("LINK: UP")
             self.lbl_comms.setStyleSheet("color: #98c379; font-family: Monospace; font-weight: 600;")
         else:
             self.lbl_comms.setText("LINK: TIMEOUT / NO SIGNAL")
@@ -1205,7 +1217,7 @@ class GroundStationWindow(QMainWindow):
         self.lbl_autocenter.setText(f"LANE CENTRING: {'ACTIVE' if c_on else 'STANDBY'}")
         self.lbl_autocenter.setStyleSheet(f"color: {'#61afef' if c_on else '#7f848e'}; font-family: Monospace; font-size: 10px; border: 1px solid {'#2b5b84' if c_on else '#3b4048'}; border-radius: 2px; padding: 2px 6px;")
 
-        self.lbl_flood_status.setText(f"Forcing: {s.get('flood_status', 'NORMAL FLOW')}")
+        self.lbl_flood_status.setText(f"Water: {s.get('flood_status', 'CALM')}")
 
     def update_detections(self, detections: list):
         self.map_river.update_targets(detections)
@@ -1213,14 +1225,15 @@ class GroundStationWindow(QMainWindow):
 
         for d in detections:
             cls_name = d.get("class", "object")
-            conf = d.get("confidence", 0.0)
+            conf = d.get("confidence")
+            conf_txt = "--" if conf is None else f"{int(conf * 100)}%"
             rng = d.get("range_m", None)
             xyz = d.get("spatial_xyz", [0.0, 0.0, 0.0])
 
             if cls_name in self.detected_items_map:
                 row_idx = self.detected_items_map[cls_name]["row"]
                 self.table_det.item(row_idx, 0).setText(now_str)
-                self.table_det.item(row_idx, 2).setText(f"{int(conf * 100)}%")
+                self.table_det.item(row_idx, 2).setText(conf_txt)
                 if rng:
                     self.table_det.item(row_idx, 3).setText(f"{rng:.2f} m")
                 self.table_det.item(row_idx, 4).setText(f"[{xyz[0]:.1f}, {xyz[1]:.1f}, {xyz[2]:.1f}]")
@@ -1230,10 +1243,10 @@ class GroundStationWindow(QMainWindow):
                 self.table_det.insertRow(row_idx)
                 self.table_det.setItem(row_idx, 0, QTableWidgetItem(now_str))
                 self.table_det.setItem(row_idx, 1, QTableWidgetItem(cls_name.upper()))
-                self.table_det.setItem(row_idx, 2, QTableWidgetItem(f"{int(conf * 100)}%"))
+                self.table_det.setItem(row_idx, 2, QTableWidgetItem(conf_txt))
                 self.table_det.setItem(row_idx, 3, QTableWidgetItem(f"{rng:.2f} m" if rng else "--"))
                 self.table_det.setItem(row_idx, 4, QTableWidgetItem(f"[{xyz[0]:.1f}, {xyz[1]:.1f}, {xyz[2]:.1f}]"))
-                self.table_det.setItem(row_idx, 5, QTableWidgetItem("Acoustic / Optical contact verified"))
+                self.table_det.setItem(row_idx, 5, QTableWidgetItem("camera"))
 
                 self.detected_items_map[cls_name] = {
                     "row": row_idx,

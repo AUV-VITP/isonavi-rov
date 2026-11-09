@@ -1,80 +1,76 @@
+"""Gazebo world, the ROS-Gazebo bridge and the vehicle's nodes.
+
+The pool world and the model are generated (make_world.py, make_model.py). The
+tether drag runs inside Gazebo from simulation/isonavi, so that package must be
+importable: set ISONAVI_ROOT to the repository, as test_sim.sh does; a symlink
+install finds it without.
+
+camera:=true opens the operator video and gcs:=true the ground station; either
+one starts the mud and operator view nodes. mesa:=true routes rendering to Mesa,
+for hybrid graphics laptops where the NVIDIA libraries crash Gazebo.
+"""
+
 import os
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, ExecuteProcess, SetEnvironmentVariable, Shutdown
+from launch.actions import (
+    DeclareLaunchArgument,
+    ExecuteProcess,
+    SetEnvironmentVariable,
+    Shutdown,
+    UnsetEnvironmentVariable,
+)
 from launch.conditions import IfCondition, UnlessCondition
 from launch.substitutions import LaunchConfiguration, PathJoinSubstitution, PythonExpression
 from launch_ros.actions import Node
 
 
 def generate_launch_description():
-    # Remove conflicting NVIDIA GLX offload variables that cause X11 BadValue crash on hybrid graphics
-    for var in ("__NV_PRIME_RENDER_OFFLOAD", "__GLX_VENDOR_LIBRARY_NAME"):
-        if var in os.environ:
-            del os.environ[var]
-
-    # Route EGL rendering to Mesa (Intel integrated graphics) to prevent NVIDIA library mismatch crash in headless/OGRE
-    mesa_egl_file = "/usr/share/glvnd/egl_vendor.d/50_mesa.json"
-    if os.path.exists(mesa_egl_file):
-        os.environ["__EGL_VENDOR_LIBRARY_FILENAMES"] = mesa_egl_file
-
     pkg_gazebo = get_package_share_directory("isonavi_rov_gazebo")
     pkg_desc = get_package_share_directory("isonavi_rov_description")
 
     headless = LaunchConfiguration("headless")
-    camera_arg = LaunchConfiguration("camera")
-    gcs_arg = LaunchConfiguration("gcs")
     mode = LaunchConfiguration("mode")
     scattering = LaunchConfiguration("scattering")
-    world_name = LaunchConfiguration("world")
+    world = LaunchConfiguration("world")
+    camera = LaunchConfiguration("camera")
+    gcs = LaunchConfiguration("gcs")
+    mesa = LaunchConfiguration("mesa")
+    view = IfCondition(PythonExpression(["'", camera, "' == 'true' or '", gcs, "' == 'true'"]))
 
-    world_path = PathJoinSubstitution([
-        pkg_gazebo, "worlds",
-        PythonExpression(["'", world_name, "' if '", world_name, "'.endswith('.sdf') else '", world_name, "' + '.sdf'"])
-    ])
+    world_path = PathJoinSubstitution([pkg_gazebo, "worlds", [world, ".sdf"]])
     bridge_config = os.path.join(pkg_gazebo, "config", "ros_gz_bridge.yaml")
     models_path = os.path.join(pkg_desc, "models")
-
-    # Discover simulation module path for ROS nodes (safety, pilot, vision)
-    candidates = [
-        os.environ.get("ISONAVI_SIMULATION_PATH", ""),
-        os.path.abspath(os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "..", "..", "simulation")),
-        os.path.abspath(os.path.join(pkg_gazebo, "..", "..", "..", "..", "simulation")),
-        os.path.expanduser("~/isonavi/isonavi-rov/simulation"),
-        os.path.expanduser("~/isonavi_rov_ws/src/isonavi_rov_gazebo/../../simulation"),
-        os.path.join(os.getcwd(), "simulation"),
-        os.path.join(os.getcwd(), "isonavi-rov", "simulation"),
-    ]
-    sim_dir = ""
-    for cand in candidates:
-        if cand and os.path.isdir(os.path.join(cand, "isonavi")):
-            sim_dir = cand
-            break
-
-    current_python_path = os.environ.get("PYTHONPATH", "")
-    new_python_path = f"{sim_dir}:{current_python_path}" if current_python_path else sim_dir
-    set_python_env = SetEnvironmentVariable("PYTHONPATH", new_python_path)
 
     # Set Gazebo resource path to discover isonavi_rov model
     current_resource_path = os.environ.get("GZ_SIM_RESOURCE_PATH", "")
     new_resource_path = f"{models_path}:{current_resource_path}" if current_resource_path else models_path
 
     set_env = SetEnvironmentVariable("GZ_SIM_RESOURCE_PATH", new_resource_path)
-    gz_env = {"GZ_SIM_RESOURCE_PATH": new_resource_path}
-    if os.path.exists(mesa_egl_file):
-        gz_env["__EGL_VENDOR_LIBRARY_FILENAMES"] = mesa_egl_file
+    root = os.environ.get("ISONAVI_ROOT", "")
+    if not root:
+        here = os.path.abspath(os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "..", ".."))
+        root = here if os.path.isdir(os.path.join(here, "simulation", "isonavi")) else ""
+    py_path = os.pathsep.join(p for p in (os.path.join(root, "simulation") if root else "",
+                                          os.environ.get("PYTHONPATH", "")) if p)
+    set_py = SetEnvironmentVariable("PYTHONPATH", py_path)
 
-    # Gazebo Harmonic headless vs GUI process
+    use_mesa = [
+        UnsetEnvironmentVariable("__NV_PRIME_RENDER_OFFLOAD", condition=IfCondition(mesa)),
+        UnsetEnvironmentVariable("__GLX_VENDOR_LIBRARY_NAME", condition=IfCondition(mesa)),
+        SetEnvironmentVariable("__EGL_VENDOR_LIBRARY_FILENAMES", "/usr/share/glvnd/egl_vendor.d/50_mesa.json",
+                               condition=IfCondition(mesa)),
+    ]
+
+    # Gazebo Harmonic headless vs GUI process; everything stops when it exits
     gz_headless = ExecuteProcess(
         cmd=["gz", "sim", "-s", "-r", "--headless-rendering", "-v", "1", world_path],
-        additional_env=gz_env,
         output="screen",
         condition=IfCondition(headless),
         on_exit=Shutdown(),
     )
     gz_gui = ExecuteProcess(
-        cmd=["gz", "sim", "-r", "-v", "3", world_path],
-        additional_env=gz_env,
+        cmd=["gz", "sim", "-r", "-v", "1", world_path],
         output="screen",
         condition=UnlessCondition(headless),
         on_exit=Shutdown(),
@@ -102,8 +98,8 @@ def generate_launch_description():
         output="screen",
     )
 
-    # Dynamic Flood Simulation Controller (water surge, currents, turbidity)
-    flood_controller_node = Node(
+    # Water current, driven by the flood topic
+    flood_node = Node(
         package="isonavi_rov_gazebo",
         executable="flood_controller",
         output="screen",
@@ -130,41 +126,57 @@ def generate_launch_description():
         output="screen",
     )
 
-    # Automatic Camera Feed Visualizer Window (ISONAVI Enhanced Stream + Spatial HUD)
-    camera_viewer_node = Node(
+    # Video for the pilot; not part of the control loop
+    mud_node = Node(
+        package="isonavi_rov_gazebo",
+        executable="mud_camera",
+        output="screen",
+        condition=view,
+    )
+    operator_node = Node(
+        package="isonavi_rov_ros",
+        executable="operator_view",
+        parameters=[{"image_topic": "camera/image_raw_turbid"}],
+        output="screen",
+        condition=view,
+    )
+    viewer_node = Node(
         package="rqt_image_view",
         executable="rqt_image_view",
         arguments=["/camera/image_detections"],
         output="screen",
-        condition=IfCondition(camera_arg),
+        condition=IfCondition(camera),
     )
-
-    # VIT Pune (>>>>IIT) Subsea Telemetry & Operations Console
     ground_station_node = Node(
         package="isonavi_rov_ros",
         executable="ground_station",
+        parameters=[{"world": world}],
         output="screen",
-        condition=IfCondition(gcs_arg),
+        condition=IfCondition(gcs),
     )
 
     return LaunchDescription([
-        DeclareLaunchArgument("world", default_value="large_river", description="Gazebo world: large_river, indian_river, or pool_course"),
-        DeclareLaunchArgument("headless", default_value="false", description="Run Gazebo in headless mode (set true for no GUI)"),
-        DeclareLaunchArgument("camera", default_value="true", description="Automatically open camera feed viewer window"),
-        DeclareLaunchArgument("gcs", default_value="false", description="Automatically launch VIT Pune (>>>>IIT) Ground Station UI"),
+        DeclareLaunchArgument("world", default_value="pool_course", description="pool_course, indian_river or large_river"),
+        DeclareLaunchArgument("headless", default_value="true", description="Run Gazebo in headless mode"),
         DeclareLaunchArgument("mode", default_value="assist", description="Pilot mode: manual, assist, auto, shared"),
-        DeclareLaunchArgument("scattering", default_value="1.6", description="Water scattering turbidity b (1/m). Murky river: 1.6 - 2.5"),
-        set_python_env,
+        DeclareLaunchArgument("scattering", default_value="0.4", description="Water scattering turbidity b (1/m)"),
+        DeclareLaunchArgument("camera", default_value="false", description="Open the operator video"),
+        DeclareLaunchArgument("gcs", default_value="false", description="Open the ground station"),
+        DeclareLaunchArgument("mesa", default_value="false", description="Render with Mesa, for hybrid graphics"),
         set_env,
+        set_py,
+        *use_mesa,
         gz_headless,
         gz_gui,
         bridge_node,
         thruster_bridge_node,
         depth_adapter_node,
-        flood_controller_node,
+        flood_node,
         safety_node,
         pilot_node,
         vision_node,
-        camera_viewer_node,
+        mud_node,
+        operator_node,
+        viewer_node,
         ground_station_node,
     ])

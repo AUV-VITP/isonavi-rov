@@ -36,7 +36,8 @@ class KeyboardTeleopNode(Node):
         self.sway = 0.0
         self.yaw = 0.0
         self.heave = 0.0
-        self.button_c = 0
+        self.centring = False
+        self.press_ticks = 0    # the pilot toggles centring on a rising edge
         self.timer = self.create_timer(0.05, self.publish_joy)  # 20 Hz heartbeat
         self.settings = termios.tcgetattr(sys.stdin)
         tty.setcbreak(sys.stdin.fileno())
@@ -44,7 +45,7 @@ class KeyboardTeleopNode(Node):
         self.print_status()
 
     def print_status(self):
-        c_state = "ON " if self.button_c else "OFF"
+        c_state = "ON " if self.centring else "OFF"
         status = (
             f"\r[Surge: {self.surge:+.2f} | Sway: {self.sway:+.2f} | "
             f"Yaw: {self.yaw:+.2f} | Heave: {self.heave:+.2f} | Auto: {c_state}] "
@@ -86,7 +87,8 @@ class KeyboardTeleopNode(Node):
                 self.yaw = 0.0
                 self.heave = 0.0
             elif key == "c":
-                self.button_c = 1 if self.button_c == 0 else 0
+                self.centring = not self.centring
+                self.press_ticks = 2
             elif key in ("x", "\x03"):
                 print("\nExiting teleoperation...")
                 self.surge = self.sway = self.yaw = self.heave = 0.0
@@ -112,7 +114,8 @@ class KeyboardTeleopNode(Node):
             0.0,
             0.0,
         ]
-        msg.buttons = [int(self.button_c), 0, 0, 0, 0, 0, 0, 0]
+        msg.buttons = [1 if self.press_ticks > 0 else 0, 0, 0, 0, 0, 0, 0, 0]
+        self.press_ticks = max(0, self.press_ticks - 1)
         self.pub.publish(msg)
 
     def destroy_node(self):

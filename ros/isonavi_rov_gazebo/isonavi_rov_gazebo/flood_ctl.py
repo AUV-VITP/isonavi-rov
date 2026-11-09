@@ -1,9 +1,9 @@
-"""CLI command tool to activate, stop, or check flood conditions in isonavi-rov.
+"""Start, stop or check the simulated flood current.
 
 Usage:
-  ros2 run isonavi_rov_gazebo flood_ctl start     # Starts river flood
-  ros2 run isonavi_rov_gazebo flood_ctl stop      # Stops river flood
-  ros2 run isonavi_rov_gazebo flood_ctl status    # Views flood status
+  ros2 run isonavi_rov_gazebo flood_ctl start     # Starts the current
+  ros2 run isonavi_rov_gazebo flood_ctl stop      # Stops the current
+  ros2 run isonavi_rov_gazebo flood_ctl status    # Current flow
 """
 
 import sys
@@ -14,16 +14,7 @@ from std_msgs.msg import Bool, String
 
 
 def print_help():
-    print("""
-======================================================
-         ISONAVI-ROV RIVER FLOOD CONTROL CLI
-======================================================
-  Usage:
-    ros2 run isonavi_rov_gazebo flood_ctl start   -> Trigger continuous flood
-    ros2 run isonavi_rov_gazebo flood_ctl stop    -> Stop flood & return to calm
-    ros2 run isonavi_rov_gazebo flood_ctl status  -> View live river condition
-======================================================
-""")
+    print(__doc__)
 
 
 def main():
@@ -43,8 +34,7 @@ def main():
         for _ in range(5):
             pub.publish(Bool(data=True))
             rclpy.spin_once(node, timeout_sec=0.05)
-        print("\n[SUCCESS] >>> FLOOD INITIATED! River current rising and flood water surging! <<<")
-        print("          Run 'ros2 run isonavi_rov_gazebo flood_ctl stop' to halt the flood.\n")
+        print("flood started")
 
     elif cmd in ("stop", "off", "disable", "0", "false"):
         pub = node.create_publisher(Bool, "flood", 10)
@@ -54,15 +44,14 @@ def main():
         for _ in range(5):
             pub.publish(Bool(data=False))
             rclpy.spin_once(node, timeout_sec=0.05)
-        print("\n[SUCCESS] >>> FLOOD STOPPED! River conditions calming to normal. <<<\n")
+        print("flood stopped")
 
     elif cmd in ("status", "info"):
         def on_status(msg):
-            print(f"\n[RIVER TELEMETRY] {msg.data}\n")
+            print(msg.data)
             rclpy.shutdown()
 
         node.create_subscription(String, "flood_status", on_status, 10)
-        print("Listening for river condition telemetry...")
         rclpy.spin(node)
         return
     else:
