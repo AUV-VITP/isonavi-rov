@@ -22,6 +22,12 @@ docs/*.toc
 # CAD meshes are regenerable from isonavi_cad.py; keep STEP + params only.
 cad/*.stl
 
+# ROS 2 build artifacts
+build/
+install/
+log/
+*.egg-info/
+
 # Slide deck, kept out of the repository.
 ppt/
 simulation/results/video/rov_frames/

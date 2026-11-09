@@ -5,7 +5,9 @@
 #      the camera renders and the tether drag is loaded;
 #   3. closed loop through every node: an assisted surge stick moves the
 #      vehicle forward while the depth hold keeps its depth;
-#   4. joystick silence holds every thruster at zero.
+#   4. joystick silence holds every thruster at zero;
+#   5. the flood current carries the vehicle downstream;
+#   6. the operator video and the ground station run.
 set -e
 REPO="$(cd "$(dirname "$0")/.." && pwd)"
 WS="${WS:-$HOME/isonavi_rov_ws}"
@@ -29,7 +31,7 @@ cleanup() {
   pkill -f parameter_bridge 2>/dev/null || true
 }
 trap cleanup EXIT
-field() { timeout 15 ros2 topic echo --once "$1" --field "$2" 2>/dev/null | head -1; }
+field() { timeout 15 ros2 topic echo --once "$1" --field "$2" 2>/dev/null | grep -vE "message was lost|total count" | head -1; }
 
 echo "1. Gazebo model against the python dynamics"
 python3 ros/isonavi_rov_gazebo/isonavi_rov_gazebo/twin_check.py
@@ -39,7 +41,9 @@ ros2 launch isonavi_rov_gazebo sim.launch.py headless:=true > /tmp/sim_launch.lo
 for _ in $(seq 60); do field /clock clock.sec > /dev/null && break; sleep 1; done
 field /imu orientation.w > /dev/null && echo "  imu streaming"
 timeout 30 ros2 topic echo --once /camera/image_raw --field width > /tmp/sim_cam.txt 2>/dev/null
-grep -q 160 /tmp/sim_cam.txt && echo "  camera rendering at 160 px"
+grep -q 640 /tmp/sim_cam.txt && echo "  camera rendering at 640 px"
+timeout 15 ros2 topic echo --once /targets --field data > /dev/null 2>&1
+echo "  vision publishing targets"
 z=$(field /model/isonavi_rov/odometry pose.pose.position.z)
 d=$(field /depth data)
 python3 -c "import sys; z, d = $z, $d; assert abs(d + z) < 0.06, (z, d); print(f'  depth {d:.3f} m against {-z:.3f} m from the pose')"
@@ -75,4 +79,29 @@ import re
 v = [float(x) for x in re.findall(r'-?\d+\.\d+(?:e-?\d+)?', open('/tmp/sim_hold.txt').read())]
 assert len(v) == 8 and all(x == 0.0 for x in v), v
 print('  all eight thrusters at zero')"
+
+echo "5. flood current"
+gz service -s /world/pool_course/set_pose --reqtype gz.msgs.Pose --reptype gz.msgs.Boolean --timeout 3000 \
+  --req 'name: "isonavi_rov", position: {x: 1.2, y: 0.0, z: -0.5}' > /dev/null
+sleep 1
+x0=$(field /model/isonavi_rov/odometry pose.pose.position.x)
+ros2 run isonavi_rov_gazebo flood_ctl start > /dev/null 2>&1
+sleep 8
+x1=$(field /model/isonavi_rov/odometry pose.pose.position.x)
+python3 -c "
+x0, x1 = $x0, $x1
+assert x1 - x0 > 0.5, (x0, x1)
+print(f'  carried {x1 - x0:.2f} m downstream')"
+ros2 run isonavi_rov_gazebo flood_ctl stop > /dev/null 2>&1
+
+echo "6. operator video and ground station"
+ros2 run isonavi_rov_gazebo mud_camera > /tmp/sim_mud.log 2>&1 &
+ros2 run isonavi_rov_ros operator_view --ros-args -p image_topic:=camera/image_raw_turbid > /tmp/sim_view.log 2>&1 &
+timeout 30 ros2 topic echo --once /camera/image_detections sensor_msgs/msg/Image --field width > /tmp/sim_view.txt 2>/dev/null
+grep -q 640 /tmp/sim_view.txt
+echo "  operator view publishing"
+QT_QPA_PLATFORM=offscreen timeout 8 ros2 run isonavi_rov_ros ground_station --ros-args -p drive:=false > /tmp/sim_gcs.log 2>&1 \
+  || [ $? -eq 124 ]
+if grep -q Traceback /tmp/sim_gcs.log; then tail -20 /tmp/sim_gcs.log; exit 1; fi
+echo "  ground station runs"
 echo "simulation checks passed"

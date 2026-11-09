@@ -20,5 +20,8 @@ setup(
         f"safety = {PKG}.safety_node:main",
         f"actuator = {PKG}.actuator_node:main",
         f"vision = {PKG}.vision_node:main",
+        f"teleop = {PKG}.keyboard_teleop:main",
+        f"ground_station = {PKG}.ground_station:main",
+        f"operator_view = {PKG}.operator_view:main",
     ]},
 )

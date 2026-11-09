@@ -126,7 +126,7 @@ degree 3/2 in thrust; all eight together still make 24.3 N each.
 | `cad/rov_bom.py` | Bill of materials in rupees with the basis of every price and what is made in house |
 | `ros/isonavi_rov_ros/` | ROS 2 nodes: pilot (assist and shared), safety, actuator, vision, and a launch file |
 | `ros/isonavi_rov_description/` | Gazebo model of the vehicle, written by `make_model.py` from the budget and the CAD |
-| `ros/isonavi_rov_gazebo/` | Pool world from `make_world.py`, bridge, launch, tether and depth adapters, `twin_check.py` |
+| `ros/isonavi_rov_gazebo/` | Pool world from `make_world.py`, two river worlds, bridge, launch, tether and depth adapters, flood current, `twin_check.py` |
 | `hil/` | Flight computer and ESP32 actuator interface, validated on hardware for isonavi; ROV bench over the same link |
 | `docs/isonavi_rov_report.tex` | Technical report; every number from `simulation/eval/make_rov_metrics.py` |
 
@@ -156,7 +156,16 @@ thruster forces, it agrees with the python dynamics to 0.08 mm in a free rise,
 0.07 mm and 0.34 mm/s in surge, 0.09 mm with the tether, and 0.18 degrees of
 roll over a 25 degree swing. Gazebo renders the camera without water, so
 the vision results stay with the camera model; the Gazebo camera is for the
-plumbing.
+plumbing and the pilot's video. It renders at 640 x 480 and the vision node
+averages it back to the calibrated 160 x 120; without a GPU that is about
+2.5 frames a second rather than 10.
+
+For piloting by hand there is a keyboard teleop and a ground station, two
+river worlds (`indian_river`, and the heavier `large_river`, both hand built
+scenery) and a flood current set through the hydrodynamics. The operator video
+adds simulated mud and dehazes it. It finds targets further out than the raw
+frame but breaks the range estimate, so the flight vision stays on the raw
+camera.
 
 ## Made in house
 
@@ -194,7 +203,10 @@ python hil/test_rov_loopback.py                 # vehicle software over the link
 bash docs/build.sh                              # reports, and the check that README numbers match
 bash ros/test_chain.sh                          # ROS 2 build and chain test, under Jazzy
 bash ros/test_sim.sh                            # Gazebo model check and the nodes flying it, closed loop
-ros2 launch isonavi_rov_gazebo sim.launch.py headless:=false   # the pool, with the GUI
+ros2 launch isonavi_rov_gazebo sim.launch.py headless:=false gcs:=true   # the pool, with the GUI and the ground station
+ros2 launch isonavi_rov_gazebo sim.launch.py headless:=false world:=indian_river camera:=true
+ros2 run isonavi_rov_ros teleop                 # keyboard pilot, if the ground station is not driving
+ros2 run isonavi_rov_gazebo flood_ctl start     # flood current, stop to end it
 ```
 
 `make_model.py` needs CadQuery for the meshes; the generated model and world

@@ -21,7 +21,7 @@ class VisionNode(Node):
     def __init__(self):
         super().__init__("vision")
         b = self.declare_parameter("scattering", 0.4).value
-        w = self.declare_parameter("width", 160).value
+        w = self.width = self.declare_parameter("width", 160).value
         self.corridor_w = self.declare_parameter("corridor_width", 1.0).value
         self.finder = TargetFinder(width=w, scattering=b)
         self.course = CourseEstimator(width=w, height=int(w * 3 / 4), scattering=b,
@@ -36,6 +36,9 @@ class VisionNode(Node):
         img = np.frombuffer(m.data, np.uint8).reshape(m.height, m.width, 3)
         if m.encoding == "bgr8":
             img = img[:, :, ::-1]
+        k = m.width // self.width
+        if k > 1:       # the estimators are calibrated at the low resolution
+            img = img.reshape(m.height // k, k, m.width // k, k, 3).mean(axis=(1, 3)).astype(np.uint8)
         out = String()
         out.data = json.dumps([{"colour": d.colour, "u": d.centroid[0], "v": d.centroid[1],
                                 "range_m": d.range_m} for d in self.finder.find(img)])
