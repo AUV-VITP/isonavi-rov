@@ -42,7 +42,8 @@ for _ in $(seq 60); do field /clock clock.sec > /dev/null && break; sleep 1; don
 field /imu orientation.w > /dev/null && echo "  imu streaming"
 timeout 30 ros2 topic echo --once /camera/image_raw --field width > /tmp/sim_cam.txt 2>/dev/null
 grep -q 640 /tmp/sim_cam.txt && echo "  camera rendering at 640 px"
-timeout 15 ros2 topic echo --once /targets --field data > /dev/null 2>&1 && echo "  vision publishing targets"
+timeout 15 ros2 topic echo --once /targets --field data > /dev/null 2>&1
+echo "  vision publishing targets"
 z=$(field /model/isonavi_rov/odometry pose.pose.position.z)
 d=$(field /depth data)
 python3 -c "import sys; z, d = $z, $d; assert abs(d + z) < 0.06, (z, d); print(f'  depth {d:.3f} m against {-z:.3f} m from the pose')"
@@ -97,8 +98,10 @@ echo "6. operator video and ground station"
 ros2 run isonavi_rov_gazebo mud_camera > /tmp/sim_mud.log 2>&1 &
 ros2 run isonavi_rov_ros operator_view --ros-args -p image_topic:=camera/image_raw_turbid > /tmp/sim_view.log 2>&1 &
 timeout 30 ros2 topic echo --once /camera/image_detections sensor_msgs/msg/Image --field width > /tmp/sim_view.txt 2>/dev/null
-grep -q 640 /tmp/sim_view.txt && echo "  operator view publishing"
+grep -q 640 /tmp/sim_view.txt
+echo "  operator view publishing"
 QT_QPA_PLATFORM=offscreen timeout 8 ros2 run isonavi_rov_ros ground_station --ros-args -p drive:=false > /tmp/sim_gcs.log 2>&1 \
   || [ $? -eq 124 ]
-! grep -q Traceback /tmp/sim_gcs.log && echo "  ground station runs"
+if grep -q Traceback /tmp/sim_gcs.log; then tail -20 /tmp/sim_gcs.log; exit 1; fi
+echo "  ground station runs"
 echo "simulation checks passed"
