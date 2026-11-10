@@ -15,7 +15,7 @@ import numpy as np
 
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..")
 LOGS = os.path.join(ROOT, "simulation", "results", "logs")
-CAD = os.path.join(ROOT, "cad")
+CAD = os.path.join(ROOT, "simulation", "vehicle")
 sys.path.insert(0, os.path.join(ROOT, "simulation"))
 from isonavi.pool import ArenaConfig   # noqa: E402
 from isonavi.pilot import PilotConfig, blend_weight, read_error   # noqa: E402

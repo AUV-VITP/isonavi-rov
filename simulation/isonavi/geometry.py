@@ -1,9 +1,9 @@
-"""Vectorised ray casting against analytic primitives and a bathymetric heightfield.
+"""Vectorised ray casting against analytic primitives and a heightfield.
 
 All intersection routines take ray origins ``o`` of shape (N, 3) and unit
 directions ``d`` of shape (N, 3) and return a ``Hit`` describing the nearest
 intersection along each ray. Everything is written against NumPy so a full
-sonar fan (thousands of rays) is evaluated in a single vectorised call.
+camera frame (thousands of rays) is evaluated in a single vectorised call.
 
 Coordinate convention: right handed, ``z`` positive up, ``z = 0`` at the water
 surface, so submerged geometry has negative ``z``.

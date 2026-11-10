@@ -1,9 +1,7 @@
 # Actuator interface
 
-The ESP32 that turns the flight computer's thrust allocation into eight real
-pulse width channels. Until this existed the report described it as though it
-did, which was wrong: the runs were made with the actuator argument empty and
-the interface was a no-op.
+The ESP32 that turns the flight computer's thrust allocation into real ESC
+pulse widths, one channel per thruster: six on the build, with two spare.
 
 ## What it does
 
@@ -24,12 +22,12 @@ emitting rather than what it was told to emit.
 | resolution | 0.305 us per LSB, 16 bit duty |
 | commanded against measured | exact, 0 us across the full range |
 | command to echo | 31 ms mean, 24 to 40 ms |
-| pipeline lag | 1.0 frames standalone, 2.6 in the mission |
+| pipeline lag | 1.0 frames standalone, 2.6 in the closed loop |
 | cost to the control loop | 3.3 ms mean, 3.8 ms p99, measured on the board |
 
-In a full mission the flight computer commanded 1201 frames, 1198 came back,
-and every one of them exactly reproduced a width that had actually been
-commanded. Zero CRC errors.
+In a full closed loop run the flight computer commanded 1201 frames, 1198
+came back, and every one of them exactly reproduced a width that had actually
+been commanded. Zero CRC errors.
 
 ## Four bugs worth recording
 
@@ -78,8 +76,8 @@ python esp_bridge.py --port 5558 --dev COM10      # on the Windows host
 python arm_actuator.py --port 5558                # start the loop, idempotent
 python verify_actuator.py                         # direct, no bridge
 
-# then, from the HIL directory
-python run_hil.py --max-time 1000 --esp-bridge <windows-ip>:5558
+# then, on the flight computer
+python3 rov_computer.py --esp tcp:<windows-ip>:5558
 ```
 
 Arming is deliberately not an autostart on boot. A loop that owns the console

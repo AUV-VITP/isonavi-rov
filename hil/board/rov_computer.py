@@ -1,4 +1,4 @@
-"""Flight computer for isonavi-rov, on the same board and links as isonavi-1.
+"""Flight computer for isonavi-rov.
 
 Each tick it asks the host for the sensor sample, takes the pilot packet
 that came down the tether (or notes that none did), runs the hold loops,
@@ -25,7 +25,7 @@ sys.path.insert(0, "/root/hil")
 sys.path.insert(0, "/root/hil/common")
 
 import hil_protocol as P                                    # noqa: E402
-from flight_computer import HostLink, SerialLink, thrust_to_pwm   # noqa: E402
+from links import HostLink, SerialLink, thrust_to_pwm             # noqa: E402
 from isonavi.dynamics import VehicleDynamics, isonavi_rov    # noqa: E402
 from isonavi.pilot import AssistController                  # noqa: E402
 from isonavi.safety import PowerGovernor, Supervisor        # noqa: E402

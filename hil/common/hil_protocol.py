@@ -2,17 +2,15 @@
 
 Three processors run one control loop between them:
 
-    host (WSL)          physics, sonar, ground truth        the plant
-    LicheeRV Nano       EKF, controller, mission FSM         the flight computer
-    ESP32               8-channel ESC PWM                    the actuator
+    host                pool, dynamics, sensors, pilot      the plant
+    LicheeRV Nano       hold loops, allocation, safety      the flight computer
+    ESP32               ESC pulse widths, one per thruster  the actuator
 
 The board is the real-time master. Each tick it requests the current sensor
-sample from the host, runs estimation and control, sends the resulting thrust
-command to the ESP32, and returns the applied wrench to the host so the host
-can integrate the plant forward. Nothing on the board ever sees ground truth,
-exactly as in the pure-simulation stack, so a matching result is evidence that
-the autonomy runs on hardware rather than that the hardware was told the
-answer.
+sample from the host, runs the hold loops and the allocation, sends the
+resulting thrust command to the ESP32, and returns the applied wrench to the
+host so the host can integrate the plant forward. Nothing on the board ever
+sees ground truth, exactly as in the pure-simulation stack.
 
 Framing is deliberately strict because a silently corrupted state estimate is
 worse than a detected dropout: every frame is

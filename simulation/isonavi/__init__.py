@@ -1,10 +1,8 @@
-"""isonavi: autonomous underwater reconnaissance and assessment for disaster response.
+"""isonavi-rov simulation library.
 
-Core simulation and autonomy library. The modules are deliberately free of any
-ROS dependency so they can be unit tested and benchmarked directly; the ROS 2
-packages under ros2_ws/ are thin wrappers around this code.
+Pool arena, camera image formation, vision, pilot assist and shared control,
+safety, and the 6-DOF dynamics they run on. The modules have no ROS
+dependency; the ROS 2 nodes under ros/ are thin wrappers around them.
 """
 
-__version__ = "0.1.0"
-
-from . import geometry, acoustics  # noqa: F401
+__version__ = "0.2.0"

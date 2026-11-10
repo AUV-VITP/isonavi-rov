@@ -15,10 +15,9 @@ nu_r = nu - nu_current. That distinction is the entire reason the vehicle gets
 pushed downstream when the controller is open loop, and it is what the
 station-keeping controller has to reject.
 
-Numerical parameters are for a BlueROV2-class vectored hovering platform and
-follow the identification widely used in the marine robotics literature. They
-are stated as the design baseline; the flight-model vehicle is intended to be
-indigenously manufactured to the same envelope.
+The BlueROV2 Heavy coefficients are the identified reference that the
+isonavi-rov damping and added mass are scaled from; the isonavi-rov parameters
+are read from the solved vehicle budget in simulation/vehicle/.
 """
 
 from __future__ import annotations
@@ -65,7 +64,7 @@ def euler_rate_matrix(roll, pitch):
 class VehicleParams:
     """Mass, hydrodynamic and geometric properties."""
 
-    name: str = "isonavi-1"
+    name: str = "vehicle"
     mass: float = 13.5
     volume: float = 0.0136          # gives slight positive buoyancy
     r_g: tuple = (0.0, 0.0, 0.0)    # centre of gravity in body frame
@@ -109,9 +108,8 @@ class VehicleParams:
         return RHO * self.volume * G
 
 
-# Baseline commercial platform: open frame, T200-class thrusters. Included as
-# the comparison point, because it is the vehicle most proposals in this space
-# assume, and the analysis in docs/ shows it cannot hold the design current.
+# Commercial open frame platform with T200-class thrusters, the identified
+# reference for the scaled isonavi-rov coefficients.
 BLUEROV2_HEAVY = VehicleParams(
     name="BlueROV2 Heavy (COTS baseline)",
     mass=13.5, volume=0.0136,
@@ -122,34 +120,12 @@ BLUEROV2_HEAVY = VehicleParams(
     max_thrust_n=51.0, thruster_tau=0.12,
 )
 
-# Purpose-designed platform for high-current, zero-visibility flood work.
-# Two changes drive the entire capability difference: a faired hull, which cuts
-# axial quadratic drag by roughly a factor of four, and larger thrusters. The
-# drag asymmetry is deliberate and characteristic of a streamlined body: low
-# along the axis, high broadside, which also gives useful passive weathervaning
-# into the flow.
-isonavi_1 = VehicleParams(
-    name="isonavi-1 (faired, high-thrust)",
-    mass=28.0, volume=0.0282,
-    r_b=(0.0, 0.0, 0.0273),   # from the CAD mass budget, see cad/isonavi_layout.py
-    inertia=(0.55, 1.60, 1.70),
-    added_mass=(12.0, 42.0, 45.0, 0.60, 3.20, 3.40),
-    r_g=(0.0, 0.0, 0.0),
-    lin_damp=(22.0, 48.0, 52.0, 6.0, 18.0, 16.0),
-    quad_damp=(32.0, 210.0, 225.0, 8.0, 60.0, 52.0),
-    max_thrust_n=120.0, thruster_tau=0.15,
-    fin_coeff=110.0,
-    arms=(0.42, 0.30, 0.38, 0.26),
-)
-
-
-
 def _rov_params():
     """isonavi-rov, read from the solved vehicle budget so the two cannot drift."""
     import json
     import os
     path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                        "..", "..", "cad", "rov_budget.json")
+                        "..", "vehicle", "rov_budget.json")
     d = json.load(open(path))
     k = d["dynamics"]
     return VehicleParams(
@@ -165,7 +141,7 @@ def _rov_params():
 
 isonavi_rov = _rov_params()
 
-VEHICLES = {"bluerov2": BLUEROV2_HEAVY, "isonavi": isonavi_1, "rov": isonavi_rov}
+VEHICLES = {"bluerov2": BLUEROV2_HEAVY, "rov": isonavi_rov}
 
 
 def vehicle(name: str) -> VehicleParams:

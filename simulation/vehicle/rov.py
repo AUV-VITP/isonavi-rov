@@ -1,16 +1,13 @@
-"""Vehicle budget for isonavi-rov: mass, buoyancy, trim, envelope, power and tether.
+"""Vehicle budget for the isonavi-rov simulation: mass, buoyancy, trim, envelope, power and tether.
 
-isonavi-rov keeps the isonavi-1 propulsion layout, eight thrusters in the
-vectored arrangement, and the same discipline: every component is listed
-with a mass, a displaced volume and a station, and the free variables are
-solved rather than chosen.
-
-What changes is the job. A pool vehicle has no current to fight and never
-goes deeper than 2 m, so the faired hull, the fins and the 50 m pressure
-rating all go, and what matters instead is a small box, low mass, full
-holonomic control for threading a gate and a maze, and a camera with its own
-light. Power comes down the tether from a mains supply, so there is no
-battery aboard.
+The parametric vehicle the simulation and the Gazebo model are built on, with
+thrusters in a vectored arrangement (eight here; the count and stations are
+parameters). Every component is listed with a mass, a displaced volume and a
+station, and the free variables are solved rather than chosen. A pool vehicle
+has no current to fight and never goes deeper than 2 m, so what matters is a
+small box, low mass, full holonomic control for threading a gate and a maze,
+and a camera with its own light. Power comes down the tether from a mains
+supply.
 
 Solved:
   1. foam volume, so the vehicle floats slightly positive and surfaces on a
@@ -36,7 +33,7 @@ import numpy as np
 from scipy.optimize import linprog
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, os.path.join(HERE, "..", "simulation"))
+sys.path.insert(0, os.path.join(HERE, ".."))
 from isonavi.dynamics import vectored_allocation, BLUEROV2_HEAVY   # noqa: E402
 
 RHO, G = 1000.0, 9.81

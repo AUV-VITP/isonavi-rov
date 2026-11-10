@@ -1,20 +1,23 @@
 # Hardware in the loop
 
-The autonomy stack running on real hardware, driven by the physics simulator.
+The vehicle software on the flight computer, with the pool, the dynamics and
+the pilot on a host.
 
 ## Roles
 
 | Node | Hardware | Runs |
 | --- | --- | --- |
-| host | x86 (WSL) | physics, sonar, sensor models, ground truth |
-| flight computer | LicheeRV Nano, RISC-V rv64 @ 750 MHz | EKF, controller, mission state machine |
-| actuator | ESP32-D0WD-V3 | 8-channel ESC PWM |
+| host | x86 | pool, dynamics, sensor models and the pilot (`host/rov_plant.py`) |
+| flight computer | LicheeRV Nano, RISC-V rv64 at 750 MHz | hold loops, thrust allocation, power governor, supervisor (`board/rov_computer.py`) |
+| actuator | ESP32-D0WD-V3 | one ESC pulse width channel per thruster (`esp32/`) |
 
-The board is the real-time master. Each tick it requests the sensor sample
-from the host, runs estimation and control, drives the ESP32, and returns the
-applied wrench so the host integrates the plant. Ground truth never leaves the
-host, so a matching mission result is evidence the autonomy runs on hardware
-rather than that the hardware was handed the answer.
+Each tick the flight computer asks the host for the sensor sample, takes the
+pilot packet that came down the tether (or notes that none did), runs the
+hold loops, allocates thrust, applies the governor and the supervisor, drives
+the ESP32 and reports the wrench the thrusters produce. It never sees the
+course or the truth. The hold loops, allocation, governor and supervisor are
+imported from `simulation/isonavi`, so a matching run is evidence about the
+same code.
 
 ## Wire protocol
 
@@ -25,18 +28,17 @@ frames rather than acting on them. 12 protocol tests in
 
 ## Layout
 
-- `common/`  protocol and its tests
-- `host/`    host plant (physics + sensors + truth)
-- `board/`   flight computer (deployed to the LicheeRV under /root/hil)
-- `deploy_board.py`  SFTP the board code onto the LicheeRV
-- `run_hil.py`  orchestrate a real run over an SSH reverse tunnel
-- `test_hil_loopback.py`  full loop on localhost with no hardware, checks
-  equivalence against the pure-simulation result
+- `common/` protocol and its tests
+- `host/rov_plant.py` the host side: pool, dynamics, sensors, pilot
+- `board/rov_computer.py` the flight computer; `board/links.py` its ESP32 and host links
+- `esp32/` actuator firmware, bridge and checks
+- `deploy_board.py` copies the board code onto the LicheeRV
+- `test_rov_loopback.py` the full loop on localhost with no hardware: an
+  assisted course against the pure simulation, then link loss and a kill
 
 ## Reproducing
 
 ```bash
-python test_hil_loopback.py         # no hardware, equivalence check
-python deploy_board.py              # push code to the board
-python run_hil.py --max-time 60     # real board + host
+python test_rov_loopback.py         # no hardware; writes results/rov_loopback.json
+python deploy_board.py              # push the board code
 ```

@@ -68,15 +68,14 @@
 
 \begin{minipage}{0.86\linewidth}
 \small
-\textbf{Summary.} isonavi-rov is the isonavi vehicle rebuilt for a pool: a
+\textbf{Summary.} This report covers the simulation study of isonavi-rov on
+its parametric reference vehicle: a
 \SI{\mmass}{\kilo\gram}, \mlenoverall{} by \mbeam{} by \mheight{}~cm open frame
 ROV, powered and controlled over a \SI{50}{\metre} tether, that threads a
 \SI{1}{\metre} gate, finds and touches a coloured target in an unlit pool by
-its own light, and flies a three section walled maze. It keeps the isonavi
-engines, the ray caster, the six degree of freedom dynamics, the eight
-thruster vectored layout, the solved mass budget, the bill of materials
-generator and the flight computer and actuator path already run on hardware,
-and replaces what a pool does not need.
+its own light, and flies a three section walled maze. The reference carries
+eight vectored thrusters; the build carries six on six ESCs, and the layout is
+a parameter of the budget, so every result here reruns on it.
 
 The design is closed by analysis rather than chosen: mass, buoyancy and
 trim are solved from a component list and checked against a CAD model built
@@ -87,11 +86,11 @@ camera's correction and the pilot's stick are blended by the error each has,
 are flown through the course in simulation with a modelled human operator,
 across water clarities and forty random course layouts, and scored on
 contacts, target and time. The vehicle-side software then runs on a hardware-in-the-loop
-bench over the same protocol as isonavi, and reproduces the simulation.
+bench over a framed, CRC-checked protocol, and reproduces the simulation.
 \end{minipage}
 
 \vspace{3mm}
-\IfFileExists{../cad/isonavi_rov_hero.png}{\includegraphics[width=0.62\linewidth]{../cad/isonavi_rov_hero.png}}{}
+\IfFileExists{../simulation/vehicle/isonavi_rov_hero.png}{\includegraphics[width=0.62\linewidth]{../simulation/vehicle/isonavi_rov_hero.png}}{}
 
 \vspace{3mm}
 \begin{minipage}{0.94\linewidth}
@@ -148,39 +147,10 @@ Compressed gas, lasers & none carried & not applicable \\
 \caption{Design requirements and where each is closed.}\label{tab:req}
 \end{table}
 
-\section{What carries over from isonavi, and what changes}
-
-isonavi-1 is a \SI{28}{\kilo\gram} faired survey vehicle built to hold
-station in a \SI{2.4}{\metre\per\second} flood current with acoustic
-perception. A pool asks for the opposite: no current, depth under two metres,
-targets identified by colour, and a narrow course flown by a person.
-
-\begin{table}[htbp]\centering\small
-\begin{tabular}{@{}p{0.27\linewidth}p{0.27\linewidth}p{0.38\linewidth}@{}}
-\toprule
-isonavi-1 & isonavi-rov & Reason \\
-\midrule
-Autonomous survey & Piloted, with assist and vision modes & A person flies it; the assist and vision loops are what reduce contacts \\
-Faired 1074 mm hull with fins & Open frame, \mlenframe{} cm & No current; a holonomic box clears a \SI{1}{\metre} corridor \\
-\SI{50}{\metre} rating, ring frames & One acrylic housing & Under two metres of water \\
-Forward-looking sonar and DVL & Camera, two lamps, IMU, depth & Targets are told apart by colour, in the dark \\
-\SI{1.5}{\kilo\watt\hour} battery aboard & \msupplyv{} V down the tether & No battery and no battery leak aboard \\
-Mission state machine & Pilot assist, governor, supervisor, ROS 2 & It must stop safely on a kill, a leak or a lost link \\
-\bottomrule
-\end{tabular}
-\caption{The engines are kept; the vehicle and its perception are replaced.}
-\end{table}
-
-Unchanged and reused directly: the vectorised ray caster, which now forms
-camera images instead of sonar images; the Fossen dynamics and the eight
-thruster allocation; the cascade of solved budget, CAD check and generated
-bill of materials; and the flight computer, ESP32 actuator interface and
-framed protocol, extended by two message types.
-
 % ======================================================================
 \section{Vehicle}\label{sec:budget}
 
-\keyfig{../cad/isonavi_rov_views.png}{General arrangement, from the CAD model
+\keyfig{../simulation/vehicle/isonavi_rov_views.png}{General arrangement, from the CAD model
 built out of the solved budget. Four horizontal thrusters canted at 45 degrees
 give surge, sway and yaw; four vertical thrusters give heave, roll and pitch.
 The vehicle can move sideways without turning, which is how it crosses the
@@ -189,7 +159,7 @@ slalom without widening its swept path.}{fig:views}
 \subsection{Mass, buoyancy and trim are solved}
 
 Every component is listed with a mass, a displaced volume and a station
-(\texttt{cad/rov.py}). Three things are then solved rather than chosen: the
+(\texttt{simulation/vehicle/rov.py}). Three things are then solved rather than chosen: the
 foam volume, so the vehicle floats \SI{\mnetbuoy}{\newton} positive and rises
 if power is lost; the lead ballast, so the centre of gravity sits
 \SI{\mbg}{\milli\metre} below the centre of buoyancy and the vehicle rights
@@ -200,7 +170,7 @@ itself; and the foam station, so it floats level (trim offset
 
 \subsection{The CAD checks the budget}
 
-\texttt{cad/rov\_cad.py} builds the \mcadparts{}-part assembly from the solved
+\texttt{simulation/vehicle/rov\_cad.py} builds the \mcadparts{}-part assembly from the solved
 budget and checks it three ways. The displaced volume of each group as built
 agrees with the budget: buoyancy \SI{\mcadbuoybuilt}{\litre} and hull
 \SI{\mcadhullbuilt}{\litre} exactly, the rest to within items not modelled as
@@ -223,7 +193,7 @@ the simulation re-run.
 \subsection{Hydrodynamics and thrust}
 
 Damping and added mass are scaled from the tank-identified coefficients of
-the open frame vehicle isonavi used as its reference, by projected area and
+the BlueROV2 Heavy, an open frame vehicle of the same class, by projected area and
 displaced volume. With \mthrustmax{}~N thrusters the vehicle makes
 \SI{\msurgefull}{\newton} in surge and sway and \SI{\mheavefull}{\newton} in
 heave, for \SI{\mspeedfull}{\metre\per\second} ahead.
@@ -256,7 +226,7 @@ thrusters where the CAD has them, made the coupling visible.
 Each thruster is a hobby outrunner run flooded, with a potted stator, in a
 printed Kort duct with a \SI{76}{\milli\metre} three blade propeller. The
 motor is matched to the propeller rather than picked by habit
-(\texttt{cad/thruster.py}): at the bench point the propeller turns at about
+(\texttt{simulation/vehicle/thruster.py}): at the bench point the propeller turns at about
 \mkvrpm{}~rpm, far below where a high KV winding wants to run, so the motor
 works at low speed and high torque. A 1000~KV winding would carry
 \SI{\mkvthousandphase}{\ampere} of phase current, past 80\,\% of a
@@ -584,7 +554,7 @@ models, runs the pilot, and sends the sensor sample and the pilot packet each
 tick. The board is the vehicle: it runs the hold loops, the allocation, the
 governor and the supervisor on what it receives and returns the wrench the
 thrusters produce. It never sees the course or the truth. The protocol is
-isonavi's framed, CRC-checked link with two message types added, the pilot
+a framed, CRC-checked link with two message types for the pilot
 command and the supervisor report; a lost pilot packet is emulated by an
 acknowledgement in its place, which keeps the bench deterministic.
 
@@ -593,7 +563,7 @@ Over the link, an assisted course finished in \SI{\mhiltime}{\second} against
 (\mhilcontacts) and a largest position difference of
 \SI{\mhildev}{\metre} over \mhilticks{} ticks, which is re-allocation round
 off and nothing else. The safety results are in Section~\ref{sec:safety}.
-The board and the ESP32 actuator interface are the units isonavi ran on
+The board and the ESP32 actuator interface have run this protocol on
 hardware; this bench ran over localhost, and the next step is the same run on
 the boards.
 
@@ -665,7 +635,7 @@ model of Section~\ref{sec:arena}; the Gazebo camera is for the plumbing.
 
 \begin{itemize}
 \item \texttt{simulation/isonavi}: arena, camera, vision, pilot, safety, with
-the isonavi dynamics, sensors and geometry they build on;
+the dynamics, sensors and geometry they build on;
 \item \texttt{ros/isonavi\_rov\_ros}: ROS~2 nodes for the pilot assist, the
 safety chain, the actuator interface and vision, each a thin wrapper over the
 module the simulation verified. The pilot node runs the shared mode's blend in
@@ -680,14 +650,14 @@ it stops the supervisor reports HOLD and every channel goes to neutral;
 the Gazebo model and pool world, their generators, the tether and depth
 adapters and the check of Section~\ref{sec:gazebo};
 \item \texttt{hil}: the bench in Section~\ref{sec:hil};
-\item \texttt{cad}: budget, CAD and its checks, thruster match, bill of materials.
+\item \texttt{simulation/vehicle}: budget, CAD and its checks, thruster match, bill of materials.
 \end{itemize}
 
 % ======================================================================
 \section{Cost}
 
 Prices are in rupees including GST, each line with the basis it rests on
-(\texttt{cad/rov\_bom.py}).
+(\texttt{simulation/vehicle/rov\_bom.py}).
 
 \begin{table}[htbp]\centering\small
 \begin{tabular}{@{}lr@{}}

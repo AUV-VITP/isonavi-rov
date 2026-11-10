@@ -31,7 +31,7 @@ RHO = 1000.0
 
 @dataclass
 class GovernorConfig:
-    cap_w: float = 800.0         # input power, as sized in cad/rov.py
+    cap_w: float = 800.0         # input power, as sized in simulation/vehicle/rov.py
     hotel_w: float = 44.0
     prop_d: float = 0.076
     drive_eta: float = 0.45
