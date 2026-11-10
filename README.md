@@ -15,13 +15,14 @@ hand shares the lateral control with the pilot.
 | Propulsion | 6 thrusters, 6 ESCs: 4 vectored horizontal for surge, sway and yaw, 2 vertical for heave |
 | Structure | Open frame (two plates on side supports), one sealed acrylic hull, foam and ballast trim, front gripper |
 | Sensing | Low-light camera with two lamps 0.18 m off axis, IMU, depth sensor, leak probes, power monitor |
-| Link and power | Ethernet over a 50 m tether, hardwired emergency stop loop, power governor and a four layer stop chain |
+| Link and power | 48 V supply and Ethernet over a 50 m tether, 800 W power governor, external kill switch and a four layer stop chain; the hull also carries an onboard battery |
 | Software | ROS 2: pilot assist and shared modes, thrust allocation, safety supervisor, vision; a Gazebo digital twin |
-| Targets | Under 20 kg (35 kg limit), inside 75 x 65 x 60 cm, at least 17.5 cm clear each side in a 1 m gate |
+| Targets | Under 20 kg (35 kg limit), 600 x 400 x 300 mm (inside 75 x 65 x 60 cm), at least 17.5 cm clear each side in a 1 m gate |
 | Status | TRL 3: designed, sized and simulated; next is the build and water |
 
 **Contents:**
 [Problem](#problem) ·
+[Existing solutions](#existing-solutions) ·
 [Vehicle](#vehicle) ·
 [Architecture](#system-architecture) ·
 [Working principle](#working-principle) ·
@@ -30,10 +31,12 @@ hand shares the lateral control with the pilot.
 [Simulation](#simulation-study) ·
 [Digital twin](#gazebo-digital-twin) ·
 [Cost](#estimated-cost) ·
+[Applications](#applications) ·
 [Plan](#development-plan) ·
 [Team](#team) ·
 [Repository](#repository-layout) ·
-[Running it](#running-it)
+[Running it](#running-it) ·
+[References](#references)
 
 ## Problem
 
@@ -57,6 +60,29 @@ a tether of about 50 m:
 The vehicle must weigh no more than 35 kg. What follows from this is a safe,
 compact, pilot-assisted ROV with stable control and vision that holds up in
 murky water.
+
+The evidence behind it: a survey of ROV pilots and industry stakeholders
+finds strong interest in tools that improve situational awareness and ease
+control demands, and names complex controls, high physical and cognitive load
+and weak sensory feedback as what limits operations [9]; a 30 participant VR
+study finds that low visibility undermines operator perception and currents
+disorient; and practitioners report that extra light mostly adds
+backscatter.
+
+## Existing solutions
+
+| | What exists | Its limit | isonavi-rov |
+| --- | --- | --- | --- |
+| Pilot assist | BlueROV2 depth and heading hold [5]; skill adaptive assist [8] | Holds its own state only; the assist adapts to the user, not to water clarity | Camera and pilot blended by inverse error variance, set by water clarity |
+| Vision and colour | YOLO and blob detection on student AUVs [1, 2]; Sea-Thru colour restoration [6] | No clarity sweeps reported; Sea-Thru needs range maps; enhancement does not reliably raise detection [7] | Range from the target's known size; commit to a colour only within 1 m |
+| Lighting | Separate the lamps from the camera to cut veiling light [10] | Not quantified for small vehicles | Lamps 0.18 m off axis, quantified across clarity levels |
+| Power and safety | 400 V tether supplies; thruster fault tolerance papers | Costly; fault tolerance mostly simulated | 48 V tether, 800 W governor, four layer stop chain |
+
+In simulation, shared mode takes contacts per run in murky water from 8.6
+(manual) to 0.5; lamps 0.18 m off axis identify 78 % of targets at 1.5 m in
+turbid water against 41 % at 0.10 m; a lost pilot link reaches zero thrust in
+0.52 s. The whole vehicle costs Rs 1.65 lakh, against USD 11,300 and up for a
+commercial tether power system alone.
 
 ## Vehicle
 
@@ -82,15 +108,12 @@ trim, checks the envelope and the gate fit, and writes the Gazebo model.
 
 ## System architecture
 
-![System architecture](docs/media/architecture.jpeg)
-
-The diagram is drawn on the eight thruster simulation reference; the build
-runs six thrusters on six ESCs.
+![System architecture](docs/media/architecture.png)
 
 | Layer | What it does | Where |
 | --- | --- | --- |
 | Surface station | Joystick or keyboard, ground station (video, attitude, depth, thruster loads, supervisor state), emergency stop | `ros/isonavi_rov_ros/ground_station.py`, `keyboard_teleop.py` |
-| Tether | Ethernet for ROS 2 and video; a hardwired stop loop on the spare pairs | `electrical/` (Section 12 of the power study) |
+| Tether | 48 V power, Ethernet for ROS 2 and video, a hardwired stop loop on the spare pairs | `electrical/` (Section 12 of the power study) |
 | Vision | Target finder and course estimators (gate, walls, target), calibrated per water clarity | `simulation/isonavi/vision.py`, `vision_node.py` |
 | Flight control | Pilot node in manual, assist, auto or shared mode; depth, heading and attitude hold; thrust allocation about the CG | `simulation/isonavi/pilot.py`, `pilot_node.py` |
 | Safety | Power governor, latching supervisor (kill, leak, 0.5 s link loss), actuator watchdog | `simulation/isonavi/safety.py`, `safety_node.py`, `hil/` |
@@ -98,6 +121,11 @@ runs six thrusters on six ESCs.
 | Digital twin | Gazebo Harmonic model and worlds generated from the same budget, checked against the python dynamics | `ros/isonavi_rov_description/`, `ros/isonavi_rov_gazebo/` |
 
 ## Working principle
+
+![Working principle: sense, perceive, plan and control, allocate, actuate](docs/media/working_principle.jpeg)
+
+The loop as the software runs it. Step 4 allocates over the thrusters the
+vehicle carries: six on the build, eight on the simulated reference.
 
 1. **The pilot flies; the vehicle holds.** Stick inputs set surge, sway and
    yaw rate and move the depth set point. The assist holds depth from the
@@ -124,6 +152,23 @@ runs six thrusters on six ESCs.
 | Hull buoyancy | F = rho g V, V = pi/4 D^2 L | 4.6 kgf; 3.6 kgf net of the 0.9 kg tube |
 | Thrust to move at 0.5 m/s | F = 1/2 rho Cd A v^2, Cd 1.0, A 0.4 x 0.3 m | 15 N (about 1.5 kgf) |
 | Gate clearance | (1000 - 400) / 2 for a 400 mm beam | 300 mm each side |
+| Size | L x B x H | 600 x 400 x 300 mm |
+
+The vehicle runs on the 48 V tether. The hull is designed to carry an onboard
+battery as well, a 6S LiPo (22.2 V nominal, 8 Ah, 177.6 Wh), and the power
+study works that case through ([Electrical and power](#electrical-and-power)):
+
+| Quantity | Relation | Value |
+| --- | --- | --- |
+| Usable battery energy | E = V x Q x usable fraction | 22.2 x 8 x 0.80 = 142.1 Wh (6.4 Ah) |
+| 5 V electronics current | I = P / V | 5.67 W / 5 V = 1.13 A typical, 2.25 A peak |
+| Electronics draw at the battery | Pin = Pout / eta | 5.67 / 0.90 = 6.30 W, 0.284 A at 22.2 V |
+| Lighting draw at the battery | Pin = P12V / eta | 40.8 / 0.93 = 43.9 W, 1.98 A (two 20 W lamps) |
+| 3.3 V sensor rail | P = V I | 47 mW, 14.2 mA typical |
+| Electronics and lights | sum | about 50.2 W from the battery |
+
+The bus runs from 25.2 V full to a 19.8 V cutoff, through DC-DC buck
+converters to 5 V and 12 V for the computer, camera, sensors and LEDs.
 
 ## Electrical and power
 
@@ -134,8 +179,8 @@ I^2R sag, losses, endurance and protection, for 4 and 6 thrusters, with a
 MATLAB model that reproduces the tables
 ([`electrical/docs/ROV_Electrical_Power_PostMortem.pdf`](electrical/docs/ROV_Electrical_Power_PostMortem.pdf),
 [`electrical/matlab/ROV_Power_Simulation.m`](electrical/matlab/ROV_Power_Simulation.m)).
-It is written for an onboard 6S LiPo pack (22.2 V, 8 Ah); what it decides holds
-for the six ESC build whichever way the bus is fed:
+It works through the onboard 6S LiPo case (22.2 V, 8 Ah) that the hull is
+designed to carry; its rules set the six ESC build on the tethered bus too:
 
 | Finding | Rule |
 | --- | --- |
@@ -309,8 +354,7 @@ camera.
 A recorded piloting session in the large river world, keyboard teleop with
 the operator video beside it, is in
 [`docs/media/gazebo_river_session.webm`](docs/media/gazebo_river_session.webm)
-(5 min; recorded on an earlier, hand written vehicle model before the
-generated one replaced it).
+(5 min, flown on the first hand built vehicle model).
 
 ## Estimated cost
 
@@ -324,9 +368,20 @@ generated one replaced it).
 | Contingency | 6,500 | Contingency | 7,500 |
 | **Mechanical** | **75,000** | **Electrical and embedded** | **90,000** |
 
-**Whole vehicle: Rs 1,65,000.** The itemised bill of materials for the
+**Whole vehicle: Rs 1,65,000**, against USD 11,300 and up for a commercial
+tether power system alone. The itemised bill of materials for the
 simulated reference, with the basis of every price, is generated by
 `cad/rov_bom.py`.
+
+## Applications
+
+| User | Use | Benefit |
+| --- | --- | --- |
+| Government departments | Dam, reservoir and canal inspection; finding visible structural damage | Safer maintenance |
+| Disaster response | Flood zone assessment; locating submerged obstacles and objects | Less risk to people |
+| Environmental agencies | Monitoring underwater waste, riverbeds and aquatic habitats | Ecosystem protection |
+| Fisheries and aquaculture | Inspecting fish cages, nets and submerged equipment | Less inspection effort |
+| Research and education | Underwater robotics experiments, student training, research and low cost prototyping | Accessible engineering |
 
 ## Development plan
 
@@ -349,6 +404,15 @@ simulated reference, with the basis of every price, is generated by
 | Structure and hydrodynamics | TRL 3 | CAD complete; mass, buoyancy, thrust and power budgets closed; Gazebo model checked against the dynamics |
 | Electrical and power | TRL 3 | Power path, fusing and governor sized by calculation; power study with a MATLAB model |
 | **Target** | **TRL 6** | Full prototype demonstrated in the operating environment |
+
+Facilities: the college's robotics lab (assembly, integration, motion control
+and bench tests), AUV lab (ROV subsystems, buoyancy, sealing), mechanical
+workshop (frame fabrication and fitting), embedded systems lab (firmware,
+sensor interfacing), signals, systems and communication lab (tether
+communication and telemetry) and machine learning lab (vision and target
+detection). The team brings 3D printing and machining, a thruster test bench,
+a practice tank, the 48 V supply with fuses, kill switch and 50 m tether, and
+the surface station.
 
 ## Team
 
@@ -374,7 +438,7 @@ river worlds) by `prjwaal`; the tow point, thermal bridge and supply rework by
 | [`simulation/eval/`](simulation/eval/) | Trials, vision calibration and evaluation, figures, video, report metrics |
 | [`ros/`](ros/) | ROS 2 packages: vehicle nodes (`isonavi_rov_ros`), generated Gazebo model (`isonavi_rov_description`), worlds, bridge and launch (`isonavi_rov_gazebo`); `test_chain.sh` and `test_sim.sh` |
 | [`hil/`](hil/) | Flight computer and ESP32 actuator interface, validated on hardware for isonavi; the ROV bench over the same link |
-| [`docs/`](docs/) | Technical report `isonavi_rov_report.tex` (every number from `simulation/eval/make_rov_metrics.py`), the README check, architecture diagram and the Gazebo session video in `docs/media/` |
+| [`docs/`](docs/) | Technical report `isonavi_rov_report.tex` (every number from `simulation/eval/make_rov_metrics.py`), the README check; architecture and working principle diagrams and the Gazebo session video in `docs/media/` |
 | [`cv/`](cv/) | Detector and classifier notebooks and results from isonavi |
 
 The project grew out of isonavi, an autonomous river survey vehicle. The
@@ -435,3 +499,17 @@ actuator interface and the flight computer pattern come from isonavi, where
 they were validated on hardware. Next is water: thruster bench curves, a hull
 vacuum and dunk test, trim in a tank, the study rerun on six thrusters with the
 measured curves, and pilot hours on a mock course.
+
+## References
+
+1. Duke Robotics Club, "CTHULHU: The Design and Implementation of the Duke Robotics Club's 2021 RoboSub Competition Entry", RoboSub Technical Design Report, 2021. <https://sites.duke.edu/sarahglomski/files/2024/12/RoboSub-Technical-Design-Report.pdf>
+2. Troy High School NJROTC, "RoboSub 2021 Technical Design Report", 2021. <https://robonation.org/app/uploads/sites/4/2021/07/RoboSub_2021_Troy-HS-NJROTC_TDR.pdf>
+3. NUS, "Team Bumblebee emerges as champion at Singapore AUV Challenge 2024". <https://cde.nus.edu.sg/edic/news/team-bumblebee-emerges-as-champion-at-singapore-auv-challenge-2024/>
+4. Plaksha University, "Our journey at the 2025 Singapore Autonomous Underwater Vehicle Challenge". <https://plaksha.edu.in/blog/our-journey-at-the-2025-singapore-autonomous-underwater-vehicle-challenge>
+5. ArduSub documentation, "Features" (depth hold and heading hold). <https://williangalvani.github.io/ardusub-gitbook/introduction/features.html>
+6. D. Akkaynak and T. Treibitz, "Sea-Thru: A Method for Removing Water from Underwater Images", Proc. IEEE/CVF CVPR, 2019. <https://openaccess.thecvf.com/content_CVPR_2019/papers/Akkaynak_Sea-Thru_A_Method_for_Removing_Water_From_Underwater_Images_CVPR_2019_paper.pdf>
+7. Y. Wang et al., "Is Underwater Image Enhancement All Object Detectors Need?", IEEE Journal of Oceanic Engineering, 2024. <https://arxiv.org/abs/2311.18814>
+8. N. Lawrance et al., "Shared autonomy for low-cost underwater vehicles", Journal of Field Robotics, 2019. <https://www.osti.gov/pages/biblio/2476823-shared-autonomy-lowcost-underwater-vehicles>
+9. "Enhancing Subsea ROV Operations: A Survey of Operator Challenges, Essential Skills, and Novel Teleoperation Technologies", NSF Public Access Repository. <https://par.nsf.gov/biblio/10650821>
+10. DeepSea Power and Light, "Optimal Lighting Geometry for Underwater Lights and Cameras". <https://www.deepsea.com/optimal-lighting-geometry-for-underwater-lights-and-cameras/>
+11. "Dynamics modeling and control of variable length remotely operated vehicle tether", University of Victoria. <https://dspace.library.uvic.ca/items/66b41ae5-30e7-44a0-a506-596beba82945>
